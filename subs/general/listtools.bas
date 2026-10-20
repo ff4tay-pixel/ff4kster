@@ -360,7 +360,6 @@ function ListInput(list_menu as BlueMenu, kind as String) as Boolean
   RefreshEntryColor(list_menu, kind, i)
  next
 
- DrawBreadcrumb("Main menu > " + KindTitle(kind) + " > " + FF4Name(EntryName(kind, list_menu.selected)))
  result = list_menu.UserInput()
  if result then
   if not list_menu.cancelled then last_list_pos(k) = list_menu.selected

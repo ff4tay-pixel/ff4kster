@@ -983,6 +983,5 @@ VERSION HISTORY
 - **Space Usage** (main menu) shows how full each fixed ROM area is (events, triggers, text banks, item descriptions); over 100% means Save ROM will refuse.
 - **Changed Entries** (main menu) lists every spell, item and monster changed since loading and opens the one you pick.
 - **Number boxes:** press X to switch between decimal and hexadecimal entry (A-F are accepted in hex mode).
-- **Breadcrumb:** the bottom line shows where you are, for example `Main menu > Spells > Fire`.
 - **Saving** asks before overwriting a ROM file that changed on disk since it was loaded or last saved.
 - **CSV** now also covers shops and formations.

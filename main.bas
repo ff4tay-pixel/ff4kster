@@ -143,7 +143,6 @@ do
 
   'Start every editor on a black screen so nothing from the main menu is left behind.
   if editor_menu.selected >= 2 and editor_menu.selected <= 32 then cls
-  if editor_menu.selected >= 2 and editor_menu.selected <= 32 then DrawBreadcrumb("Main menu > " + FF4Name(editor_menu.options.ItemAt(editor_menu.selected)))
 
   select case editor_menu.selected
 

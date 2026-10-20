@@ -133,13 +133,3 @@ sub ShowKeyHelp()
   "Press any key", 15, 8)
 
 end sub
-
-
-sub DrawBreadcrumb(text as String)
-
- 'Where-am-I line at the bottom of the screen.
-
- line (12 * 8, 59 * 8)-(79 * 8 + 7, 59 * 8 + 7), RGB(0, 0, 0), bf
- WriteText(FF4Text(left(text, 66)), 12, 59, 11)
-
-end sub
