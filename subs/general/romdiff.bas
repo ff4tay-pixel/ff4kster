@@ -35,6 +35,7 @@ function DiffLabel(offset as UInteger) as String
   case &h7A910 to &h7A96F: return "Character names"
   case &h7B000 to &h7B1FF: return "Item descriptions"
   case &h7CC00 to &h7CF7F: return "Monster graphics"
+  case &hD0200 to &hD89FF: return "Battle character graphics"
  end select
 
  return "(other)"

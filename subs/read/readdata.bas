@@ -389,4 +389,8 @@ sub ReadData(filename as String)
  ReadSpellColorNames()
  print "DONE"
  
+ print "Reading battle character graphics... ";
+ ReadBattleCharGfx()
+ print "DONE"
+ 
 end sub

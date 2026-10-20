@@ -63,6 +63,7 @@ const total_scripts = &h15A
 const total_monsters = &hE0
 const total_special_sizes = &h40
 const total_monster_palettes = 234
+const total_battle_char_sheets = 15
 
 const total_dialogues_bank1 = 512
 const total_dialogues_bank2 = 768

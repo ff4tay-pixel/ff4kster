@@ -122,6 +122,11 @@ sub DrawMainHelp(selected as Integer)
   case 32
    HelpLine(lines(), n, "Lists every spell, item and monster you")
    HelpLine(lines(), n, "changed since loading; pick one to open it.")
+  case 33
+   HelpLine(lines(), n, "Edit the in-battle sprite of each character.")
+   HelpLine(lines(), n, "Enter edits a tile, PgUp / PgDn changes the")
+   HelpLine(lines(), n, "pose preview, , and . change the palette.")
+   HelpLine(lines(), n, "Golbez and Anna are not included yet.")
   case else
    HelpLine(lines(), n, "Leave the editor. You are asked to save")
    HelpLine(lines(), n, "if there are unsaved edits.")

@@ -116,6 +116,7 @@ editor_menu.AddOption(FF4Text("Compare with ROM File"))
 editor_menu.AddOption(FF4Text("Search Everywhere"))
 editor_menu.AddOption(FF4Text("Space Usage"))
 editor_menu.AddOption(FF4Text("Changed Entries"))
+editor_menu.AddOption(FF4Text("Edit Battle Sprites"))
 editor_menu.AddOption(FF4Text("Quit"))
 
 save_prompt.x = 24
@@ -136,13 +137,13 @@ do
 
  if not editor_menu.cancelled then
 
-  if (editor_menu.selected >= 2 and editor_menu.selected <= 25) or editor_menu.selected = 30 or editor_menu.selected = 32 then
+  if (editor_menu.selected >= 2 and editor_menu.selected <= 25) or editor_menu.selected = 30 or editor_menu.selected = 32 or editor_menu.selected = 33 then
    modified = true
    editor_menu.ChangeOption(1, FF4Text("Save ROM *"))
   end if
 
   'Start every editor on a black screen so nothing from the main menu is left behind.
-  if editor_menu.selected >= 2 and editor_menu.selected <= 32 then cls
+  if editor_menu.selected >= 2 and editor_menu.selected <= 33 then cls
 
   select case editor_menu.selected
 
@@ -195,6 +196,7 @@ do
    case 30: SearchEverywhere()
    case 31: ShowSpaceUsage()
    case 32: ChangedEntries()
+   case 33: EditBattleSprites()
 
    case else
     if not modified then

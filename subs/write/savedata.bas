@@ -212,6 +212,7 @@ sub ApplyDataToROM()
  SaveAIs()
  
  SaveSpellColorNames()
+ SaveBattleCharGfx()
 
 end sub
 

@@ -103,6 +103,7 @@ dim shared conditionsets(total_condition_sets) as String
 dim shared conditions(total_conditions) as AICondition
 dim shared scripts(total_scripts) as List
 dim shared special_sizes(total_special_sizes) as SpecialSize
+dim shared battle_char_gfx(total_battle_char_sheets - 1, 63, 7, 7) as UByte 'sheet, tile, row, column: color 0-15
 dim shared formations(total_formations) as Formation
 dim shared encounters(total_encounters, 8) as UByte
 dim shared encounter_tables(total_encounter_tables) as UByte
