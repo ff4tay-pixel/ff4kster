@@ -249,14 +249,24 @@ headings. The editors are in this order: Features, Spells, Spell Sets,
 Weapons, Armors, Medicines, Tools, Shops, Jobs, Battle Sprites, Characters,
 Commands, Actors, Messages, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
 Monsters, Formations, Encounters, Autobattles and Solobattles, followed by
-Search Everywhere, Space Usage and Changed Entries. "View World Maps" (under World) is a
-read-only viewer for the overworld, the underground and the moon: arrows move a
-cursor over the 16x16 pixel tiles, PgUp / PgDn and Home / End jump 16 tiles, Tab
-changes world, a click on the small map jumps there and a click on the view moves
-the cursor. The side panel shows the tile number and what can cross it (walking,
-chocobos, hovercraft, airship, whale) and whether it has random battles. The map
-is shown as stored in the ROM; the game changes a few overworld tiles while it
-runs. A panel beside the menu
+Search Everywhere, Space Usage and Changed Entries. "Edit World Maps" (under World) edits the
+overworld (256x256 tiles), the underground (256x256) and the moon (64x64).
+Arrows move the cursor over the 16x16 pixel tiles, PgUp / PgDn and Home / End
+jump 16 tiles, Tab changes world and a click on the small map jumps there.
+Enter paints the chosen tile (over the selected block, if there is one), Backspace
+picks the tile under the cursor, Space flood fills, R replaces every tile like the
+one under the cursor in the whole world, Shift with the arrows selects a block,
+Ctrl-C / Ctrl-V copy and paste a block at the cursor, Ctrl-Z / Ctrl-Y undo and
+redo, and Comma / Period / the square bracket keys (or a click on the tile picker
+below the map) choose the tile. With the mouse a left click paints (drag to keep
+painting) and a right click picks the tile. The side panel shows the tile number
+and what can cross it (walking, chocobos, hovercraft, airship, whale) and whether
+it has random battles. The map is shown as stored in the ROM; the game changes a
+few overworld tiles while it runs, and the editor does not change that. Each
+world has a fixed amount of room in the ROM (16384, 7424 and 7808 bytes); the
+editor shows how much the world takes and Space Usage lists it too. If a world
+does not fit, Save ROM refuses. Edits to the tile graphics, palettes and tile
+properties are not part of this editor. A panel beside the menu
 shows the keys for the highlighted entry. The CSV export/import and the two ROM
 comparison tools described under "Extras" below are still in the program but
 are currently hidden from the menu.
@@ -1252,7 +1262,9 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * Since 0.8
-    - View World Maps: read-only viewer for the overworld, underground and moon
+    - Edit World Maps: edit the overworld, underground and moon (paint, fill, replace,
+      copy / paste, undo, mouse painting); saved into the fixed room the game gives
+      each world, with a space check
     - Revert, copy / paste, undo and changed marks for solobattles, autobattles, spell
       sets and encounter areas; Changed Entries lists commands, actors and those too
     - Edit Graphics shows and edits the palette a boss really uses

@@ -1,3 +1,5 @@
+declare sub ReadWorldMaps()
+
 sub ReadData(filename as String)
  
  'Reads all the relevant objects from the ROM into memory.
@@ -391,6 +393,10 @@ sub ReadData(filename as String)
  
  print "Reading battle character graphics... ";
  ReadBattleCharGfx()
+ print "DONE"
+
+ print "Reading world maps... ";
+ ReadWorldMaps()
  print "DONE"
  
 end sub

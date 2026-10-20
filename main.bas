@@ -17,7 +17,7 @@
 
 'The main menu has header rows between groups of entries. menu_id maps a row
 ' to its entry number (1 = Save ROM ... 30 = Quit), 0 for a header row.
-const menu_world_map = 31 'View World Maps (numbered last so the other entries keep their numbers)
+const menu_world_map = 31 'Edit World Maps (numbered last so the other entries keep their numbers)
 dim shared menu_id(1 to 60) as Integer
 dim shared menu_rows as Integer
 dim shared entry_number as Integer
@@ -162,7 +162,7 @@ AddMainHeader(editor_menu, "World")
 AddMainEntry(editor_menu, "Edit Tilesets")
 AddMainEntry(editor_menu, "Edit Map Info")
 AddMainEntry(editor_menu, "Edit Maps")
-AddMainEntry(editor_menu, "View World Maps", menu_world_map)
+AddMainEntry(editor_menu, "Edit World Maps", menu_world_map)
 AddMainHeader(editor_menu, "Battles")
 AddMainEntry(editor_menu, "Edit Monsters")
 AddMainEntry(editor_menu, "Edit Formations")
@@ -238,7 +238,7 @@ do
    case 27: SearchEverywhere()
    case 28: ShowSpaceUsage()
    case 29: ChangedEntries()
-   case menu_world_map: ViewWorldMaps()
+   case menu_world_map: EditWorldMaps()
 
    case else
     if not modified then
@@ -265,7 +265,7 @@ do
   help_entry = 0
 
   'Work out whether anything really changed (opening an editor and leaving does not count).
-  if choice >= menu_first_editor and choice <= menu_last_editor then
+  if (choice >= menu_first_editor and choice <= menu_last_editor) or choice = menu_world_map then
    modified = HasUnsavedEdits()
   end if
   editor_menu.ChangeOption(menu_save, FF4Text(iif(modified, "Save ROM *", "Save ROM")))

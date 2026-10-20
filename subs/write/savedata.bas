@@ -1,3 +1,5 @@
+declare sub SaveWorldMaps()
+
 dim shared disk_rom as String 'what the ROM file contained when last read or written
 
 function SafeToSave(filename as String) as Boolean
@@ -124,6 +126,7 @@ sub ApplyDataToROM()
   if i < 252 or i > 256 then maps(i).WriteToROM(i)
  next
  SaveMapGrids()
+ SaveWorldMaps()
  
  for i as Integer = 1 to total_stat_groups
   stat_groups(i).WriteToROM(i)
