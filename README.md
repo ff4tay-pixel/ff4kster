@@ -714,6 +714,23 @@ will be randomly selected from a group of eight stat bonus combinations, each
 of which has a set of stats to increase and an amount by which to increase
 them.
 
+"Edit after 70 data" opens a full screen table of those eight combinations, one
+per row, with the five stat flags and the amount (-1 to 6). A column in words
+says what each combination does, and below the table you see the average gain
+of every stat per level up (the eight combinations are equally likely) and the
+HP, MP and TNL bonuses that are repeated from level 69.
+
+    ARROWS, TAB:       Move between cells (Tab wraps to the next row).
+    HOME / END:        First / last combination.
+    ENTER, SPACE:      Toggle a stat flag, or cycle the amount.
+    0-6:               Set the amount (stat: 1 on, 0 off).
+    MINUS / PLUS:      Change by 1 (stat: off / on).
+    D:                 Copy this cell from the row above.
+    N / P:             Switch to the next / previous character.
+    CTRL+C / CTRL+V:   Copy and paste a whole combination.
+    CTRL+Z:            Undo the last action.
+    ESC:               Back to the character list.
+
 
 COMMANDS
 --------

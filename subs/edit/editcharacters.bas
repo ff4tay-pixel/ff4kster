@@ -41,8 +41,7 @@ sub EditCharacters()
      case 2
       EditLevelUps(select_character.selected)
      case 3
-      after70_menu.UserSelect()
-      after70_menu.ApplyUpdates(select_character.selected)
+      EditAfter70(select_character.selected)
     end select
    end if
   end if

@@ -14,17 +14,6 @@ constructor After70Menu(starting_x as UByte = 0, starting_y as UByte = 0)
 end constructor
 
 
-sub After70Menu.ApplyUpdates(index as UByte)
-
- for i as Integer = 1 to 8
-  for j as Integer = 1 to 5
-   characters(index).after70(i).stat(j) = stat_menu(i).stat(j)
-  next
-  characters(index).after70(i).amount = stat_menu(i).bonus
- next
-
-end sub
-
 sub After70Menu.Display()
 
  BlueBox(x, y, 8, 1)
@@ -41,25 +30,5 @@ sub After70Menu.SetTo(index as UByte)
  for i as Integer = 1 to 8
   stat_menu(i).SetTo(characters(index).after70(i))
  next
-
-end sub
-
-
-sub After70Menu.UserSelect()
-
- dim select_menu as BlueMenu
- 
- select_menu = BlueMenu(x + 11, y + 3)
- select_menu.columns = 2
- for i as Integer = 1 to 8
-  select_menu.AddOption(FF4Text(str(i)))
- next
- 
- do
-  select_menu.UserSelect()
-  if not select_menu.cancelled then
-   stat_menu(select_menu.selected).UserSelect() 
-  end if
- loop until select_menu.cancelled
 
 end sub
