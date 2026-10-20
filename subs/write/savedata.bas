@@ -237,6 +237,8 @@ sub SaveData(filename as String)
   end if
   if open(filename for binary access write as #1) <> 0 then
    warning = true
+   if save_problems <> "" then save_problems += "|"
+   save_problems += "Could not write " + filename + "|(read-only, or open in another program?)"
   else
    dim temp as String
    temp = ff4rom
@@ -244,7 +246,48 @@ sub SaveData(filename as String)
    put #1, , temp
    close #1
    disk_rom = ff4rom
+   saved_image = ff4rom
   end if
  end if
- 
+
 end sub
+
+
+function SaveROM(filename as String) as Boolean
+
+ 'Save ROM from the menu: checks the file, writes it, and tells the user what
+ ' happened, listing every problem found. Returns true if the file was written.
+ ' After a failure the ROM image in memory is put back as it was, so nothing
+ ' half-applied is kept.
+
+ dim before as String = ff4rom
+
+ save_problems = ""
+ warning = false
+ defer_warnings = true
+
+ if SafeToSave(filename) then
+  SaveData(filename)
+ else
+  warning = true
+  save_problems = "Not saved: the ROM file changed on disk|and you chose not to overwrite it."
+ end if
+ defer_warnings = false
+
+ if warning then
+  warning = false
+  ff4rom = before
+  InfoBox("SAVE FAILED, nothing was written.||" + save_problems + "||Press any key", 4, 1)
+  return false
+ end if
+
+ modified = false
+ if last_backup_name <> "" then
+  InfoBox("Data saved|Backup: " + last_backup_name + "||Press any key", 4, 1)
+ else
+  InfoBox("Data saved||Press any key", 20, 1)
+ end if
+
+ return true
+
+end function

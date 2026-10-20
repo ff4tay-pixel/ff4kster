@@ -4,7 +4,6 @@ sub OpenEntry(kind as String, index as Integer)
 
  jump_kind = kind
  jump_index = index
- modified = true
  cls
  select case kind
   case "spells": EditSpells()

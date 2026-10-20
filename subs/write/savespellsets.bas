@@ -12,7 +12,7 @@ sub SaveSpellSets()
   total += Min(s->starting_spells.Length() + 1, 24)
  next
  if total > &h320 then 
-  WarningMessage("Starting spells overflow!")
+  WarningMessage(FF4Text("Starting spells overflow!"))
  else
   for i as Integer = 1 to spellsets.Length()
    s = spellsets.PointerAt(i)

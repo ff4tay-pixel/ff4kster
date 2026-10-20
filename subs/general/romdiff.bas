@@ -50,10 +50,37 @@ sub BuildBaselineROM()
 
  ApplyDataToROM()
  baseline_rom = ff4rom
+ saved_image = ff4rom
  ff4rom = original_rom
  warning = false
 
 end sub
+
+
+function HasUnsavedEdits() as Boolean
+
+ 'True if saving now would write something different from what was loaded or
+ ' last saved. Applies the data to a scratch copy of the ROM image; a save
+ ' problem such as an overflow counts as an edit.
+
+ dim saved_rom as String = ff4rom
+ dim saved_warning as Boolean = warning
+ dim saved_problems as String = save_problems
+ dim result as Boolean
+
+ defer_warnings = true
+ warning = false
+ ApplyDataToROM()
+ result = warning or (ff4rom <> saved_image)
+ defer_warnings = false
+
+ ff4rom = saved_rom
+ warning = saved_warning
+ save_problems = saved_problems
+
+ return result
+
+end function
 
 
 function DiffImages(newer as String, older as String, report_file as String, heading as String, byref changed as UInteger) as String

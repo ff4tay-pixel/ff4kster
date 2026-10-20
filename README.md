@@ -217,10 +217,14 @@ Assuming that nothing goes wrong and the rom loads correctly, you will then
 be presented with a menu of different editors for different types of game
 objects. You can use those to view and/or change the various game components,
 then when you are satisfied with the changes, navigate back to the main menu
-and select "Save ROM". The menu changes this entry to "Save ROM *" after an
-editor is opened, indicating that unsaved changes may exist. If you choose
-"Quit" while the editor is marked as modified, you can save, quit without
-saving, or cancel and return to the editor.
+and select "Save ROM". The menu changes this entry to "Save ROM *" (and the
+window title gets a *) when you leave an editor after really changing
+something; opening an editor and leaving it unchanged does not count. If you
+choose "Quit" while the editor is marked as modified, you can save, quit
+without saving, or cancel and return to the editor. If saving fails (data
+that does not fit, a read-only file, or a ROM file that changed on disk),
+a box lists every reason, nothing is written, and Quit asks whether you
+really want to leave and lose the edits.
 
 If something did go wrong, the usual result is that you will be presented
 with a black screen that seems to be doing nothing for a long time. If this
@@ -1201,6 +1205,8 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * Since 0.8
+    - Save ROM lists every problem at once when it fails; the modified mark
+      now reflects real changes only
     - Added Battle Sprites editor (after Edit Jobs)
        - Tile editor with live pose previews, copy/paste, undo
        - Palette editor

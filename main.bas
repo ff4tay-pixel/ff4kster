@@ -121,6 +121,11 @@ save_prompt.AddOption(FF4Text("Save ROM"))
 save_prompt.AddOption(FF4Text("Quit without saving"))
 save_prompt.AddOption(FF4Text("Cancel"))
 
+'Main menu entries: 1 is Save ROM, then the editors up to the last one before Quit.
+const menu_save = 1
+const menu_first_editor = 2
+const menu_last_editor = 29
+
 'Main menu loop
 do
 
@@ -133,33 +138,14 @@ do
 
  if not editor_menu.cancelled then
 
-  if (editor_menu.selected >= 2 and editor_menu.selected <= 26) or editor_menu.selected = 27 or editor_menu.selected = 29 then
-   modified = true
-   editor_menu.ChangeOption(1, FF4Text("Save ROM *"))
-  end if
-
   'Start every editor on a black screen so nothing from the main menu is left behind.
-  if editor_menu.selected >= 2 and editor_menu.selected <= 29 then cls
+  if editor_menu.selected >= menu_first_editor and editor_menu.selected <= menu_last_editor then cls
 
   select case editor_menu.selected
 
-   case 1 'Save
-    if SafeToSave(filename) then SaveData(filename) else warning = true
+   case menu_save
     editor_menu.Display()
-    if warning then
-     warning = false
-     BlueBox(20, 1, 11, 1)
-     WriteText(FF4Text("Save failed"), 21, 2)
-     getkey
-    else
-      modified = false
-      editor_menu.ChangeOption(1, FF4Text("Save ROM"))
-     if last_backup_name <> "" then
-      InfoBox("Data saved|Backup: " + last_backup_name + "||Press any key", 4, 1)
-     else
-      InfoBox("Data saved||Press any key", 20, 1)
-     end if
-    end if
+    SaveROM(filename)
 
    case 2: EditItemRanges()
    case 3: EditSpells()
@@ -199,15 +185,11 @@ do
     if not save_prompt.cancelled then
      select case save_prompt.selected
       case 1
-       if SafeToSave(filename) then SaveData(filename) else warning = true
-       if warning then
-        warning = false
-        BlueBox(20, 1, 11, 1)
-        WriteText(FF4Text("Save failed"), 21, 2)
-        getkey
-       else
-        modified = false
+       if SaveROM(filename) then
         exit do
+       else
+        'Saving failed: the reasons were shown. Leave only if the user insists.
+        if ConfirmBox("Quit and lose the unsaved edits?") then exit do
        end if
       case 2
        exit do
@@ -215,6 +197,12 @@ do
     end if
 
   end select
+
+  'Work out whether anything really changed (opening an editor and leaving does not count).
+  if editor_menu.selected >= menu_first_editor and editor_menu.selected <= menu_last_editor then
+   modified = HasUnsavedEdits()
+  end if
+  editor_menu.ChangeOption(menu_save, FF4Text(iif(modified, "Save ROM *", "Save ROM")))
 
  end if
 
