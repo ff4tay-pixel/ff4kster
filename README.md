@@ -1299,6 +1299,8 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * Since 0.8
+    - Fixed the cursor in the message list of event calls (NPC speech, event triggers): it
+      jumped back to the first message, so the other messages could not be reached
     - Edit World Maps: edit the overworld, underground and moon (paint, fill, replace,
       copy / paste, undo, mouse painting); saved into the fixed room the game gives
       each world, with a space check; O shows triggers and encounter zones over the map;

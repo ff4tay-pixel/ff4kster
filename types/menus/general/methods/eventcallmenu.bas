@@ -12,6 +12,7 @@ end constructor
 sub EventCallMenu.Display()
 
  dim c as CallComponent ptr
+ dim kept_message as UInteger
  
  call_menu.ClearAll()
  for i as Integer = 1 to e->components.Length()
@@ -26,6 +27,8 @@ sub EventCallMenu.Display()
   call_menu.AddOption(FF4Text("-- EMPTY --"))
  end if
  
+ 'The menu is rebuilt every time, so remember where its cursor was (otherwise it jumps back to the first message)
+ kept_message = data_menu.selected
  data_menu = BlueMenu(x, y + call_menu.options.Length() + 2)
  for i as Integer = 1 to e->parameters.Length()
   data_menu.AddOption(FF4Text("Message " + Pad(str(asc(e->parameters.ItemAt(i)) + 1), 2, true)))
@@ -33,6 +36,7 @@ sub EventCallMenu.Display()
  if data_menu.options.Length() = 0 then 
   data_menu.AddOption(FF4Text("-- No messages --"))
  end if
+ data_menu.ChangeSelected(kept_message)
  
  call_menu.Display()
  data_menu.Display()
