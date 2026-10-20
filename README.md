@@ -80,7 +80,21 @@ with:
   winget install --id FreeBASIC.FreeBASIC
 
 FreeBASIC 1.10.1 was used to build this checkout. From the repository root,
-compile the single translation unit with the visible console build:
+run the reproducible console build script:
+
+  .\build.ps1
+
+To remove the previous canonical executable before building, use:
+
+  .\build.ps1 -Clean
+
+If PowerShell blocks local scripts, allow scripts for the current terminal only
+and run the command again:
+
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+  .\build.ps1
+
+The script compiles the single translation unit with the visible console build:
 
   fbc -x ff4kster-console.exe main.bas
 
