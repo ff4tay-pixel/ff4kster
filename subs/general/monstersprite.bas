@@ -11,6 +11,8 @@
 '               (FF), or a run of empty cells (FE then a count), or a tile number.
 'The graphics pointer P addresses the tile data at &h48200 + (P * 8 mod &h40000) (the offsets
 'include the 0x200 header that ff4rom always carries), so pointers below 8000h are valid too.
+'Graphics pointers below 8000h are 4 bits per pixel instead (16 colors, 32 bytes per tile, the second
+'8 colors come from the next palette): only Zeromus's last form and the Dummy use that.
 'Pixel 0 is transparent: the images use RGB(255, 0, 255) for it.
 '
 'The pixels are written straight into the image's memory. Do not draw into these images with PSET or
@@ -68,11 +70,47 @@ sub MonsterSizeTiles(size_id as Integer, byref tiles_wide as Integer, byref tile
 end sub
 
 
-function MonsterTileColor(start as Integer, t as Integer, row as Integer, col as Integer) as Integer
+function MonsterIsDeep(gfx_ptr as UInteger) as Boolean
 
- 'The color number (0-7) of one pixel of tile t of the 3 bits per pixel data starting at start
+ 'Graphics pointers below 8000h address 4 bits per pixel art (16 colors, 32 bytes per tile); the
+ ' game checks bit 15 of the pointer (btlgfx/ppu.asm, "branch if 3bpp graphics"). Only Zeromus's
+ ' last form and the Dummy use it. Everything else is 3 bits per pixel (8 colors, 24 bytes per tile).
 
- dim tile_start as Integer = start + t * 24
+ return gfx_ptr < &h8000
+
+end function
+
+
+function MonsterTileBytes(deep as Boolean) as Integer
+
+ if deep then return 32
+ return 24
+
+end function
+
+
+function MonsterPaletteColor(palette_id as Integer, c as Integer) as UInteger
+
+ 'The color of color number c. Colors 8-15 (4 bits per pixel art) come from the next palette in the
+ ' table: the game loads two palettes (32 bytes) for every monster.
+
+ if c < 8 then return monster_palettes(palette_id + 1, c)
+ if palette_id + 2 > total_monster_palettes then return RGB(0, 0, 0)
+
+ return monster_palettes(palette_id + 2, c - 8)
+
+end function
+
+
+function MonsterTileColor(start as Integer, t as Integer, row as Integer, col as Integer, deep as Boolean = false) as Integer
+
+ 'The color number (0-7, or 0-15 if deep) of one pixel of tile t of the graphics starting at start
+
+ dim tile_start as Integer = start + t * MonsterTileBytes(deep)
+
+ if deep then
+  return ((ByteAt(tile_start + row * 2) shr (7 - col)) and 1) or (((ByteAt(tile_start + row * 2 + 1) shr (7 - col)) and 1) shl 1) or (((ByteAt(tile_start + 16 + row * 2) shr (7 - col)) and 1) shl 2) or (((ByteAt(tile_start + 16 + row * 2 + 1) shr (7 - col)) and 1) shl 3)
+ end if
 
  return ((ByteAt(tile_start + row * 2) shr (7 - col)) and 1) or (((ByteAt(tile_start + row * 2 + 1) shr (7 - col)) and 1) shl 1) or (((ByteAt(tile_start + 16 + row) shr (7 - col)) and 1) shl 2)
 
@@ -83,6 +121,7 @@ function MonsterRegularImage(gfx_ptr as UInteger, size_id as Integer, pal as Int
 
  'An ordinary monster: a block of tiles in order
 
+ dim deep as Boolean
  dim tiles_wide as Integer
  dim tiles_high as Integer
  dim start as Integer
@@ -95,7 +134,8 @@ function MonsterRegularImage(gfx_ptr as UInteger, size_id as Integer, pal as Int
  start = MonsterSpriteOffset(gfx_ptr)
  MonsterSizeTiles(size_id, tiles_wide, tiles_high)
  if tiles_wide = 0 then return 0
- if start + tiles_wide * tiles_high * 24 > len(ff4rom) then return 0
+ deep = MonsterIsDeep(gfx_ptr)
+ if start + tiles_wide * tiles_high * MonsterTileBytes(deep) > len(ff4rom) then return 0
  if pal < 0 or pal >= total_monster_palettes then return 0
 
  result = MonsterNewImage(tiles_wide, tiles_high, pixels, pitch)
@@ -103,9 +143,9 @@ function MonsterRegularImage(gfx_ptr as UInteger, size_id as Integer, pal as Int
  for n as Integer = 0 to tiles_wide * tiles_high - 1
   for row as Integer = 0 to 7
    for col as Integer = 0 to 7
-    color_index = MonsterTileColor(start, n, row, col)
+    color_index = MonsterTileColor(start, n, row, col, deep)
     if color_index <> 0 then
-     pixel_value = monster_palettes(pal + 1, color_index)
+     pixel_value = MonsterPaletteColor(pal, color_index)
      MonsterPutPixel(pixels, pitch, (n mod tiles_wide) * 8 + col, (n \ tiles_wide) * 8 + row, pixel_value)
     end if
    next
@@ -170,6 +210,7 @@ function MonsterBossImage(gfx_ptr as UInteger, special_index as Integer) as Any 
 
  'A boss: the special size entry says which tile goes where, and which palette to use
 
+ dim deep as Boolean
  dim tiles_wide as Integer
  dim tiles_high as Integer
  dim start as Integer
@@ -183,6 +224,7 @@ function MonsterBossImage(gfx_ptr as UInteger, special_index as Integer) as Any 
  dim pitch as Integer
 
  start = MonsterSpriteOffset(gfx_ptr)
+ deep = MonsterIsDeep(gfx_ptr)
  cell_count = MonsterBossCells(special_index, tiles_wide, tiles_high, palette_id)
  if cell_count = 0 then return 0
 
@@ -190,12 +232,12 @@ function MonsterBossImage(gfx_ptr as UInteger, special_index as Integer) as Any 
  if result = 0 then return 0
  for n as Integer = 0 to cell_count - 1
   cell_tile = boss_cells(n)
-  if cell_tile >= 0 and start + cell_tile * 24 + 24 <= len(ff4rom) then
+  if cell_tile >= 0 and start + cell_tile * MonsterTileBytes(deep) + MonsterTileBytes(deep) <= len(ff4rom) then
    for row as Integer = 0 to 7
     for col as Integer = 0 to 7
-     color_index = MonsterTileColor(start, cell_tile, row, col)
+     color_index = MonsterTileColor(start, cell_tile, row, col, deep)
      if color_index <> 0 then
-      pixel_value = monster_palettes(palette_id + 1, color_index)
+      pixel_value = MonsterPaletteColor(palette_id, color_index)
       MonsterPutPixel(pixels, pitch, (n mod tiles_wide) * 8 + col, (n \ tiles_wide) * 8 + row, pixel_value)
      end if
     next

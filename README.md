@@ -990,6 +990,10 @@ little explanation.
             palette straight into the ROM image, so every monster sharing that
             graphics pointer or palette changes too (the message tells you how
             many), and Ctrl-R revert in the monster list does not undo it.
+            Zeromus's last form and the Dummy have 16 color art (the game checks
+            the graphics pointer: below 8000h means 4 bits per pixel, using the
+            palette and the one after it): their images have 16 palette pixels
+            and importing also rewrites the following palette.
 
 * Flags: There are certain kinds of data which some monsters have and others do
          not. You can change which "extra bits" of information a given monster
@@ -1233,6 +1237,8 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * Since 0.8
+    - Monster graphics pointers below 8000h are drawn as 4 bits per pixel (fixes the
+      Zeromus and Dummy previews)
     - Monster sprite export and import (Sprite Image in the monster edit menu)
     - Mouse support in menus, message boxes and the map editor
     - Ctrl-Z undo in the entry lists; command and actor lists get the changed marks,

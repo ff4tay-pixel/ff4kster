@@ -7,6 +7,9 @@
 'palette index N). On import the 8 palette pixels define the palette, and every other pixel takes the
 'palette index of the palette pixel with the same color; pixels of any other color are rejected.
 '
+'Zeromus's last form and the Dummy are 4 bits per pixel art with 16 colors (the palette and the one
+'after it in the table): their images have 16 palette pixels instead.
+'
 '  ordinary monsters (size 00-3F)  the tiles in order, row by row
 '  bosses (size 80-BF)             the cells of the boss's tile map; empty cells are left blank on export
 '                                  and ignored on import. If one tile appears in several cells and the
@@ -46,6 +49,19 @@ function MonsterSpritePath(file_name as String) as String
  mkdir system_path + "\exports\monster_sprites"
 
  return system_path + "\exports\monster_sprites\" + file_name
+
+end function
+
+
+function MonsterSwatches(gfx_ptr as Integer, size as Integer) as Integer
+
+ 'Palette pixels in a monster's image: 16 for 4 bits per pixel art, else 8
+
+ if size < &h40 or size >= &h80 then
+  if MonsterIsDeep(gfx_ptr) then return 16
+ end if
+
+ return monster_swatch_count
 
 end function
 
@@ -128,8 +144,11 @@ function ExportMonsterImage(index as Integer) as String
  dim colors(15) as UInteger
  dim tile_number as Integer
  dim file_name as String = MonsterImageName(index)
+ dim swatches as Integer = MonsterSwatches(gfx_ptr, size)
+ dim deep as Boolean = (swatches = 16)
 
  if not MonsterLayout(size, monsters(index).pal, tiles_wide, tiles_high, palette_id, cell_count, problem) then return "Cannot export: " + problem
+ if deep and (tiles_high * 8 < 16 or palette_id + 1 >= total_monster_palettes) then return "Cannot export: 16 color art needs an image at least 16 pixels high and a following palette"
 
  for y as Integer = 0 to tiles_high * 8 - 1
   for x as Integer = 0 to tiles_wide * 8
@@ -139,16 +158,16 @@ function ExportMonsterImage(index as Integer) as String
 
  for n as Integer = 0 to cell_count - 1
   tile_number = boss_cells(n)
-  if tile_number >= 0 and start + tile_number * 24 + 24 <= len(ff4rom) then
+  if tile_number >= 0 and start + tile_number * MonsterTileBytes(deep) + MonsterTileBytes(deep) <= len(ff4rom) then
    for row as Integer = 0 to 7
     for col as Integer = 0 to 7
-     bmp_px((n \ tiles_wide) * 8 + row, (n mod tiles_wide) * 8 + col) = MonsterTileColor(start, tile_number, row, col)
+     bmp_px((n \ tiles_wide) * 8 + row, (n mod tiles_wide) * 8 + col) = MonsterTileColor(start, tile_number, row, col, deep)
     next
    next
   end if
  next
 
- for i as Integer = 0 to monster_swatch_count - 1
+ for i as Integer = 0 to swatches - 1
   bmp_px(i, tiles_wide * 8) = i
   colors(i) = ByteAt(monster_palette_table + palette_id * 16 + i * 2) + ByteAt(monster_palette_table + palette_id * 16 + i * 2 + 1) * &h100
  next
@@ -157,33 +176,42 @@ function ExportMonsterImage(index as Integer) as String
   return "Cannot write exports\monster_sprites|Check that the folder can be written"
  end if
 
- return "Wrote " + str(tiles_wide * 8) + "x" + str(tiles_high * 8) + " pixels, palette " + str(palette_id) + "|exports\monster_sprites\" + file_name
+ return "Wrote " + str(tiles_wide * 8) + "x" + str(tiles_high * 8) + " pixels, " + str(swatches) + " colors, palette " + str(palette_id) + "|exports\monster_sprites\" + file_name
 
 end function
 
 
-sub MonsterWriteTile(start as Integer, tile_number as Integer, tile_px() as UByte)
+sub MonsterWriteTile(start as Integer, tile_number as Integer, tile_px() as UByte, deep as Boolean)
 
- 'Stores one 8x8 tile as 3 bits per pixel planar data (see MonsterTileColor)
+ 'Stores one 8x8 tile as planar data, 3 bits per pixel or 4 if deep (see MonsterTileColor)
 
  dim plane0 as Integer
  dim plane1 as Integer
  dim plane2 as Integer
+ dim plane3 as Integer
  dim c as Integer
+ dim tile_start as Integer = start + tile_number * MonsterTileBytes(deep)
 
  for row as Integer = 0 to 7
   plane0 = 0
   plane1 = 0
   plane2 = 0
+  plane3 = 0
   for col as Integer = 0 to 7
    c = tile_px(row * 8 + col)
    plane0 or= (c and 1) shl (7 - col)
    plane1 or= ((c shr 1) and 1) shl (7 - col)
    plane2 or= ((c shr 2) and 1) shl (7 - col)
+   plane3 or= ((c shr 3) and 1) shl (7 - col)
   next
-  WriteByte(start + tile_number * 24 + row * 2, plane0)
-  WriteByte(start + tile_number * 24 + row * 2 + 1, plane1)
-  WriteByte(start + tile_number * 24 + 16 + row, plane2)
+  WriteByte(tile_start + row * 2, plane0)
+  WriteByte(tile_start + row * 2 + 1, plane1)
+  if deep then
+   WriteByte(tile_start + 16 + row * 2, plane2)
+   WriteByte(tile_start + 16 + row * 2 + 1, plane3)
+  else
+   WriteByte(tile_start + 16 + row, plane2)
+  end if
  next
 
 end sub
@@ -214,15 +242,18 @@ function ImportMonsterImage(index as Integer) as String
  dim shared_count as Integer
  dim message as String
  dim prefix as String = "monster_" + Pad(str(index), 3, true, "0") + "_"
+ dim swatches as Integer = MonsterSwatches(gfx_ptr, size)
+ dim deep as Boolean = (swatches = 16)
 
  if not MonsterLayout(size, monsters(index).pal, tiles_wide, tiles_high, palette_id, cell_count, problem) then return "Cannot import: " + problem
+ if deep and (tiles_high * 8 < 16 or palette_id + 1 >= total_monster_palettes) then return "Cannot import: 16 color art needs an image at least 16 pixels high and a following palette"
 
  file_name = dir(MonsterSpritePath(prefix + "*.bmp"))
  if len(file_name) = 0 then file_name = dir(MonsterSpritePath("monster_" + Pad(str(index), 3, true, "0") + ".bmp"))
  if len(file_name) = 0 then return "No image for this monster|Looked for exports\monster_sprites\" + prefix + "*.bmp"
 
  if not ReadIndexedBMP(MonsterSpritePath(file_name), tiles_wide * 8 + 1, tiles_high * 8, problem) then return file_name + ": " + problem
- if not ResolveSwatchPalette(tiles_wide * 8 + 1, tiles_high * 8, new_palette(), problem, monster_swatch_count) then return file_name + ": " + problem
+ if not ResolveSwatchPalette(tiles_wide * 8 + 1, tiles_high * 8, new_palette(), problem, swatches) then return file_name + ": " + problem
 
  for t as Integer = 0 to 1023
   chosen(t) = -1
@@ -232,13 +263,13 @@ function ImportMonsterImage(index as Integer) as String
  for n as Integer = 0 to cell_count - 1
   tile_number = boss_cells(n)
   if tile_number >= 0 then
-   if tile_number > 1023 or start + tile_number * 24 + 24 > len(ff4rom) then
+   if tile_number > 1023 or start + tile_number * MonsterTileBytes(deep) + MonsterTileBytes(deep) > len(ff4rom) then
     skipped += 1
    else
     differs = false
     for row as Integer = 0 to 7
      for col as Integer = 0 to 7
-      if bmp_px((n \ tiles_wide) * 8 + row, (n mod tiles_wide) * 8 + col) <> MonsterTileColor(start, tile_number, row, col) then differs = true
+      if bmp_px((n \ tiles_wide) * 8 + row, (n mod tiles_wide) * 8 + col) <> MonsterTileColor(start, tile_number, row, col, deep) then differs = true
      next
     next
     if differs then
@@ -265,19 +296,19 @@ function ImportMonsterImage(index as Integer) as String
      tile_px(row * 8 + col) = bmp_px((chosen(t) \ tiles_wide) * 8 + row, (chosen(t) mod tiles_wide) * 8 + col)
     next
    next
-   MonsterWriteTile(start, t, tile_px())
+   MonsterWriteTile(start, t, tile_px(), deep)
    written += 1
   end if
  next
 
- 'The palette
- for i as Integer = 0 to monster_swatch_count - 1
+ 'The palette (16 color art also stores the next palette)
+ for i as Integer = 0 to swatches - 1
   WriteByte(monster_palette_table + palette_id * 16 + i * 2, new_palette(i) mod &h100)
   WriteByte(monster_palette_table + palette_id * 16 + i * 2 + 1, new_palette(i) \ &h100)
-  monster_palettes(palette_id + 1, i) = RGB((new_palette(i) mod 32) * 8, ((new_palette(i) \ 32) mod 32) * 8, ((new_palette(i) \ 1024) mod 32) * 8)
+  monster_palettes(palette_id + 1 + i \ 8, i mod 8) = RGB((new_palette(i) mod 32) * 8, ((new_palette(i) \ 32) mod 32) * 8, ((new_palette(i) \ 1024) mod 32) * 8)
  next
 
- message = "Imported " + file_name + "|" + str(written) + " tiles changed, palette " + str(palette_id) + " stored"
+ message = "Imported " + file_name + "|" + str(written) + " tiles changed, palette " + str(palette_id) + iif(deep, " and the next one", "") + " stored"
  if conflicts > 0 then message += "|" + str(conflicts) + " cells share a tile but were edited differently; the first one was kept"
  if skipped > 0 then message += "|" + str(skipped) + " cells use tiles outside the ROM and were skipped"
  shared_count = MonsterSharedCount(index, gfx_ptr, palette_id, size)
