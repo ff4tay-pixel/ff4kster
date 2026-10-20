@@ -46,9 +46,16 @@ sub TriggerInfoMenu.Display()
    temp = map_names.ItemAt(t->new_map + 1)
   end if
   parameters_menu.AddOption(FF4Text("To:     ") + Pad(temp, map_names.Width(), , FF4Text(" ")))
-  parameters_menu.AddOption(FF4Text("X:      " + str(t->new_x)))
-  parameters_menu.AddOption(FF4Text("Y:      " + str(t->new_y)))
-  parameters_menu.AddOption(FF4Text("Facing: " + FacingString(t->facing)))
+  if TriggerGoesToWorld(t) then
+   'the game reads the whole byte as the X position and does not use the facing
+   parameters_menu.AddOption(FF4Text("X:      " + str(t->new_x + t->facing * 64)))
+   parameters_menu.AddOption(FF4Text("Y:      " + str(t->new_y)))
+   parameters_menu.AddOption(FF4Text("Facing: not used"))
+  else
+   parameters_menu.AddOption(FF4Text("X:      " + str(t->new_x)))
+   parameters_menu.AddOption(FF4Text("Y:      " + str(t->new_y)))
+   parameters_menu.AddOption(FF4Text("Facing: " + FacingString(t->facing)))
+  end if
   parameters_menu.AddOption(FF4Text("Pick the spot on the map"))
   parameters_menu.ChangeSelected(1)
  elseif t->treasure then
@@ -226,9 +233,14 @@ sub TriggerInfoMenu.UserSelect()
         case 2 'X
          xy.x = destination_menu_overworld.x
          xy.y = destination_menu_overworld.y + 1
-         xy.starting_number = t->new_x
+         if TriggerGoesToWorld(t) then xy.starting_number = t->new_x + t->facing * 64 else xy.starting_number = t->new_x
          xy.UserSelect()
-         t->new_x = xy.number
+         if TriggerGoesToWorld(t) then
+          t->new_x = xy.number and 63
+          t->facing = xy.number shr 6
+         else
+          t->new_x = xy.number
+         end if
         case 3 'Y
          xy.x = destination_menu_overworld.x
          xy.y = destination_menu_overworld.y + 2
@@ -236,9 +248,13 @@ sub TriggerInfoMenu.UserSelect()
          xy.UserSelect()
          t->new_y = xy.number
         case 4 'Facing
-         facing_menu.ChangeSelected(t->facing + 1)
-         facing_menu.UserSelect()
-         if not facing_menu.cancelled then t->facing = facing_menu.selected - 1
+         if TriggerGoesToWorld(t) then
+          InfoBox("The game does not use the facing when|a teleport goes to a world map.||Press any key", 20, 20)
+         else
+          facing_menu.ChangeSelected(t->facing + 1)
+          facing_menu.UserSelect()
+          if not facing_menu.cancelled then t->facing = facing_menu.selected - 1
+         end if
         case 5 'Pick the spot on the map
          if not PickDestinationSpot(t, underworld) then InfoBox("This destination cannot be shown.|Use X and Y.||Press any key", 20, 20)
        end select

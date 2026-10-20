@@ -5,6 +5,19 @@
 'other maps share room for max_triggers.
 
 
+declare function PickWorldSpot(w as Integer, byref spot_x as Integer, byref spot_y as Integer) as Boolean
+
+
+function TriggerGoesToWorld(t as Trigger ptr) as Boolean
+
+ 'A teleport to the overworld, the underground or the moon (destination 251-253). For these the game
+ ' reads the whole byte that holds new_x and the facing as the X position, and ignores the facing.
+
+ return t->warp and t->new_map >= 251 and t->new_map <= 253
+
+end function
+
+
 function TriggerUnderworld(m as Integer) as Boolean
 
  'Maps whose teleports name maps of the underground set (as Edit Triggers decides it)
@@ -50,8 +63,8 @@ function PickTeleportSpot(map_index as Integer, byref spot_x as Integer, byref s
 
  'Shows the map a teleport goes to and lets the user move a cursor to where the party should arrive.
  ' Arrows move, Enter (or clicking the cursor tile again) chooses, Esc or a right click cancels. Returns
- ' true if a spot was chosen. False too if the map cannot be shown (the world maps, or a map with no
- ' data), in which case the caller keeps the numbers.
+ ' true if a spot was chosen. False too if the map cannot be shown (a map with no data), in which case
+ ' the caller keeps the numbers. The three worlds are shown by PickWorldSpot.
 
  dim em as MapEditorMenu
  dim backdrop as Any ptr
@@ -155,6 +168,17 @@ function PickDestinationSpot(t as Trigger ptr, underworld as Boolean) as Boolean
  dim spot_x as Integer = t->new_x
  dim spot_y as Integer = t->new_y
 
+ if TriggerGoesToWorld(t) then
+  spot_x = t->new_x + t->facing * 64
+  if PickWorldSpot(t->new_map - 251, spot_x, spot_y) then
+   t->new_x = spot_x and 63
+   t->facing = spot_x shr 6
+   t->new_y = spot_y
+   return true
+  end if
+  return false
+ end if
+
  if PickTeleportSpot(TeleportDestinationIndex(underworld, t->new_map), spot_x, spot_y) then
   t->new_x = min(spot_x, 63)
   t->new_y = spot_y
@@ -183,6 +207,7 @@ function TriggerSummary(m as Integer, t as Trigger ptr) as String
   else
    destination = FF4Text("unknown")
   end if
+  if TriggerGoesToWorld(t) then return "goes to " + PlainName(FF4Name(destination)) + " at " + str(t->new_x + t->facing * 64) + "," + str(t->new_y)
   return "goes to " + PlainName(FF4Name(destination)) + " at " + str(t->new_x) + "," + str(t->new_y)
  elseif t->treasure then
   if t->item then contents = PlainName(FF4Name(item_names.ItemAt(t->contents + 1))) else contents = PriceName(t->contents)

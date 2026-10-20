@@ -856,8 +856,10 @@ have a destination map, the destination coordinates and the direction the
 party faces on arrival. After you choose a new destination map, the editor shows that
 map (with its triggers and NPCs marked) so you can move a cursor to where the party
 should arrive and press Enter; "Pick the spot on the map" in the parameters does the
-same later, and X and Y can still be typed. The world maps cannot be shown that way
-(their X and Y stay numbers). Events have the event call (which event runs, with its
+same later, and X and Y can still be typed. A teleport to the overworld, the underground
+or the moon shows that world map instead (with its triggers framed in yellow); for these
+the game uses the whole byte as the X position (0 to 255) and ignores the facing, so the
+trigger editor shows X that way and the facing as "not used". Events have the event call (which event runs, with its
 parameters), the flag settings and the list of messages described above.
 
 

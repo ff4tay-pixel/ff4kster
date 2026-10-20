@@ -698,6 +698,7 @@ dim shared wv_pal_x as Integer 'palette cursor, 8 columns by 16 rows (tile = row
 dim shared wv_pal_y as Integer
 dim shared wv_map_active as Boolean = true 'Tab switches between the map and the palette
 dim shared wv_paste_mode as Boolean
+dim shared wv_picker_mode as Boolean 'the screen is picking a teleport's arrival spot
 dim shared wv_overlay as Integer = 3 'O cycles: 3 triggers and encounter zones, 1 triggers, 2 zones, 0 none
 
 'Random battles: the game cuts each world into zones of 32 x 32 tiles and picks the encounter (a group
@@ -894,10 +895,21 @@ sub DrawWorldEditor()
 
  'The tile palette
  BlueBox(0, 0, 16, 32)
- for t as Integer = 0 to 127
-  put (world_pal_px + (t mod 8) * 16, world_pal_py + ((t \ 16) * 2 + (t mod 16) \ 8) * 16), world_tile_img(w, t), pset
- next
- DrawWorldCursor(world_pal_px + wv_pal_x * 16, world_pal_py + wv_pal_y * 16, 1, 1, not wv_map_active)
+ if wv_picker_mode then
+  WriteText(FF4Text("Teleport to"), 2, 2, 14)
+  WriteText(FF4Text(WorldNameText(w)), 2, 3, 15)
+  WriteText(FF4Text("Pick the spot"), 2, 5, 15)
+  WriteText(FF4Text("where the party"), 2, 6, 15)
+  WriteText(FF4Text("arrives."), 2, 7, 15)
+  WriteText(FF4Text("Yellow frames"), 2, 10, 15)
+  WriteText(FF4Text("are the world's"), 2, 11, 15)
+  WriteText(FF4Text("triggers."), 2, 12, 15)
+ else
+  for t as Integer = 0 to 127
+   put (world_pal_px + (t mod 8) * 16, world_pal_py + ((t \ 16) * 2 + (t mod 16) \ 8) * 16), world_tile_img(w, t), pset
+  next
+  DrawWorldCursor(world_pal_px + wv_pal_x * 16, world_pal_py + wv_pal_y * 16, 1, 1, not wv_map_active)
+ end if
 
  'The map
  BlueBox(world_map_box_x, 0, world_view_cols * 2, world_view_rows * 2)
@@ -955,6 +967,10 @@ sub DrawWorldEditor()
   WriteText(FF4Text(Pad("PASTE: arrows move, Enter place, Esc cancel", 74)), 1, 54, 14)
  else
   WriteText(FF4Text(Pad("Tab panel  Enter place  Space fill  R replace  O overlay  T trigger", 74)), 1, 54, 15)
+ end if
+ if wv_picker_mode then
+  WriteText(FF4Text(Pad("Teleport to " + WorldNameText(w) + ", X " + str(wv_cursor_x) + "  Y " + str(wv_cursor_y), 76)), 1, 53, 15)
+  WriteText(FF4Text(Pad("Arrows move, Enter chooses, Esc cancels. Click moves, click again chooses", 74)), 1, 54, 14)
  end if
  tile_number = world_tiles(w, wv_cursor_y, wv_cursor_x) and 127
  info_line = ""
@@ -1234,6 +1250,132 @@ sub EditOneWorld(w as Integer)
  cls
 
 end sub
+
+
+function PickWorldSpot(w as Integer, byref spot_x as Integer, byref spot_y as Integer) as Boolean
+
+ 'Shows a world map and lets the user choose where a teleport arrives (X and Y of a tile). The world
+ ' editor's own state is put back afterwards.
+
+ dim saved_world as Integer = wv_world
+ dim saved_view_x as Integer = wv_view_x
+ dim saved_view_y as Integer = wv_view_y
+ dim saved_cursor_x as Integer = wv_cursor_x
+ dim saved_cursor_y as Integer = wv_cursor_y
+ dim saved_overlay as Integer = wv_overlay
+ dim saved_selecting as Boolean = wv_selecting
+ dim saved_paste as Boolean = wv_paste_mode
+ dim saved_active as Boolean = wv_map_active
+ dim backdrop as Any ptr
+ dim key as String
+ dim key_code as UInteger
+ dim done as Boolean
+ dim chosen as Boolean
+ dim moved as Boolean
+ dim cell_x as Integer
+ dim cell_y as Integer
+ dim left_click as Boolean
+ dim right_click as Boolean
+ dim wheel_steps as Integer
+ dim tile_x as Integer
+ dim tile_y as Integer
+ dim mx as Integer
+ dim my as Integer
+
+ if w < 0 or w > 2 then return false
+ if not world_loaded then ReadWorldMaps()
+ if not world_built(w) then BuildWorldTiles(w)
+ BuildWorldMinimap(w)
+
+ backdrop = ImageCreate(640, 480)
+ get (0, 0)-(639, 479), backdrop
+
+ wv_world = w
+ wv_cursor_x = min(spot_x, world_size(w) - 1)
+ wv_cursor_y = min(spot_y, world_size(w) - 1)
+ wv_view_x = wv_cursor_x - world_view_cols \ 2
+ wv_view_y = wv_cursor_y - world_view_rows \ 2
+ wv_overlay = 1
+ wv_selecting = false
+ wv_paste_mode = false
+ wv_map_active = true
+ wv_picker_mode = true
+ cls
+
+ do
+  WorldKeepCursorInView()
+  DrawWorldEditor()
+  moved = false
+  do
+   key = inkey
+   key_code = 0
+   if key <> "" then
+    key_code = asc(right(key, 1))
+    if len(key) > 1 then key_code = key_code * &h100 + 255
+   else
+    PollMouse(cell_x, cell_y, left_click, right_click, wheel_steps)
+    mx = mouse_pixel_x
+    my = mouse_pixel_y
+    tile_x = wv_view_x + (mx - world_map_px) \ 16
+    tile_y = wv_view_y + (my - world_map_py) \ 16
+    if right_click then
+     key_code = ESC_KEY
+    elseif wheel_steps > 0 then
+     key_code = UP_KEY
+    elseif wheel_steps < 0 then
+     key_code = DOWN_KEY
+    elseif left_click and mx >= world_map_px and my >= world_map_py and mx < world_map_px + world_view_cols * 16 and my < world_map_py + world_view_rows * 16 and tile_x < world_size(w) and tile_y < world_size(w) then
+     if tile_x = wv_cursor_x and tile_y = wv_cursor_y then
+      key_code = ENTER_KEY
+     else
+      wv_cursor_x = tile_x
+      wv_cursor_y = tile_y
+      moved = true
+     end if
+    elseif left_click and mx >= world_mini_px and mx < world_mini_px + 128 and my >= world_mini_py and my < world_mini_py + 128 then
+     wv_cursor_x = (mx - world_mini_px) * world_size(w) \ 128
+     wv_cursor_y = (my - world_mini_py) * world_size(w) \ 128
+     wv_view_x = wv_cursor_x - world_view_cols \ 2
+     wv_view_y = wv_cursor_y - world_view_rows \ 2
+     moved = true
+    end if
+    if key_code = 0 and not moved then sleep 10
+   end if
+  loop while key_code = 0 and not moved
+  select case key_code
+   case ENTER_KEY
+    chosen = true
+    done = true
+   case ESC_KEY
+    done = true
+   case UP_KEY, DOWN_KEY, LEFT_KEY, RIGHT_KEY, HOME_KEY, END_KEY, PAGEUP_KEY, PAGEDOWN_KEY
+    WorldMoveCursor(key_code, false, multikey(SC_CONTROL))
+  end select
+ loop until done
+
+ if chosen then
+  spot_x = wv_cursor_x
+  spot_y = wv_cursor_y
+ end if
+
+ wv_picker_mode = false
+ wv_world = saved_world
+ wv_view_x = saved_view_x
+ wv_view_y = saved_view_y
+ wv_cursor_x = saved_cursor_x
+ wv_cursor_y = saved_cursor_y
+ wv_overlay = saved_overlay
+ wv_selecting = saved_selecting
+ wv_paste_mode = saved_paste
+ wv_map_active = saved_active
+ put (0, 0), backdrop, pset
+ ImageDestroy(backdrop)
+ 'a draw on the screen itself, so the destroyed image is not left as the drawing target
+ pset (0, 0), point(0, 0)
+
+ return chosen
+
+end function
 
 
 sub DrawWorldListPreview(w as Integer)
