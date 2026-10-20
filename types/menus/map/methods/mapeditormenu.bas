@@ -34,6 +34,10 @@ sub MapEditorMenu.Display()
   WriteText(FF4Text("Room:      " + Pad(str(amount), 5, true)), palette_menu.x + 1, palette_menu.y + palette_menu.rows * 2 + 3, 15)
  end if
 
+ BlueBox(0, 52, screen_width - 1, 2)
+ WriteText(FF4Text("Tab: " + iif(map_menu.active, "Map", "Palette") + "  Enter: Paint  ShiftAndArrows: Select  Space: Fill"), 1, 53, 15)
+ WriteText(FF4Text("Backspace:Pick  CtrlAndZ:Undo  Esc:Back  Tile:" + palette_menu.options.ItemAt(palette_menu.cursor_x + 1, palette_menu.cursor_y + 1) + "  Size:" + str(abs(map_menu.cursor_w) + 1) + "x" + str(abs(map_menu.cursor_h) + 1)), 1, 54, 15)
+
 end sub
 
 
@@ -46,6 +50,7 @@ sub MapEditorMenu.SetTo(index as UInteger)
  if index > &h100 then underground = &h100 else underground = 0
  map_menu.options.Destroy()
  map_index = maps(index).grid_index + underground + 1
+ undo_count = 0
  
  'if index < 252 or index > 256 then
   'open "debug.txt" for output as #1
@@ -88,6 +93,46 @@ sub MapEditorMenu.SetTo(index as UInteger)
 end sub
 
 
+sub MapEditorMenu.SaveUndo()
+
+ for history as Integer = max_map_undo - 1 to 1 step -1
+  for i as Integer = 0 to 31
+   for j as Integer = 0 to 31
+    undo_tiles(i, j, history) = undo_tiles(i, j, history - 1)
+   next
+  next
+ next
+ for i as Integer = 0 to 31
+  for j as Integer = 0 to 31
+   undo_tiles(i, j, 0) = val("&h" + map_menu.options.ItemAt(i + 1, j + 1))
+  next
+ next
+ if undo_count < max_map_undo then undo_count += 1
+
+end sub
+
+
+sub MapEditorMenu.Undo()
+
+ if undo_count > 0 then
+  for i as Integer = 0 to 31
+   for j as Integer = 0 to 31
+    map_menu.options.Assign(i + 1, j + 1, hex(undo_tiles(i, j, 0), 2))
+   next
+  next
+  for history as Integer = 0 to max_map_undo - 2
+   for i as Integer = 0 to 31
+    for j as Integer = 0 to 31
+     undo_tiles(i, j, history) = undo_tiles(i, j, history + 1)
+    next
+   next
+  next
+  undo_count -= 1
+ end if
+
+end sub
+
+
 sub MapEditorMenu.UserSelect()
 
  dim key as String
@@ -124,6 +169,7 @@ sub MapEditorMenu.UserSelect()
      end if
     case ENTER_KEY
      if active_menu = @map_menu then
+      SaveUndo()
       for i as Integer = 0 to map_menu.cursor_w step sgn(map_menu.cursor_w)
        for j as Integer = 0 to map_menu.cursor_h step sgn(map_menu.cursor_h)
         map_menu.options.Assign(map_menu.cursor_x + i + 1, map_menu.cursor_y + j + 1, palette_menu.options.ItemAt(palette_menu.cursor_x + 1, palette_menu.cursor_y + 1))
@@ -139,8 +185,11 @@ sub MapEditorMenu.UserSelect()
      end if
     case SPACE_KEY
      if active_menu = @map_menu then
+      SaveUndo()
       map_menu.FloodFill(map_menu.cursor_x + 1, map_menu.cursor_y + 1, palette_menu.options.ItemAt(palette_menu.cursor_x + 1, palette_menu.cursor_y + 1))
      end if
+    case 26
+     if active_menu = @map_menu then Undo()
     case DOWN_KEY
      if active_menu = @map_menu then
       if multikey(SC_LSHIFT) or multikey(SC_RSHIFT) then
