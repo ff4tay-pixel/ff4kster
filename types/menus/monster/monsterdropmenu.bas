@@ -15,6 +15,7 @@ type MonsterDropMenu
  declare constructor(starting_x as UByte = 0, starting_y as UByte = 0)
  
  declare sub Display()
+ declare sub EditField(row as Integer)
  declare sub SetDropIndex()
  declare sub SetTo(new_index as UByte)
  declare sub UpdateMenu()

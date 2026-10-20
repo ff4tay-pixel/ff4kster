@@ -53,76 +53,78 @@ sub MonsterDropMenu.UpdateMenu()
 end sub
 
 
+sub MonsterDropMenu.EditField(row as Integer)
+
+ 'Edits one row of the box (1 drop rate, 2 drop index, 3 to 6 the four drops)
+
+  select case row
+  
+   case 1 'Drop rate
+    dim n as BlueNumberInput
+    n = BlueNumberInput(x + 11, y)
+    n.max_value = 3
+    n.starting_number = drop_rate
+    n.UserSelect()
+    drop_rate = n.number
+    monsters(index).drop_rate = drop_rate
+   
+   case 2 'Index
+    dim n as BlueNumberInput
+    n = BlueNumberInput(x + 11, y + 1)
+    n.starting_number = drop_index
+    n.UserSelect()
+    drop_index = n.number
+    SetDropIndex()
+    monsters(index).drop_index = drop_index
+   
+   case 3 'Common
+    item_menu.y = y + 2
+    item_menu.ChangeSelected(common_drop + 1)
+    item_menu.UserSelect()
+    if not item_menu.cancelled then
+     common_drop = item_menu.selected - 1
+     item_drops(drop_index + 1).common_drop = common_drop
+    end if
+   
+   case 4 'Uncommon
+    item_menu.y = y + 3
+    item_menu.ChangeSelected(uncommon_drop + 1)
+    item_menu.UserSelect()
+    if not item_menu.cancelled then
+     uncommon_drop = item_menu.selected - 1
+     item_drops(drop_index + 1).uncommon_drop = uncommon_drop
+    end if
+   
+   case 5 'Rare
+    item_menu.y = y + 4
+    item_menu.ChangeSelected(rare_drop + 1)
+    item_menu.UserSelect()
+    if not item_menu.cancelled then
+     rare_drop = item_menu.selected - 1
+     item_drops(drop_index + 1).rare_drop = rare_drop
+    end if
+   
+   case 6 'Mythic
+    item_menu.y = y + 5
+    item_menu.ChangeSelected(mythic_drop + 1)
+    item_menu.UserSelect()
+    if not item_menu.cancelled then
+     mythic_drop = item_menu.selected - 1
+     item_drops(drop_index + 1).mythic_drop = mythic_drop
+    end if
+  
+  end select
+ UpdateMenu()
+ Display()
+
+end sub
+
+
 sub MonsterDropMenu.UserSelect()
 
  do
- 
   main_menu.UserSelect()
-  
-  if not main_menu.cancelled then
-  
-   select case main_menu.selected
-   
-    case 1 'Drop rate
-     dim n as BlueNumberInput
-     n = BlueNumberInput(x + 11, y)
-     n.max_value = 3
-     n.starting_number = drop_rate
-     n.UserSelect()
-     drop_rate = n.number
-     monsters(index).drop_rate = drop_rate
-    
-    case 2 'Index
-     dim n as BlueNumberInput
-     n = BlueNumberInput(x + 11, y + 1)
-     n.starting_number = drop_index
-     n.UserSelect()
-     drop_index = n.number
-     SetDropIndex()
-     monsters(index).drop_index = drop_index
-    
-    case 3 'Common
-     item_menu.y = y + 2
-     item_menu.ChangeSelected(common_drop + 1)
-     item_menu.UserSelect()
-     if not item_menu.cancelled then
-      common_drop = item_menu.selected - 1
-      item_drops(drop_index + 1).common_drop = common_drop
-     end if
-    
-    case 4 'Uncommon
-     item_menu.y = y + 3
-     item_menu.ChangeSelected(uncommon_drop + 1)
-     item_menu.UserSelect()
-     if not item_menu.cancelled then
-      uncommon_drop = item_menu.selected - 1
-      item_drops(drop_index + 1).uncommon_drop = uncommon_drop
-     end if
-    
-    case 5 'Rare
-     item_menu.y = y + 4
-     item_menu.ChangeSelected(rare_drop + 1)
-     item_menu.UserSelect()
-     if not item_menu.cancelled then
-      rare_drop = item_menu.selected - 1
-      item_drops(drop_index + 1).rare_drop = rare_drop
-     end if
-    
-    case 6 'Mythic
-     item_menu.y = y + 5
-     item_menu.ChangeSelected(mythic_drop + 1)
-     item_menu.UserSelect()
-     if not item_menu.cancelled then
-      mythic_drop = item_menu.selected - 1
-      item_drops(drop_index + 1).mythic_drop = mythic_drop
-     end if
-   
-   end select
-   UpdateMenu()
-   Display()
-  
-  end if
-  
+  if not main_menu.cancelled then EditField(main_menu.selected)
  loop until main_menu.cancelled
 
 end sub

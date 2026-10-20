@@ -13,7 +13,9 @@ type MonsterInfoMenu
  
  declare constructor(starting_x as UByte = 0, starting_y as UByte = 0)
  
+ declare sub Commit()
  declare sub Display()
+ declare sub EditField(row as Integer)
  declare sub SetTo(new_index as UByte)
  declare sub UpdateMenu()
  declare sub UserSelect()

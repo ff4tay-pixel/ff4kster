@@ -79,7 +79,6 @@
 
 #include once "types/menus/trigger/methods/triggerinfomenu.bas"
 
-#include once "types/menus/monster/methods/aimenu.bas"
 #include once "types/menus/monster/methods/monsterinfomenu.bas"
 #include once "types/menus/monster/methods/monsterstatsmenu.bas"
 #include once "types/menus/monster/methods/monsterdropmenu.bas"

@@ -1,341 +1,539 @@
-sub EditMonsters()
+'Monster editor. The monster list is on the left; Enter on a monster moves the cursor into the boxes on the
+'right, where every value is edited in place:
+'
+'  1 Monster   name, boss, level, HP, exp, gil
+'  2 Graphics  pointer, size, palette (with a live picture)
+'  3 Stats     attack, defense, magic defense, speed index, spell power
+'  4 Drops     drop rate, drop index and the four drops
+'  5 Extras    attack adds, resistances, weaknesses, races, reaction (switched on and off here)
+'  6 AI        the attack AI and the reaction AI (opens the AI editor)
+'
+'Up and Down walk through all the rows, Tab or 1-6 jump to a box, Enter edits the row, Page Up and Page Down
+'move to the previous or next monster, Esc goes back to the list.
 
- dim select_monster as BlueMenu
- dim edit_monster as BlueMenu
- dim monster_info as MonsterInfoMenu
- dim monster_gfx as MonsterGfxMenu
- dim monster_stats as MonsterStatsMenu
- dim monster_drops as MonsterDropMenu
- dim monster_flags as BlueMenu
- dim attack_elements as FlagMenu
- dim resistances as FlagMenu
- dim weaknesses as FlagMenu
- dim races as FlagMenu
- dim spell_power_menu as BlueMenu
- dim ai_menu as AIMenu
- dim reaction_menu as AIMenu
- 
- select_monster.max_rows = screen_height
+const mon_panels = 6
+
+dim shared mon_list as BlueMenu
+dim shared mon_info as MonsterInfoMenu
+dim shared mon_gfx as MonsterGfxMenu
+dim shared mon_stats as MonsterStatsMenu
+dim shared mon_drops as MonsterDropMenu
+dim shared mon_flags as BlueMenu
+dim shared mon_attack_elements as FlagMenu
+dim shared mon_resistances as FlagMenu
+dim shared mon_weaknesses as FlagMenu
+dim shared mon_races as FlagMenu
+dim shared mon_panel as Integer 'the box the cursor is in
+dim shared mon_ai_row as Integer 'which of the two AI rows
+dim shared mon_script_keys(255) as UInteger 'keys to feed the editor instead of the keyboard (for testing)
+dim shared mon_script_count as Integer
+dim shared mon_script_pos as Integer
+
+
+function MonReadKey() as UInteger
+
+ if mon_script_pos < mon_script_count then
+  mon_script_pos += 1
+  return mon_script_keys(mon_script_pos - 1)
+ end if
+
+ return getkey
+
+end function
+
+
+sub MonInit()
+
+ mon_list = BlueMenu()
+ mon_list.max_rows = screen_height - 3 'the bottom row is the hint line
  for i as Integer = 1 to total_monsters
-  select_monster.AddOption(monsters(i).name)
+  mon_list.AddOption(monsters(i).name)
  next
- 
+
  'Layout: the monster list, then a 36 cell wide column of boxes (so their edges line up),
  ' then the AI column. Each box has a title in its top border.
- monster_info = MonsterInfoMenu(select_monster.options.Width() + 2, 0)
- monster_gfx = MonsterGfxMenu(monster_info.x, 8)
- monster_stats = MonsterStatsMenu(monster_info.x, monster_gfx.y + 5)
- monster_drops = MonsterDropMenu(monster_info.x, monster_stats.y + 6)
- monster_info.main_menu.min_width = 16
- monster_info.main_menu.title = "Monster"
- monster_gfx.main_menu.min_width = 16
- monster_gfx.main_menu.title = "Graphics"
- monster_stats.main_menu.min_width = 34
- monster_stats.main_menu.title = "Stats"
- monster_drops.main_menu.min_width = 21
- monster_drops.main_menu.title = "Drops"
- monster_flags.x = monster_info.x + 23
- monster_flags.y = monster_drops.y
- monster_flags.title = "Extras"
- 
- monster_flags.AddOption(FF4Text("Adds"))
- monster_flags.AddOption(FF4Text("Resistances"))
- monster_flags.AddOption(FF4Text("Weaknesses"))
- monster_flags.AddOption(FF4Text("Spell Power"))
- monster_flags.AddOption(FF4Text("Races"))
- monster_flags.AddOption(FF4Text("Reaction"))
- 
- attack_elements = FlagMenu(monster_info.x, monster_flags.y + 8, "status")
- resistances = FlagMenu(monster_info.x, attack_elements.y + 10, "status")
- weaknesses = FlagMenu(monster_info.x, resistances.y + 10, "element")
- races = FlagMenu(weaknesses.x + 9, weaknesses.y, "race")
- attack_elements.main_menu.min_width = 10
- attack_elements.main_menu.title = "Adds"
- resistances.main_menu.min_width = 10
- resistances.main_menu.title = "Resist"
- weaknesses.main_menu.min_width = 7
- weaknesses.main_menu.title = "Weak"
- races.main_menu.min_width = 7
- races.main_menu.title = "Races"
- 
- spell_power_menu.x = monster_info.x + 18
- spell_power_menu.y = monster_gfx.y
- spell_power_menu.min_width = 16
- reaction_menu = AIMenu(46, 28)
- reaction_menu.title = "REACTION AI"
- ai_menu = AIMenu(46, 1)
- ai_menu.title = "AI"
- ai_menu.show_bank = true
- 
- edit_monster = BlueMenu(monster_info.x + 18, 0)
- edit_monster.AddOption(FF4Text("Edit Information"))
- edit_monster.AddOption(FF4Text("Edit Graphics"))
- edit_monster.AddOption(FF4Text("Edit AI"))
- edit_monster.AddOption(FF4Text("Edit Stats"))
- edit_monster.AddOption(FF4Text("Edit Drops"))
- edit_monster.AddOption(FF4Text("Edit Extras"))
- 
+ mon_info = MonsterInfoMenu(mon_list.options.Width() + 2, 0)
+ mon_gfx = MonsterGfxMenu(mon_info.x, 8)
+ mon_stats = MonsterStatsMenu(mon_info.x, mon_gfx.y + 5)
+ mon_drops = MonsterDropMenu(mon_info.x, mon_stats.y + 7)
+ mon_info.main_menu.min_width = 16
+ mon_info.main_menu.title = "1 Monster"
+ mon_gfx.main_menu.min_width = 16
+ mon_gfx.main_menu.title = "2 Graphics"
+ mon_stats.main_menu.min_width = 34
+ mon_stats.main_menu.title = "3 Stats"
+ mon_drops.main_menu.min_width = 21
+ mon_drops.main_menu.title = "4 Drops"
+ mon_flags = BlueMenu()
+ mon_flags.x = mon_info.x + 23
+ mon_flags.y = mon_drops.y
+ mon_flags.title = "5 Extras"
+
+ mon_flags.AddOption(FF4Text("Adds"))
+ mon_flags.AddOption(FF4Text("Resistances"))
+ mon_flags.AddOption(FF4Text("Weaknesses"))
+ mon_flags.AddOption(FF4Text("Races"))
+ mon_flags.AddOption(FF4Text("Reaction"))
+
+ mon_attack_elements = FlagMenu(mon_info.x, mon_flags.y + 8, "status")
+ mon_resistances = FlagMenu(mon_info.x, mon_attack_elements.y + 10, "status")
+ 'Weak and Races have room under the reaction AI box
+ mon_weaknesses = FlagMenu(46, 43, "element")
+ mon_races = FlagMenu(mon_weaknesses.x + 10, mon_weaknesses.y, "race")
+ mon_attack_elements.main_menu.min_width = 10
+ mon_attack_elements.main_menu.title = "Adds"
+ mon_resistances.main_menu.min_width = 10
+ mon_resistances.main_menu.title = "Resist"
+ mon_weaknesses.main_menu.min_width = 7
+ mon_weaknesses.main_menu.title = "Weak"
+ mon_races.main_menu.min_width = 7
+ mon_races.main_menu.title = "Races"
+
+
+end sub
+
+
+function MonFlagIsOn(m as Integer, row as Integer) as Boolean
+
+ 'row of the Extras box: 1 adds, 2 resistances, 3 weaknesses, 4 races, 5 reaction
+
+ select case row
+  case 1: return monsters(m).has_attack_element
+  case 2: return monsters(m).has_resistances
+  case 3: return monsters(m).has_weaknesses
+  case 4: return monsters(m).has_race
+ end select
+
+ return monsters(m).has_reaction
+
+end function
+
+
+sub MonSetFlag(m as Integer, row as Integer, value as Boolean)
+
+ select case row
+  case 1: monsters(m).has_attack_element = value
+  case 2: monsters(m).has_resistances = value
+  case 3: monsters(m).has_weaknesses = value
+  case 4: monsters(m).has_race = value
+  case else: monsters(m).has_reaction = value
+ end select
+
+end sub
+
+
+sub MonDrawAIBox(x as Integer, y as Integer, inner_h as Integer, title as String, index as Integer, lunar_flag as Boolean)
+
+ 'A box that sums up an AI: its pairs, each with its first condition and its first action. The editor
+ ' for it opens from the AI box of the cursor.
+
+ dim row as Integer = y + 2
+ dim last_row as Integer = y + inner_h
+ dim pair_count as Integer
+ dim shown as Integer
+
+ BlueBox(x, y, 31, inner_h)
+ LuText(title, x, y, 14)
+ LuText("AI " + str(index), x + 1, y + 1, 15)
+ LuText(iif(lunar_flag, "LUNAR bank", "Regular bank"), x + 8, y + 1, iif(lunar_flag, 12, 23))
+
+ ai_index = index
+ ai_lunar = lunar_flag
+ pair_count = len(aigroupconditions(index))
+ for p as Integer = 1 to pair_count
+  if row + 1 > last_row then exit for
+  LuText(str(p), x + 1, row, 14)
+  LuText("WHEN", x + 3, row, 21)
+  WriteText(left(AIFirstCondition(p), 20), x + 9, row, 15)
+  LuText("THEN", x + 3, row + 1, 22)
+  WriteText(left(AIFirstAction(p), 20), x + 9, row + 1, 15)
+  row += 2
+  shown += 1
+ next
+ if shown < pair_count then LuText("and " + str(pair_count - shown) + " more pairs", x + 3, last_row, 23)
+
+end sub
+
+
+sub MonShow(m as Integer)
+
+ 'Draws every box for monster m
+
+ for row as Integer = 1 to 5
+  mon_flags.ChangeOption(row,, iif(MonFlagIsOn(m, row), 14, 23))
+ next
+
+ mon_info.SetTo(m)
+ mon_gfx.SetTo(m)
+ mon_stats.SetTo(m)
+ mon_drops.SetTo(m)
+
+ mon_info.Display()
+ mon_gfx.Display()
+ mon_stats.Display()
+ mon_drops.Display()
+ mon_flags.Display()
+
+ MonDrawAIBox(46, 0, 25, " 6 ATTACK AI ", monsters(m).attack_sequence_group + 1, monsters(m).lunar)
+ MonsterThumbnail(m, 29, 0, 15, 11)
+
+ if monsters(m).has_attack_element then
+  for i as Integer = 1 to 24
+   mon_attack_elements.SetFlag(i, monsters(m).attack_element.flags(i))
+  next
+  mon_attack_elements.Display()
+ else
+  mon_attack_elements.Hide()
+ end if
+
+ if monsters(m).has_resistances then
+  for i as Integer = 1 to 24
+   mon_resistances.SetFlag(i, monsters(m).resistances.flags(i))
+  next
+  mon_resistances.Display()
+ else
+  mon_resistances.Hide()
+ end if
+
+ if monsters(m).has_weaknesses then
+  for i as Integer = 1 to 8
+   mon_weaknesses.SetFlag(i, monsters(m).weaknesses.flags(i))
+  next
+  mon_weaknesses.Display()
+ else
+  mon_weaknesses.Hide()
+ end if
+
+ if monsters(m).has_race then
+  for i as Integer = 1 to 8
+   mon_races.SetFlag(i, monsters(m).races.flags(i))
+  next
+  mon_races.Display()
+ else
+  mon_races.Hide()
+ end if
+
+ if monsters(m).has_reaction then
+  MonDrawAIBox(46, 27, 14, " REACTION AI ", monsters(m).reaction_index + 1, monsters(m).lunar)
+ else
+  line (46 * 8, 27 * 8)-(78 * 8 - 1, 43 * 8 - 1), RGB(0, 0, 0), bf
+ end if
+
+end sub
+
+
+sub MonOpenAI(m as Integer, on_reaction as Boolean)
+
+ 'The full screen AI editor for monster m (on its reaction AI if on_reaction)
+
+ dim attack_ai as Integer = monsters(m).attack_sequence_group + 1
+ dim reaction_ai as Integer = 0
+ dim ai_lunar_flag as Boolean = monsters(m).lunar
+
+ if monsters(m).has_reaction then reaction_ai = monsters(m).reaction_index + 1
+ EditMonsterAI(attack_ai, reaction_ai, ai_lunar_flag, m, on_reaction)
+ monsters(m).lunar = ai_lunar_flag
+ monsters(m).attack_sequence_group = attack_ai - 1
+ if reaction_ai > 0 then monsters(m).reaction_index = reaction_ai - 1
+
+ 'the AI editor clears the screen
+ cls
+ mon_list.Display()
+
+end sub
+
+
+sub MonEditExtra(m as Integer, row as Integer)
+
+ 'Enter on a row of the Extras box: switches the extra on if it is off, then edits its details
+
+ if not MonFlagIsOn(m, row) then
+  MonSetFlag(m, row, true)
+  MonShow(m)
+ end if
+
+ select case row
+
+  case 1
+   mon_attack_elements.UserSelect()
+   for i as Integer = 1 to 24
+    monsters(m).attack_element.flags(i) = mon_attack_elements.flags(i)
+   next
+
+  case 2
+   mon_resistances.UserSelect()
+   for i as Integer = 1 to 24
+    monsters(m).resistances.flags(i) = mon_resistances.flags(i)
+   next
+
+  case 3
+   mon_weaknesses.UserSelect()
+   for i as Integer = 1 to 8
+    monsters(m).weaknesses.flags(i) = mon_weaknesses.flags(i)
+   next
+
+  case 4
+   mon_races.UserSelect()
+   for i as Integer = 1 to 8
+    monsters(m).races.flags(i) = mon_races.flags(i)
+   next
+
+  case 5
+   MonOpenAI(m, true)
+
+ end select
+
+end sub
+
+
+function MonPanelMenu(panel as Integer) as BlueMenu ptr
+
+ select case panel
+  case 1: return @mon_info.main_menu
+  case 2: return @mon_gfx.main_menu
+  case 3: return @mon_stats.main_menu
+  case 4: return @mon_drops.main_menu
+ end select
+
+ return @mon_flags
+
+end function
+
+
+function MonPanelRows(panel as Integer) as Integer
+
+ if panel = 6 then return 2
+ return MonPanelMenu(panel)->options.Length()
+
+end function
+
+
+function MonCursorRow(panel as Integer) as Integer
+
+ if panel = 6 then return mon_ai_row
+ return MonPanelMenu(panel)->selected
+
+end function
+
+
+sub MonSetCursorRow(panel as Integer, row as Integer)
+
+ if panel = 6 then
+  mon_ai_row = row
+ else
+  MonPanelMenu(panel)->ChangeSelected(row)
+ end if
+
+end sub
+
+
+sub MonDrawCursor()
+
+ 'The arrow beside the row being edited
+
+ dim menu_ptr as BlueMenu ptr
+
+ if mon_panel = 6 then
+  DrawLetter(20, 45, iif(mon_ai_row = 1, 0, 27))
+ else
+  menu_ptr = MonPanelMenu(mon_panel)
+  menu_ptr->ShowCursor()
+ end if
+
+end sub
+
+
+function MonHint(m as Integer) as String
+
+ 'What Enter does on the row the cursor is on
+
+ dim row as Integer = MonCursorRow(mon_panel)
+
+ select case mon_panel
+  case 1
+   select case row
+    case 1: return "Enter types the name. Up Down move, Tab or 1 to 6 jump to a box."
+    case 2: return "Enter or Space switches Boss on and off."
+    case else: return "Enter types a number."
+   end select
+  case 2
+   select case row
+    case 1: return "Enter picks the graphics from a template or by number, with a live picture."
+    case 2: return "Enter picks the size (bosses also get their special size settings)."
+    case else: return "Enter types the palette number, the picture follows."
+   end select
+  case 3
+   if row <= 3 then return "Enter picks a stat group, then edits its base, multiplier and percentage."
+   if row = 4 then return "Enter picks a speed group, then edits its range."
+   if monsters(m).has_spell_power then return "Enter types the spell power. Space or Delete switches it off."
+   return "Enter or Space gives this monster a spell power (it is off now)."
+  case 4
+   if row <= 2 then return "Enter types a number. The index decides which four drops are used."
+   return "Enter picks the item. The drops belong to the drop index, shared by monsters."
+  case 5
+   if MonFlagIsOn(m, row) then return "Enter edits the details. Space or Delete switches it off. Yellow is on."
+   return "Enter or Space switches it on and edits it. Yellow is on."
+  case else
+   if mon_ai_row = 1 then return "Enter opens the AI editor for the attack AI of this monster."
+   if monsters(m).has_reaction then return "Enter opens the AI editor on the reaction AI of this monster."
+   return "No reaction AI. Switch Reaction on in box 5 to give this monster one."
+ end select
+
+end function
+
+
+sub MonDrawHint(m as Integer, message as String)
+
+ line (0, 57 * 8)-(639, 58 * 8 - 1), RGB(0, 0, 0), bf
+ WriteText(FF4Text(left(iif(message <> "", message, MonHint(m)), 78)), 1, 57, 14)
+
+end sub
+
+
+sub MonFields()
+
+ 'The cursor in the boxes. Returns when Esc is pressed.
+
+ dim k as UInteger
+ dim done as Boolean
+ dim m as Integer
+ dim row as Integer
+ dim rows as Integer
+ dim message as String
+
+ mon_panel = 1
+ mon_ai_row = 1
+ for p as Integer = 1 to 5
+  MonSetCursorRow(p, 1)
+ next
+
  do
- 
-  do
-  
-   monster_info.SetTo(select_monster.selected)
-   monster_gfx.SetTo(select_monster.selected)
-   monster_stats.SetTo(select_monster.selected)
-   monster_drops.SetTo(select_monster.selected)
-   if monsters(select_monster.selected).has_attack_element then monster_flags.ChangeOption(1,, 14) else monster_flags.ChangeOption(1,, 0)
-   if monsters(select_monster.selected).has_resistances then monster_flags.ChangeOption(2,, 14) else monster_flags.ChangeOption(2,, 0)
-   if monsters(select_monster.selected).has_weaknesses then monster_flags.ChangeOption(3,, 14) else monster_flags.ChangeOption(3,, 0)
-   if monsters(select_monster.selected).has_spell_power then monster_flags.ChangeOption(4,, 14) else monster_flags.ChangeOption(4,, 0)
-   if monsters(select_monster.selected).has_race then monster_flags.ChangeOption(5,, 14) else monster_flags.ChangeOption(5,, 0)
-   if monsters(select_monster.selected).has_reaction then monster_flags.ChangeOption(6,, 14) else monster_flags.ChangeOption(6,, 0)
-   
-   monster_info.Display()
-   monster_gfx.Display()
-   monster_stats.Display()
-   monster_drops.Display()
-   monster_flags.Display()
-   
-   ai_menu.SetTo(monsters(select_monster.selected).attack_sequence_group + 1, monsters(select_monster.selected).lunar)
-   ai_menu.Display()
-   MonsterThumbnail(select_monster.selected, 29, 0, 15, 11)
+  m = mon_list.selected
+  MonShow(m)
+  MonDrawCursor()
+  MonDrawHint(m, message)
+  message = ""
+  k = MonReadKey()
+  row = MonCursorRow(mon_panel)
+  rows = MonPanelRows(mon_panel)
 
-   if monsters(select_monster.selected).has_attack_element then 
-    for i as Integer = 1 to 24
-     attack_elements.SetFlag(i, monsters(select_monster.selected).attack_element.flags(i))
-    next
-    attack_elements.Display() 
-   else
-    attack_elements.Hide()
-   end if
+  select case k
 
-   if monsters(select_monster.selected).has_resistances then 
-    for i as Integer = 1 to 24
-     resistances.SetFlag(i, monsters(select_monster.selected).resistances.flags(i))
-    next
-    resistances.Display() 
-   else
-    resistances.Hide()
-   end if
-   
-   if monsters(select_monster.selected).has_weaknesses then
-    for i as Integer = 1 to 8
-     weaknesses.SetFlag(i, monsters(select_monster.selected).weaknesses.flags(i))
-    next
-    weaknesses.Display()
-   else
-    weaknesses.Hide()
-   end if
-   
-   if monsters(select_monster.selected).has_race then
-    for i as Integer = 1 to 8
-     races.SetFlag(i, monsters(select_monster.selected).races.flags(i))
-    next
-    races.Display()
-   else
-    races.Hide()
-   end if
-   
-   if monsters(select_monster.selected).has_spell_power then
-    spell_power_menu.ChangeOption(1, FF4Text("Spell Power: " + Pad(str(monsters(select_monster.selected).spell_power), 3)), 15)
-    spell_power_menu.Display()
-   else
-    spell_power_menu.Hide()
-   end if
-   
-   if monsters(select_monster.selected).has_reaction then
-    reaction_menu.SetTo(monsters(select_monster.selected).reaction_index + 1, monsters(select_monster.selected).lunar)
-    reaction_menu.Display()
-   else
-    reaction_menu.Hide()
-   end if
-   
-  loop until ListInput(select_monster, "monsters")
-  
-  if not select_monster.cancelled then
-  
-   edit_monster.UserSelect()
-   
-   if not edit_monster.cancelled then
-   
-    select case edit_monster.selected
-    
-     case 1 'Edit Information
-      monster_info.UserSelect()
-      select_monster.ChangeOption(select_monster.selected, monsters(select_monster.selected).name)
-      
-     case 2 'Edit Graphics
-      monster_gfx.UserSelect()
-     
-     case 3 'Edit AI
-      dim attack_ai as Integer = monsters(select_monster.selected).attack_sequence_group + 1
-      dim reaction_ai as Integer = 0
-      dim ai_lunar_flag as Boolean = monsters(select_monster.selected).lunar
-      if monsters(select_monster.selected).has_reaction then reaction_ai = monsters(select_monster.selected).reaction_index + 1
-      EditMonsterAI(attack_ai, reaction_ai, ai_lunar_flag, select_monster.selected)
-      monsters(select_monster.selected).lunar = ai_lunar_flag
-      monsters(select_monster.selected).attack_sequence_group = attack_ai - 1
-      if reaction_ai > 0 then monsters(select_monster.selected).reaction_index = reaction_ai - 1
-      select_monster.Display()
-     
-     case 4 'Edit Stats
-      monster_stats.UserSelect()
-     
-     case 5 'Edit Drops
-      monster_drops.UserSelect()
-     
-     case 6 'Edit Extras
-      dim k as UInteger
-      do
-       monster_flags.Display()
-       monster_flags.ShowCursor()
-       k = getkey
-       select case k
-        case TAB_KEY
-         select case monster_flags.selected
-          
-          case 1
-           if monsters(select_monster.selected).has_attack_element then 
-            attack_elements.UserSelect()
-            for i as Integer = 1 to 24
-             monsters(select_monster.selected).attack_element.flags(i) = attack_elements.flags(i)
-            next
-           end if
-           
-          case 2
-           if monsters(select_monster.selected).has_resistances then
-            resistances.UserSelect()
-            for i as Integer = 1 to 24
-             monsters(select_monster.selected).resistances.flags(i) = resistances.flags(i)
-            next
-           end if
-           
-          case 3
-           if monsters(select_monster.selected).has_weaknesses then
-            weaknesses.UserSelect()
-            for i as Integer = 1 to 8
-             monsters(select_monster.selected).weaknesses.flags(i) = weaknesses.flags(i)
-            next
-           end if
-           
-          case 4
-           if monsters(select_monster.selected).has_spell_power then
-            dim sp_input as BlueNumberInput
-            sp_input = BlueNumberInput(spell_power_menu.x + 13, spell_power_menu.y)
-            sp_input.starting_number = monsters(select_monster.selected).spell_power
-            sp_input.UserSelect()
-            monsters(select_monster.selected).spell_power = sp_input.number
-           end if
-          
-          case 5
-           if monsters(select_monster.selected).has_race then
-            races.UserSelect()
-            for i as Integer = 1 to 24
-             monsters(select_monster.selected).races.flags(i) = races.flags(i)
-            next
-           end if
-           
-          case 6
-           if monsters(select_monster.selected).has_reaction then
-            dim attack_ai as Integer = monsters(select_monster.selected).attack_sequence_group + 1
-            dim reaction_ai as Integer = monsters(select_monster.selected).reaction_index + 1
-            dim ai_lunar_flag as Boolean = monsters(select_monster.selected).lunar
-            EditMonsterAI(attack_ai, reaction_ai, ai_lunar_flag, select_monster.selected, true)
-            monsters(select_monster.selected).lunar = ai_lunar_flag
-            monsters(select_monster.selected).attack_sequence_group = attack_ai - 1
-            monsters(select_monster.selected).reaction_index = reaction_ai - 1
-           end if
-          
-         end select
-        case else
-         if monster_flags.ProcessKey(k) then
-          if not monster_flags.cancelled then
+   case ESC_KEY
+    done = true
 
-           select case monster_flags.selected
-            case 1
-             if monsters(select_monster.selected).has_attack_element then monsters(select_monster.selected).has_attack_element = false else monsters(select_monster.selected).has_attack_element = true
-            case 2
-             if monsters(select_monster.selected).has_resistances then monsters(select_monster.selected).has_resistances = false else monsters(select_monster.selected).has_resistances = true
-            case 3
-             if monsters(select_monster.selected).has_weaknesses then monsters(select_monster.selected).has_weaknesses = false else monsters(select_monster.selected).has_weaknesses = true
-            case 4
-             if monsters(select_monster.selected).has_spell_power then monsters(select_monster.selected).has_spell_power = false else monsters(select_monster.selected).has_spell_power = true
-            case 5
-             if monsters(select_monster.selected).has_race then monsters(select_monster.selected).has_race = false else monsters(select_monster.selected).has_race = true
-            case 6
-             if monsters(select_monster.selected).has_reaction then monsters(select_monster.selected).has_reaction = false else monsters(select_monster.selected).has_reaction = true
-           end select
+   case TAB_KEY
+    mon_panel = mon_panel mod mon_panels + 1
+   case asc("1") to asc("6")
+    mon_panel = k - asc("0")
 
-          end if
-         end if
-       end select
+   case UP_KEY
+    if row > 1 then
+     MonSetCursorRow(mon_panel, row - 1)
+    else
+     mon_panel = iif(mon_panel = 1, mon_panels, mon_panel - 1)
+     MonSetCursorRow(mon_panel, MonPanelRows(mon_panel))
+    end if
+   case DOWN_KEY
+    if row < rows then
+     MonSetCursorRow(mon_panel, row + 1)
+    else
+     mon_panel = mon_panel mod mon_panels + 1
+     MonSetCursorRow(mon_panel, 1)
+    end if
+   case HOME_KEY
+    MonSetCursorRow(mon_panel, 1)
+   case END_KEY
+    MonSetCursorRow(mon_panel, rows)
 
-       if monsters(select_monster.selected).has_attack_element then monster_flags.ChangeOption(1,, 14) else monster_flags.ChangeOption(1,, 0)
-       if monsters(select_monster.selected).has_resistances then monster_flags.ChangeOption(2,, 14) else monster_flags.ChangeOption(2,, 0)
-       if monsters(select_monster.selected).has_weaknesses then monster_flags.ChangeOption(3,, 14) else monster_flags.ChangeOption(3,, 0)
-       if monsters(select_monster.selected).has_spell_power then monster_flags.ChangeOption(4,, 14) else monster_flags.ChangeOption(4,, 0)
-       if monsters(select_monster.selected).has_race then monster_flags.ChangeOption(5,, 14) else monster_flags.ChangeOption(5,, 0)
-       if monsters(select_monster.selected).has_reaction then monster_flags.ChangeOption(6,, 14) else monster_flags.ChangeOption(6,, 0)
+   case PAGEUP_KEY, PAGEDOWN_KEY
+    'the same row of the previous or next monster
+    if k = PAGEUP_KEY and mon_list.selected > 1 then
+     UndoPush("monsters", mon_list.selected - 1)
+     mon_list.ChangeSelected(mon_list.selected - 1)
+    elseif k = PAGEDOWN_KEY and mon_list.selected < mon_list.options.Length() then
+     UndoPush("monsters", mon_list.selected + 1)
+     mon_list.ChangeSelected(mon_list.selected + 1)
+    end if
 
-       if monsters(select_monster.selected).has_attack_element then 
-        for i as Integer = 1 to 24
-         attack_elements.SetFlag(i, monsters(select_monster.selected).attack_element.flags(i))
-        next
-        attack_elements.Display() 
+   case ENTER_KEY, SPACE_KEY, DELETE_KEY
+    select case mon_panel
+
+     case 1
+      if k = SPACE_KEY and row = 2 then
+       monsters(m).boss = not monsters(m).boss
+      elseif k = ENTER_KEY then
+       mon_info.SetTo(m)
+       mon_info.EditField(row)
+       mon_list.ChangeOption(m, monsters(m).name)
+      end if
+
+     case 2
+      if k = ENTER_KEY then
+       mon_gfx.SetTo(m)
+       mon_gfx.EditField(row)
+      end if
+
+     case 3
+      if k = ENTER_KEY then
+       mon_stats.SetTo(m)
+       mon_stats.EditField(row)
+      elseif row = 5 and k = SPACE_KEY then
+       monsters(m).has_spell_power = not monsters(m).has_spell_power
+      elseif row = 5 and monsters(m).has_spell_power then
+       monsters(m).has_spell_power = false
+      end if
+
+     case 4
+      if k = ENTER_KEY then
+       mon_drops.SetTo(m)
+       mon_drops.EditField(row)
+      end if
+
+     case 5
+      if k = ENTER_KEY then
+       MonEditExtra(m, row)
+      elseif k = SPACE_KEY then
+       MonSetFlag(m, row, not MonFlagIsOn(m, row))
+      elseif MonFlagIsOn(m, row) then
+       MonSetFlag(m, row, false)
+      end if
+
+     case else
+      if k = ENTER_KEY then
+       if mon_ai_row = 1 then
+        MonOpenAI(m, false)
+       elseif monsters(m).has_reaction then
+        MonOpenAI(m, true)
        else
-        attack_elements.Hide()
+        message = "This monster has no reaction AI. Switch Reaction on in box 5 first."
        end if
-
-       if monsters(select_monster.selected).has_resistances then 
-        for i as Integer = 1 to 24
-         resistances.SetFlag(i, monsters(select_monster.selected).resistances.flags(i))
-        next
-        resistances.Display() 
-       else
-        resistances.Hide()
-       end if
-       
-       if monsters(select_monster.selected).has_weaknesses then
-        for i as Integer = 1 to 8
-         weaknesses.SetFlag(i, monsters(select_monster.selected).weaknesses.flags(i))
-        next
-        weaknesses.Display()
-       else
-        weaknesses.Hide()
-       end if
-       
-       if monsters(select_monster.selected).has_race then
-        for i as Integer = 1 to 8
-         races.SetFlag(i, monsters(select_monster.selected).races.flags(i))
-        next
-        races.Display()
-       else
-        races.Hide()
-       end if
-       
-       if monsters(select_monster.selected).has_spell_power then
-        spell_power_menu.ChangeOption(1, FF4Text("Spell Power: " + Pad(str(monsters(select_monster.selected).spell_power), 3)), 15)
-        spell_power_menu.Display()
-       else
-        spell_power_menu.Hide()
-       end if
-       
-       if monsters(select_monster.selected).has_reaction then
-        reaction_menu.SetTo(monsters(select_monster.selected).reaction_index + 1, monsters(select_monster.selected).lunar)
-        reaction_menu.Display()
-       else
-        reaction_menu.Hide()
-       end if
-
-      loop until monster_flags.cancelled
-      monster_flags.cancelled = false
+      end if
 
     end select
-   
-   end if
-  
+
+  end select
+
+ loop until done
+
+end sub
+
+
+sub EditMonsters()
+
+ MonInit()
+
+ do
+
+  do
+   MonShow(mon_list.selected)
+  loop until ListInput(mon_list, "monsters")
+
+  if not mon_list.cancelled then
+   MonFields()
+   mon_list.Display()
   end if
-  
- loop until select_monster.cancelled
+
+ loop until mon_list.cancelled
 
 end sub

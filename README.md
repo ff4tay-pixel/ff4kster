@@ -1157,6 +1157,38 @@ updated as you edit; it is only updated when you go back to the map selection me
 MONSTERS
 --------
 
+The monster list is on the left (the usual list keys work: yellow names are
+changed, Ctrl-R, Ctrl-C / V, Ctrl-U, Ctrl-Z). Select a monster and press Enter
+to edit it: the cursor moves into the boxes on the right and every value is
+edited in place, with no menu in between. A line at the bottom of the screen
+says what Enter does on the row the cursor is on.
+
+    1 Monster    Name, Boss, Level, HP, Exp and Gil.
+    2 Graphics   Pointer, Size and Palette, with a live picture of the monster.
+    3 Stats      Attack, Defense, Magic defense, Speed index and Spell Power
+                 (grey "off" until the monster has one; Enter types it, Space
+                 or Delete switches it off).
+    4 Drops      Drop rate, Index and the four drops (common, uncommon, rare,
+                 mythic).
+    5 Extras     Adds, Resistances, Weaknesses, Races and Reaction: the
+                 extra data that only some monsters have. A yellow row is on,
+                 a grey row is off.
+    6 AI         The attack AI and the reaction AI, summed up pair by pair
+                 (see ENEMY AI).
+
+    UP, DOWN:        Move through all the rows; at the end of a box the cursor
+                     goes on to the next one.
+    TAB, 1-6:        Next box / jump to box 1-6.
+    HOME / END:      First / last row of the box.
+    ENTER:           Edit the row. In Extras it switches the extra on if it is
+                     off and edits its details (the status, element or race
+                     grid, the spell power, or the reaction AI).
+    SPACE:           Switch Boss on / off, or an extra or the Spell Power
+                     on / off.
+    DELETE:          Switch an extra or the Spell Power off.
+    PAGE UP/DOWN:    The same row of the previous / next monster.
+    ESC:             Back to the monster list.
+
 Monsters have some properties that are stored in unusual ways that require a
 little explanation.
 
@@ -1179,7 +1211,7 @@ little explanation.
               that changing the table for an index will affect all monsters
               that have that item drop table index.
               
-* Graphics: "Edit Graphics" shows a live preview of the monster's sprite in
+* Graphics: The Graphics box shows a live preview of the monster's sprite in
             the monster's palette that updates as you change the pointer, size
             or palette (also while you move through the pointer templates or type
             a pointer number; Esc puts the old pointer back). It draws all three kinds of monster: ordinary monsters
@@ -1197,23 +1229,22 @@ little explanation.
             Stats box. Pictures are edited, exported and imported in "Edit
             Monster Sprites" (see MONSTER SPRITES).
 
-* Flags: There are certain kinds of data which some monsters have and others do
-         not. You can change which "extra bits" of information a given monster
-         has by setting or unsetting the flags in the "flags menu". If you wish
-         to edit the details of the extra data in question, select the 
-         appropriate flag and press TAB (will only work if the flag is set).
+* Extras: There are certain kinds of data which some monsters have and others do
+          not (the Spell Power in the Stats box is one of them). Switch them
+          on and off in the Extras box. Pressing Enter on one edits its
+          details; the grids (Adds, Resist, Weak, Races) appear while the
+          extra is on.
 
-* AIs: "Edit AI" opens a full screen editor for the monster's AI (see ENEMY AI
-       below). The AI column in the monster list only shows it.
+* AIs: Enter on the AI box opens a full screen editor for the monster's AI (see
+       ENEMY AI below). The AI box only sums it up.
 
 The monsters screen is organized in three groups. The monster list is on the
 left. Next to it is a column of titled boxes of equal width: the monster's
-name and basic data and the Edit menu, its graphics (with Spell Power
-beside them when the monster has it), combat stats, drops and the list of
-extra flags, and below those the status and element grids for the flags that
-are set (Adds, Resist, Weak, Races). The AI is in the column on the right, with
-a header line above it that shows which bank is in use ("Regular" or "LUNAR")
-and the reaction AI below it when the monster has one.
+name and basic data, its graphics, combat stats (with the Spell Power),
+drops and the Extras, and below those the Adds and Resist grids for the extras
+that are on. The AI is in the column on the right: the attack AI at the top,
+with the bank it uses ("Regular" or "LUNAR"), and the reaction AI below it when
+the monster has one; under that are the Weak and Races grids.
 
 Monsters that appear in certain lunar maps use a different set of scripts
 than monsters in the other areas. For the most part, the monster editor
@@ -1228,43 +1259,51 @@ ENEMY AI
 An AI (1 to 254) is a list of pairs. The game goes through the pairs in order
 and carries out the actions of the first pair whose conditions are all true.
 Each pair is a condition set (all of its conditions must hold) and a script (the
-actions to carry out). "Edit AI" in the monster editor opens one full screen
-list that shows the whole AI at once. Every pair is a heading with its
-conditions (WHEN, AND) and its actions (THEN) under it, and green "Add" rows
-that add a part:
+actions to carry out). "Edit AI" in the monster editor opens a full screen
+editor with three panels, one under the other, that each do one job:
 
-    PAIR 1   Condition set 12, used 3x   Script 34, used 2x
-        WHEN unit self has 1000 HP or less
-        AND  takes damage
-             Add a condition
-        THEN Cast Fire on single
-        THEN Target self
-             Add an action
-    Add a new pair of conditions and actions
+    1 WHICH AI      The AI this monster uses, and the pairs of that AI. The
+                    first line says "AI 12 of 254"; Enter on it picks the AI
+                    from a list (it shows which monsters use each one, and
+                    yellow ones are unused). Under it, one line per pair
+                    shows its first condition and its first action, and an
+                    "Add a new pair" line.
+    2 CONDITIONS    The condition set of the selected pair (WHEN, AND). The
+                    first line says which set it is and how many places use
+                    it; Enter on it picks another set from a list. Under it
+                    are the conditions, and an "Add a condition" line.
+    3 SCRIPT        The script of the selected pair (THEN). The first line
+                    says which script it is and how many places use it; Enter
+                    on it picks another script from a list. Under it are the
+                    actions, and an "Add an action" line.
 
-The title shows the monster, which AI and bank it uses and which other monsters
-use the same AI. Monsters that appear on the moon use a different bank of
-scripts (shown as LUNAR). The cursor walks the lines, a line below the list
-says what the keys do on the line the cursor is on, and the keys depend on it.
+The pair selected in panel 1 decides what panels 2 and 3 show. The title shows
+the monster, which AI and bank it uses and which other monsters use the same AI.
+Monsters that appear on the moon use a different bank of scripts (shown as
+LUNAR). The panel you work in has the bright title and cursor, and a line below
+the panels says what the keys do on the line the cursor is on.
 
-    UP, DOWN, PAGE UP/DOWN, HOME, END: Move through the lines.
-    ENTER:           On a pair, choose another condition set or script from a
-                     list (it shows the first line of each, and yellow ones
-                     are unused). On a condition or an action, change its kind
-                     and parameters, in a list of all kinds. On an Add row, add
-                     a new part and open it at once.
-    INSERT:          Add after this line: a pair, a condition or an action.
-                     The new condition or action opens at once, and ESC in its
-                     first menu takes it away again. A new pair gets its own
-                     unused condition set, condition and script (a condition
-                     of "no condition", which is always true, and the action
-                     "Do nothing"), so changing it touches nothing else.
+    TAB, 1 2 3:      Switch to the next panel / to panel 1, 2, 3.
+    UP, DOWN, PAGE UP/DOWN, HOME, END: Move in the panel.
+    ENTER:           First line of a panel: choose another AI, condition set
+                     or script from a list. On a pair: go to its conditions.
+                     On a condition or an action: change its kind and
+                     parameters, in a list of all kinds. On an Add line: add a
+                     new part and open it at once (ESC in its first menu takes
+                     it away again).
+    INSERT:          Add after this line: a pair, a condition or an action. A
+                     new pair gets its own unused condition set, condition and
+                     script (a condition of "no condition", which is always
+                     true, and the action "Do nothing"), so changing it
+                     touches nothing else.
     DELETE:          Remove the line (an AI keeps at least one pair, a pair at
                      least one condition).
-    S:               On a condition, switch to another existing condition.
+    S:               In panel 2, on a condition: switch to another existing
+                     condition.
     U:               Make private copies of what this line shares.
     CTRL+C / CTRL+V: Copy a pair, a condition or an action, and paste it after
-                     the cursor line. Copying works across AIs.
+                     the cursor line, in the panel of its kind. Copying works
+                     across AIs.
     CTRL+Z:          Undo the last action (kept until you change AI or bank).
     N / P:           Next / previous AI. G: go to an AI number.
     L:               Switch between the regular and the lunar script bank.
@@ -1516,10 +1555,13 @@ VERSION HISTORY
       wrote past the end of the monster list), which could crash the editor
     - Monsters screen reorganized: aligned, titled boxes and a clearer AI
       column with a bank header
-    - Enemy AI editor rewritten as a full screen list of pairs, conditions
-      and actions with insert/delete, private copies on request,
+    - Enemy AI editor rewritten as a full screen editor with three panels
+      (which AI, conditions, script actions) with insert/delete, private copies on request,
       copy/paste, undo, a list of the monsters that use the AI and a
       room check (Save ROM refuses AI data that does not fit)
+    - Monster editor: the cursor moves straight into the boxes (no Edit menu),
+      every value is edited in place, extras are switched on and off with
+      Space, a hint line says what Enter does, the AI is summed up pair by pair
     - Level up editor rewritten as a full screen table with free cell
       navigation, direct number entry, copy/fill/paste, undo, character
       switching and per-level total stats, HP, MP and EXP

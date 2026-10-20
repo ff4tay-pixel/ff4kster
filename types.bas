@@ -81,7 +81,6 @@
 
 #include once "types/menus/trigger/triggerinfomenu.bas"
 
-#include once "types/menus/monster/aimenu.bas"
 #include once "types/menus/monster/monsterinfomenu.bas"
 #include once "types/menus/monster/monsterstatsmenu.bas"
 #include once "types/menus/monster/monsterdropmenu.bas"

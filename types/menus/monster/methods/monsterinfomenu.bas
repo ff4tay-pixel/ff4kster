@@ -40,71 +40,83 @@ sub MonsterInfoMenu.UpdateMenu()
 end sub
 
 
-sub MonsterInfoMenu.UserSelect()
+sub MonsterInfoMenu.Commit()
 
- do
- 
-  main_menu.UserSelect()
-  
-  if not main_menu.cancelled then
+ 'Stores the values in the monster
 
-   select case main_menu.selected
-
-    case 1 'Name
-     dim t as BlueTextInput
-     t = BlueTextInput(x + 7, y)
-     t.starting_text = name
-     t.text_width = 8
-     t.UserType()
-     name = Pad(t.text, 8,, FF4Text(" "))
-
-    case 2 'Boss
-     boss = not boss
-
-    case 3 'Level
-     dim n as BlueNumberInput
-     n = BlueNumberInput(x + 7, y + 2)
-     n.starting_number = level
-     n.UserSelect()
-     level = n.number
-
-    case 4 'HP
-     dim n as BlueNumberInput
-     n = BlueNumberInput(x + 7, y + 3)
-     n.max_value = 2^16 - 1
-     n.starting_number = hp
-     n.UserSelect()
-     hp = n.number
-
-    case 5 'Exp
-     dim n as BlueNumberInput
-     n = BlueNumberInput(x + 7, y + 4)
-     n.max_value = 2^16 - 1
-     n.starting_number = xp
-     n.UserSelect()
-     xp = n.number
-
-    case 6 'Gil
-     dim n as BlueNumberInput
-     n = BlueNumberInput(x + 7, y + 5)
-     n.max_value = 2^16 - 1
-     n.starting_number = gil
-     n.UserSelect()
-     gil = n.number
-
-   end select
-   UpdateMenu()
-   Display()
-
-  end if
-  
- loop until main_menu.cancelled
- 
  monsters(index).name = name
  monsters(index).boss = boss
  monsters(index).level = level
  monsters(index).hp = hp
  monsters(index).xp = xp
  monsters(index).gil = gil
+
+end sub
+
+
+sub MonsterInfoMenu.EditField(row as Integer)
+
+ 'Edits one row of the box (1 name, 2 boss, 3 level, 4 HP, 5 exp, 6 gil) and stores the result
+
+ select case row
+
+  case 1 'Name
+   dim t as BlueTextInput
+   t = BlueTextInput(x + 7, y)
+   t.starting_text = name
+   t.text_width = 8
+   t.UserType()
+   name = Pad(t.text, 8,, FF4Text(" "))
+
+  case 2 'Boss
+   boss = not boss
+
+  case 3 'Level
+   dim n as BlueNumberInput
+   n = BlueNumberInput(x + 7, y + 2)
+   n.starting_number = level
+   n.UserSelect()
+   level = n.number
+
+  case 4 'HP
+   dim n as BlueNumberInput
+   n = BlueNumberInput(x + 7, y + 3)
+   n.max_value = 2^16 - 1
+   n.starting_number = hp
+   n.UserSelect()
+   hp = n.number
+
+  case 5 'Exp
+   dim n as BlueNumberInput
+   n = BlueNumberInput(x + 7, y + 4)
+   n.max_value = 2^16 - 1
+   n.starting_number = xp
+   n.UserSelect()
+   xp = n.number
+
+  case 6 'Gil
+   dim n as BlueNumberInput
+   n = BlueNumberInput(x + 7, y + 5)
+   n.max_value = 2^16 - 1
+   n.starting_number = gil
+   n.UserSelect()
+   gil = n.number
+
+ end select
+ UpdateMenu()
+ Display()
+ Commit()
+
+end sub
+
+
+sub MonsterInfoMenu.UserSelect()
+
+ do
+  main_menu.UserSelect()
+  if not main_menu.cancelled then EditField(main_menu.selected)
+ loop until main_menu.cancelled
+
+ Commit()
 
 end sub
