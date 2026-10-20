@@ -105,10 +105,14 @@ sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
    HelpLine(lines(), n, "Insert     Add a trigger")
    HelpLine(lines(), n, "Delete     Remove the trigger")
    HelpLine(lines(), n, "Shift-Enter marks a trigger to swap.")
+   HelpLine(lines(), n, "Event call menu: Tab to the messages,")
+   HelpLine(lines(), n, "E edits the text of the selected one.")
   case 18
    HelpLine(lines(), n, "Tab        Toggle the minimap cursor")
    HelpLine(lines(), n, "Insert     Add an NPC / placement")
    HelpLine(lines(), n, "Delete     Remove it")
+   HelpLine(lines(), n, "Speech menu: Tab to the messages, E edits")
+   HelpLine(lines(), n, "the text of the selected one.")
   case 19
    HelpLine(lines(), n, "Tab        Edit the palette")
   case 20

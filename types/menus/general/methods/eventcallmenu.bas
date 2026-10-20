@@ -211,6 +211,15 @@ sub EventCallMenu.UserSelect()
       'condition_menu.Display()
      end if
      
+    case asc("e"), asc("E")
+     'edit the text of the selected message
+     if e->parameters.Length() > 0 then
+      EditMessageText(m, asc(e->parameters.ItemAt(data_menu.selected)) + 1)
+      data_menu.Hide()
+      Display()
+      condition_menu.Display()
+     end if
+
     case INSERT_KEY
      data_menu.Hide()
      condition_menu.Hide()

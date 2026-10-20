@@ -810,6 +810,11 @@ There are three types of triggers:
           "bank 2" messages (messages associated with particular maps) which
           are accessed by specific events (default config file calls them
           "show first message", "show second message", "show third message").
+          In the event call menu (NPC speech, event triggers) press TAB to
+          reach the list of messages: Enter changes which message a slot uses,
+          and E opens the text of the selected message for editing (the same
+          screen as the Messages editor). The text belongs to the map, so
+          everything on that map that uses the message shows the change.
           In the editor, use the TAB key to alternate between editing event
           calls, flag settings, and messages. When editing event calls, you
           can use the INSERT and DELETE keys to add or remove event calls
@@ -1304,7 +1309,7 @@ VERSION HISTORY
     - Edit World Maps: edit the overworld, underground and moon (paint, fill, replace,
       copy / paste, undo, mouse painting); saved into the fixed room the game gives
       each world, with a space check; O shows triggers and encounter zones over the map;
-      T / Insert / Delete edit the world triggers from the map; teleport triggers pick
+      the text of a speech message can be edited from the speech menu (E); T / Insert / Delete edit the world triggers from the map; teleport triggers pick
       their arrival spot on a picture of the destination map; NPC placements can be
       edited from the map editor too (N, Shift-Insert, Shift-Delete); the regular map editor
       has the same keys for the triggers of the map
