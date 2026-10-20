@@ -6,8 +6,8 @@
 '
 ' Keys (in those lists):  Ctrl+R revert   Ctrl+C copy   Ctrl+V paste   Ctrl+U where used
 
-dim shared orig_rows(1 to 9, 0 to 511) as String
-dim shared clip_has(1 to 9) as Boolean
+dim shared orig_rows(1 to 11, 0 to 511) as String
+dim shared clip_has(1 to 11) as Boolean
 dim shared clip_spell as Spell
 dim shared clip_weapon as Weapon
 dim shared clip_armor as Armor
@@ -17,7 +17,9 @@ dim shared clip_monster as Monster
 dim shared clip_shop as Shop
 dim shared clip_formation as Formation
 dim shared clip_job as Job
-dim shared last_list_pos(1 to 9) as Integer
+dim shared clip_command as MenuCommand
+dim shared clip_actor as Actor
+dim shared last_list_pos(1 to 11) as Integer
 dim shared jump_kind as String
 dim shared jump_index as Integer
 
@@ -34,6 +36,8 @@ function KindIndex(kind as String) as Integer
   case "shops": return 7
   case "formations": return 8
   case "jobs": return 9
+  case "commands": return 10
+  case "actors": return 11
  end select
 
  return 0
@@ -45,9 +49,9 @@ sub SnapshotOriginalRows()
 
  'Remember how every entry looked when the ROM was loaded.
 
- dim kinds(1 to 9) as String = {"spells", "weapons", "armors", "medicines", "tools", "monsters", "shops", "formations", "jobs"}
+ dim kinds(1 to 11) as String = {"spells", "weapons", "armors", "medicines", "tools", "monsters", "shops", "formations", "jobs", "commands", "actors"}
 
- for k as Integer = 1 to 9
+ for k as Integer = 1 to 11
   for i as Integer = 1 to CsvTableSize(kinds(k))
    orig_rows(k, i) = CsvRow(kinds(k), i)
   next
@@ -84,6 +88,8 @@ function KindTitle(kind as String) as String
   case "shops": return "Shops"
   case "formations": return "Formations"
   case "jobs": return "Jobs"
+  case "commands": return "Commands"
+  case "actors": return "Actors"
  end select
 
  return kind
@@ -103,6 +109,8 @@ function EntryName(kind as String, i as Integer) as String
   case "shops": return shop_names.ItemAt(i)
   case "formations": return formation_names.ItemAt(i)
   case "jobs": return jobs(i).name
+  case "commands": return menucommands(i).name
+  case "actors": return actor_names.ItemAt(i)
  end select
 
  return ""
@@ -120,6 +128,7 @@ sub SetEntryName(kind as String, i as Integer, new_name as String)
   case "tools": tools(i).name = new_name: item_names.Assign(i + total_weapons + total_armors + total_medicines + 2, new_name)
   case "monsters": monsters(i).name = new_name
   case "jobs": jobs(i).name = new_name
+  case "commands": menucommands(i).name = new_name
  end select
 
 end sub
@@ -170,6 +179,14 @@ sub RevertEntry(kind as String, i as Integer)
    dim blank_job as Job
    jobs(i) = blank_job
    jobs(i).ReadFromROM(i)
+  case "commands"
+   dim blank_command as MenuCommand
+   menucommands(i) = blank_command
+   menucommands(i).ReadFromROM(i)
+  case "actors"
+   dim blank_actor as Actor
+   actors(i) = blank_actor
+   actors(i).ReadFromROM(i)
  end select
 
  ff4rom = saved_rom
@@ -190,6 +207,8 @@ sub ClipCopy(kind as String, i as Integer)
   case "shops": clip_shop = shops(i)
   case "formations": clip_formation = formations(i)
   case "jobs": clip_job = jobs(i)
+  case "commands": clip_command = menucommands(i)
+  case "actors": clip_actor = actors(i)
  end select
  clip_has(KindIndex(kind)) = true
 
@@ -214,6 +233,8 @@ function ClipPaste(kind as String, i as Integer) as Boolean
   case "shops": shops(i) = clip_shop
   case "formations": formations(i) = clip_formation
   case "jobs": jobs(i) = clip_job
+  case "commands": menucommands(i) = clip_command
+  case "actors": actors(i) = clip_actor
  end select
  SetEntryName(kind, i, keep_name)
 
@@ -374,7 +395,7 @@ function UsageText(kind as String, id as Integer) as String
    if count > shown then lines += "|  ...and " + str(count - shown) + " more"
    lines += "||Battles started by events are not listed."
 
-  case "shops", "jobs"
+  case "shops", "jobs", "commands", "actors"
    lines += "|Usage is not tracked for this kind of entry."
 
   case "spells"
@@ -404,6 +425,145 @@ sub ShowUsage(kind as String, id as Integer)
 end sub
 
 
+'Undo: before an entry is opened for editing (Enter), pasted over or reverted, a
+' copy of it goes on a small stack. Ctrl+Z in a list restores the newest copy
+' made in that list. A copy whose entry ended up unchanged is dropped.
+const undo_max = 40
+dim shared undo_kind(1 to undo_max) as String
+dim shared undo_index(1 to undo_max) as Integer
+dim shared undo_spell(1 to undo_max) as Spell
+dim shared undo_weapon(1 to undo_max) as Weapon
+dim shared undo_armor(1 to undo_max) as Armor
+dim shared undo_medicine(1 to undo_max) as Medicine
+dim shared undo_tool(1 to undo_max) as Tool
+dim shared undo_monster(1 to undo_max) as Monster
+dim shared undo_shop(1 to undo_max) as Shop
+dim shared undo_formation(1 to undo_max) as Formation
+dim shared undo_job(1 to undo_max) as Job
+dim shared undo_command(1 to undo_max) as MenuCommand
+dim shared undo_actor(1 to undo_max) as Actor
+dim shared undo_count as Integer
+dim shared undo_pending as Boolean 'the newest copy has not been checked for a real change yet
+dim shared undo_pending_row as String
+
+
+sub UndoStore(slot as Integer, kind as String, i as Integer)
+
+ select case kind
+  case "spells": undo_spell(slot) = spells(i)
+  case "weapons": undo_weapon(slot) = weapons(i)
+  case "armors": undo_armor(slot) = armors(i)
+  case "medicines": undo_medicine(slot) = medicines(i)
+  case "tools": undo_tool(slot) = tools(i)
+  case "monsters": undo_monster(slot) = monsters(i)
+  case "shops": undo_shop(slot) = shops(i)
+  case "formations": undo_formation(slot) = formations(i)
+  case "jobs": undo_job(slot) = jobs(i)
+  case "commands": undo_command(slot) = menucommands(i)
+  case "actors": undo_actor(slot) = actors(i)
+ end select
+
+end sub
+
+
+sub UndoLoad(slot as Integer, kind as String, i as Integer)
+
+ select case kind
+  case "spells": spells(i) = undo_spell(slot)
+  case "weapons": weapons(i) = undo_weapon(slot)
+  case "armors": armors(i) = undo_armor(slot)
+  case "medicines": medicines(i) = undo_medicine(slot)
+  case "tools": tools(i) = undo_tool(slot)
+  case "monsters": monsters(i) = undo_monster(slot)
+  case "shops": shops(i) = undo_shop(slot)
+  case "formations": formations(i) = undo_formation(slot)
+  case "jobs": jobs(i) = undo_job(slot)
+  case "commands": menucommands(i) = undo_command(slot)
+  case "actors": actors(i) = undo_actor(slot)
+ end select
+
+end sub
+
+
+sub UndoMove(to_slot as Integer, from_slot as Integer)
+
+ 'Copies one stack slot onto another (only the part its kind uses).
+
+ undo_kind(to_slot) = undo_kind(from_slot)
+ undo_index(to_slot) = undo_index(from_slot)
+ select case undo_kind(from_slot)
+  case "spells": undo_spell(to_slot) = undo_spell(from_slot)
+  case "weapons": undo_weapon(to_slot) = undo_weapon(from_slot)
+  case "armors": undo_armor(to_slot) = undo_armor(from_slot)
+  case "medicines": undo_medicine(to_slot) = undo_medicine(from_slot)
+  case "tools": undo_tool(to_slot) = undo_tool(from_slot)
+  case "monsters": undo_monster(to_slot) = undo_monster(from_slot)
+  case "shops": undo_shop(to_slot) = undo_shop(from_slot)
+  case "formations": undo_formation(to_slot) = undo_formation(from_slot)
+  case "jobs": undo_job(to_slot) = undo_job(from_slot)
+  case "commands": undo_command(to_slot) = undo_command(from_slot)
+  case "actors": undo_actor(to_slot) = undo_actor(from_slot)
+ end select
+
+end sub
+
+
+sub UndoRemove(slot as Integer)
+
+ for n as Integer = slot to undo_count - 1
+  UndoMove(n, n + 1)
+ next
+ undo_count -= 1
+
+end sub
+
+
+sub UndoSettle()
+
+ 'Drops the newest copy if the entry it was taken from did not change.
+
+ if not undo_pending then exit sub
+ undo_pending = false
+ if undo_count < 1 then exit sub
+ if CsvRow(undo_kind(undo_count), undo_index(undo_count)) = undo_pending_row then undo_count -= 1
+
+end sub
+
+
+sub UndoPush(kind as String, i as Integer)
+
+ UndoSettle()
+ if undo_count = undo_max then UndoRemove(1)
+ undo_count += 1
+ undo_kind(undo_count) = kind
+ undo_index(undo_count) = i
+ UndoStore(undo_count, kind, i)
+ undo_pending = true
+ undo_pending_row = CsvRow(kind, i)
+
+end sub
+
+
+function UndoPop(kind as String, byref i as Integer) as Boolean
+
+ 'Restores the newest saved copy of an entry of this kind. i receives its index.
+
+ UndoSettle()
+ for n as Integer = undo_count to 1 step -1
+  if undo_kind(n) = kind then
+   i = undo_index(n)
+   UndoLoad(n, kind, i)
+   UndoRemove(n)
+   SetEntryName(kind, i, EntryName(kind, i)) 'refresh the shared item name list
+   return true
+  end if
+ next
+
+ return false
+
+end function
+
+
 function ListInput(list_menu as BlueMenu, kind as String) as Boolean
 
  'Drop-in replacement for list_menu.UserInput() in the list editors. Adds modified
@@ -412,6 +572,7 @@ function ListInput(list_menu as BlueMenu, kind as String) as Boolean
 
  dim k as Integer = KindIndex(kind)
  dim result as Boolean
+ dim undone as Integer
 
  if not list_menu.marked then
   list_menu.marked = true
@@ -430,9 +591,13 @@ function ListInput(list_menu as BlueMenu, kind as String) as Boolean
   RefreshEntryColor(list_menu, kind, i)
  next
 
+ UndoSettle()
  result = list_menu.UserInput()
  if result then
-  if not list_menu.cancelled then last_list_pos(k) = list_menu.selected
+  if not list_menu.cancelled then
+   last_list_pos(k) = list_menu.selected
+   if list_menu.highlighted = 0 then UndoPush(kind, list_menu.selected)
+  end if
   return true
  end if
  last_list_pos(k) = list_menu.selected
@@ -441,6 +606,7 @@ function ListInput(list_menu as BlueMenu, kind as String) as Boolean
   case 18 'Ctrl+R
    if EntryModified(kind, list_menu.selected) then
     if ConfirmBox("Revert this entry to the loaded ROM?") then
+     UndoPush(kind, list_menu.selected)
      RevertEntry(kind, list_menu.selected)
      list_menu.ChangeOption(list_menu.selected, EntryName(kind, list_menu.selected))
      RefreshEntryColor(list_menu, kind, list_menu.selected)
@@ -451,10 +617,20 @@ function ListInput(list_menu as BlueMenu, kind as String) as Boolean
   case 3 'Ctrl+C
    ClipCopy(kind, list_menu.selected)
    InfoBox("Copied " + FF4Name(EntryName(kind, list_menu.selected)) + ".|Ctrl+V on another entry pastes it|(that entry keeps its own name).||Press any key")
+  case 26 'Ctrl+Z
+   if UndoPop(kind, undone) then
+    list_menu.ChangeOption(undone, EntryName(kind, undone))
+    RefreshEntryColor(list_menu, kind, undone)
+    list_menu.ChangeSelected(undone)
+   else
+    InfoBox("Nothing to undo in this list.||Press any key")
+   end if
   case 22 'Ctrl+V
    if clip_has(k) andalso EntryModified(kind, list_menu.selected) andalso not ConfirmBox("Paste over your edits to this entry?") then
     'declined
-   elseif ClipPaste(kind, list_menu.selected) then
+   elseif clip_has(k) then
+    UndoPush(kind, list_menu.selected)
+    ClipPaste(kind, list_menu.selected)
     RefreshEntryColor(list_menu, kind, list_menu.selected)
    else
     InfoBox("Nothing copied yet. Use Ctrl+C first.||Press any key")

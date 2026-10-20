@@ -43,6 +43,8 @@ function CsvTableSize(kind as String) as Integer
   case "shops": return total_shops
   case "formations": return total_formations
   case "jobs": return total_jobs
+  case "commands": return total_commands
+  case "actors": return total_actors
  end select
 
  return 0
@@ -158,6 +160,29 @@ function CsvRow(kind as String, i as Integer) as String
      str(.monster_qty(1)) + "," + str(.monster_qty(2)) + "," + str(.monster_qty(3)) + "," + str(.arrangement) + "," + _
      str(BoolInt(.no_flee)) + "," + str(BoolInt(.no_gameover)) + "," + str(.battle_music) + "," + str(BoolInt(.character_battle)) + "," + _
      str(BoolInt(.auto_battle)) + "," + str(BoolInt(.floating)) + "," + str(BoolInt(.transparent)) + "," + str(.mystery_byte) + "," + str(BoolInt(.rewards))
+   end with
+
+  case "commands"
+   with menucommands(i)
+    result = str(i) + "," + CsvQuote(FF4Name(.name)) + "," + str(.target) + "," + str(.target_byte) + "," + str(.delay) + "," + _
+     str(.disabling_persistent) + "," + str(.disabling_temporary) + "," + str(.charging_stance) + "," + str(.action_stance) + "," + _
+     str(.action_stance2) + "," + str(.action_stance3) + "," + str(.item_consumed) + "," + str(.item_effect) + "," + str(.item_visual) + "," + _
+     str(.regen_amount) + "," + str(BoolInt(.regen_freeze)) + "," + str(.disable_actor) + "," + str(.cover_actor) + "," + str(BoolInt(.cover_by_job))
+    for j as Integer = 0 to 8
+     result += "," + str(.spell(j)) + "," + str(.success(j)) + "," + str(.misc_bytes(j))
+    next
+    for j as Integer = 0 to 5
+     result += "," + str(.message(j))
+    next
+   end with
+
+  case "actors"
+   with actors(i)
+    result = str(i) + "," + str(.name_index) + "," + str(BoolInt(.load_initial)) + "," + str(BoolInt(.store_shadow)) + "," + str(.load_slot) + "," + _
+     str(.store_slot) + "," + str(.level_link) + "," + str(.right_ammo) + "," + str(.left_ammo)
+    for j as Integer = 0 to 5
+     result += "," + str(.menu_command(j)) + "," + str(.starting_gear(j))
+    next
    end with
 
   case "jobs"

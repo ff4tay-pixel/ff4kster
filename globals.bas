@@ -6,6 +6,7 @@ dim shared asc2ff4 as String
 dim shared warning as Boolean
 dim shared idle_hook as sub() 'called by menus while they wait for a key (for animated previews)
 dim shared modified as Boolean
+dim shared help_entry as Integer 'main menu entry of the open editor, so F1 can show its keys (0 = none)
 dim shared saved_image as String 'what the ROM image looked like at load or at the last save; "modified" means the data now applies differently
 dim shared defer_warnings as Boolean 'WarningMessage only records the problem (shown together after a save)
 dim shared save_problems as String 'problems found while saving, separated by |

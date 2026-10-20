@@ -1,10 +1,24 @@
 sub OpenEntry(kind as String, index as Integer)
 
+ dim saved_help as Integer
+
  'Opens the editor for a spell/item/monster list already on that entry.
 
  jump_kind = kind
  jump_index = index
  cls
+ saved_help = help_entry
+ select case kind
+  case "spells": help_entry = 3
+  case "weapons": help_entry = 5
+  case "armors": help_entry = 6
+  case "medicines": help_entry = 7
+  case "tools": help_entry = 8
+  case "monsters": help_entry = 22
+  case "shops": help_entry = 9
+  case "formations": help_entry = 23
+  case "jobs": help_entry = 10
+ end select
  select case kind
   case "spells": EditSpells()
   case "weapons": EditWeapons()
@@ -16,6 +30,7 @@ sub OpenEntry(kind as String, index as Integer)
   case "formations": EditFormations()
   case "jobs": EditJobs()
  end select
+ help_entry = saved_help
  jump_kind = ""
 
 end sub

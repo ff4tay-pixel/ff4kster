@@ -90,7 +90,7 @@ sub EditCommands()
    edit_info.Display()
    edit_ranges.Display()
   
-  loop until select_command.UserInput()
+  loop until ListInput(select_command, "commands")
   
   if not select_command.cancelled then
   

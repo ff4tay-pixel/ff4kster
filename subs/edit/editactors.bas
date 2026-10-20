@@ -83,7 +83,7 @@ sub EditActors()
    BlueBox(data_menu.x, job_menu.y, actor_names.Width() + 33, 1)
    WriteText(FF4Text("Change ") + actor_names.ItemAt(jobchange_actor) + FF4Text("'s job to ") + jobs(jobchange_job + 1).name + FF4Text(" upon return"), data_menu.x + 1, job_menu.y + 1)
   
-  loop until select_actor.UserInput()
+  loop until ListInput(select_actor, "actors")
   
   if not select_actor.cancelled then
   

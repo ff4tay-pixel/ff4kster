@@ -113,27 +113,23 @@ function ConfirmBox(message as String) as Boolean
 end function
 
 
+declare sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
+
+
 sub ShowKeyHelp()
 
- 'F1 in any menu.
+ 'F1 in any menu: the keys that work everywhere, plus the keys of the open
+ ' editor (the same text the main menu shows beside its entries).
 
- InfoBox("KEYS IN EVERY MENU|" + _
-  "Arrows        Move|" + _
-  "Enter         Open / select|" + _
-  "Esc           Back / cancel|" + _
-  "Home / End    First / last entry|" + _
-  "PgUp / PgDn   Page up / down|" + _
-  "/             Show entry numbers|" + _
-  "Ctrl-F        Find entry by name|" + _
-  "Ctrl-N        Find next match|" + _
-  "Ctrl-G        Go to entry number|" + _
-  "F1            This help||" + _
-  "SPELL / ITEM / MONSTER / SHOP / JOB LISTS|" + _
-  "Yellow names  Changed since load|" + _
-  "Ctrl-R        Revert entry to loaded ROM|" + _
-  "Ctrl-C / V    Copy / paste entry|" + _
-  "Ctrl-U        Where is this used?|" + _
-  "Shift-Enter   Swap two entries||" + _
-  "Press any key", 15, 8)
+ dim lines(1 to 40) as String
+ dim n as Integer
+ dim text as String
+
+ FillHelp(lines(), n, help_entry)
+ for i as Integer = 1 to n
+  text += lines(i) + "|"
+ next
+
+ InfoBox(text + "|Press any key", 12, 1)
 
 end sub

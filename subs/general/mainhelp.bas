@@ -11,13 +11,10 @@ end sub
 
 dim shared last_help_rows as Integer 'height of the help box drawn last time
 
-sub DrawMainHelp(selected as Integer)
+sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
 
- dim x as Integer = 28
- dim y as Integer = 0
- dim w as Integer = 50
- dim lines(1 to 40) as String
- dim n as Integer
+ 'The key help text, shared by the panel beside the main menu and by F1. selected
+ ' is the main menu entry number; 0 gives only the keys that work in every menu.
 
  HelpLine(lines(), n, "KEYS IN EVERY MENU")
  HelpLine(lines(), n, "Arrows        Move")
@@ -29,9 +26,10 @@ sub DrawMainHelp(selected as Integer)
  HelpLine(lines(), n, "Ctrl-F        Find entry by name")
  HelpLine(lines(), n, "Ctrl-N        Find next match")
  HelpLine(lines(), n, "Ctrl-G        Go to entry number")
- HelpLine(lines(), n, "F1            Key help in any menu")
+ HelpLine(lines(), n, "F1            Key help for the open editor")
  HelpLine(lines(), n, "X            Hex or decimal in number boxes")
  HelpLine(lines(), n, "Tab           Switch panels in two-pane editors")
+ if selected = 0 then exit sub
  HelpLine(lines(), n, "")
  HelpLine(lines(), n, "THIS ENTRY")
 
@@ -47,6 +45,7 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "Yellow names are changed since load.")
    HelpLine(lines(), n, "Ctrl-R  Revert entry   Ctrl-U  Where used")
    HelpLine(lines(), n, "Ctrl-C / V  Copy / paste entry")
+   HelpLine(lines(), n, "Ctrl-Z  Undo the last change in this list")
    HelpLine(lines(), n, "Shift-Enter twice swaps two entries")
    HelpLine(lines(), n, "spells, weapons, armors.")
    HelpLine(lines(), n, "Enter opens the entry's editor.")
@@ -58,13 +57,18 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "Edit what each shop sells.")
    HelpLine(lines(), n, "Yellow names are changed since load.")
    HelpLine(lines(), n, "Ctrl-R revert  Ctrl-C / V copy / paste")
+   HelpLine(lines(), n, "Ctrl-Z undo the last change in this list")
   case 10
    HelpLine(lines(), n, "Enter opens the entry's editor.")
    HelpLine(lines(), n, "Yellow names are changed since load.")
    HelpLine(lines(), n, "Ctrl-R revert  Ctrl-C / V copy / paste")
+   HelpLine(lines(), n, "Ctrl-Z undo the last change in this list")
    HelpLine(lines(), n, "In sub-menus: Tab switches between boxes.")
   case 13 to 14
    HelpLine(lines(), n, "Enter opens the entry's editor.")
+   HelpLine(lines(), n, "Yellow names are changed since load.")
+   HelpLine(lines(), n, "Ctrl-R revert  Ctrl-C / V copy / paste")
+   HelpLine(lines(), n, "Ctrl-Z undo the last change in this list")
    HelpLine(lines(), n, "In sub-menus: Tab switches between boxes.")
   case 12
    HelpLine(lines(), n, "Enter opens the entry's editor.")
@@ -120,7 +124,8 @@ sub DrawMainHelp(selected as Integer)
   case 22
    HelpLine(lines(), n, "Enter opens the monster's editor.")
    HelpLine(lines(), n, "Yellow means changed.  Ctrl-R revert, Ctrl-U")
-   HelpLine(lines(), n, "where used, Ctrl-C / V copy / paste.")
+   HelpLine(lines(), n, "where used, Ctrl-C / V copy / paste,")
+   HelpLine(lines(), n, "Ctrl-Z undo the last change in the list.")
    HelpLine(lines(), n, "Tab switches between the flag lists and")
    HelpLine(lines(), n, "their details.")
    HelpLine(lines(), n, "In Edit AI: L switches between the regular")
@@ -129,6 +134,7 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "Enter opens the entry's editor.")
    HelpLine(lines(), n, "Yellow names are changed since load.")
    HelpLine(lines(), n, "Ctrl-R revert  Ctrl-C / V copy / paste")
+   HelpLine(lines(), n, "Ctrl-Z undo the last change in this list")
    HelpLine(lines(), n, "Ctrl-U shows the areas that use it.")
   case 24 to 26
    HelpLine(lines(), n, "Enter opens the entry's editor.")
@@ -150,7 +156,22 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "if there are unsaved edits.")
  end select
 
- 'The box is as tall as its text, so wipe whatever the previous (taller) box left below it
+ 
+
+end sub
+
+
+sub DrawMainHelp(selected as Integer)
+
+ dim x as Integer = 28
+ dim y as Integer = 0
+ dim w as Integer = 50
+ dim lines(1 to 40) as String
+ dim n as Integer
+
+ FillHelp(lines(), n, selected)
+
+'The box is as tall as its text, so wipe whatever the previous (taller) box left below it
  screenlock
  if last_help_rows > n + 2 then line (x * 8, (y + n + 2) * 8)-((x + w + 2) * 8 - 1, (y + last_help_rows) * 8 - 1), RGB(0, 0, 0), bf
  BlueBox(x, y, w, n)

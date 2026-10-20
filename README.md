@@ -157,14 +157,19 @@ CONTROLS
   confirmation first.
 
   In the lists of spells, weapons, armors, medicines, tools, monsters, shops,
-  formations and jobs (Ctrl-U works for all but shops and jobs):
+  formations, jobs, commands and actors (Ctrl-U works for spells, items,
+  monsters and formations):
 
     Ctrl-R:      Revert the entry to how it was when the ROM was loaded
     Ctrl-C / V:  Copy and paste an entry (the target keeps its name)
+    Ctrl-Z:      Undo the last change made to an entry in this list (up to 40
+                 changes; opening an entry, pasting and reverting are each one
+                 step; swapping entries is not undoable)
     Ctrl-U:      Show where the entry is used
     Yellow names mark entries that differ from the loaded ROM, and the list
     reopens on the entry you were last on.
-  F1 shows key help in any menu. The main menu also lists the keys that matter
+  F1 shows key help in any menu: the keys that work everywhere plus the keys of
+  the editor you are in (the same text the main menu shows beside its entries). The main menu also lists the keys that matter
   for whichever editor is highlighted, and the map editor, the battle sprite
   editor and the level up editor print their own keys on screen.
 
@@ -1206,6 +1211,8 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * Since 0.8
+    - Ctrl-Z undo in the entry lists; command and actor lists get the changed marks,
+      revert and copy / paste; F1 shows the keys of the editor you are in
     - Main menu grouped under headings; confirmation before deleting an event
       call entry or an AI condition/script pair, and before pasting over an
       edited list entry
@@ -1371,7 +1378,7 @@ VERSION HISTORY
 - **Automatic backup:** the first Save ROM of a session copies the ROM file to `<rom>.<date>-<time>.bak` before writing.
 - **Command line / last ROM:** `ff4kster-console.exe path	oom.smc` (or drag a ROM onto the exe) skips the file selector. Without an argument the editor offers the ROM used last time (`lastrom.cfg`).
 - **Window title** shows the ROM name and a `*` when there are unsaved edits.
-- **Spell, weapon, armor, medicine, tool, monster, shop, formation and job lists:** names that differ from the loaded ROM are yellow. Ctrl-R reverts an entry, Ctrl-C / Ctrl-V copy and paste an entry (the target keeps its name), Ctrl-U shows where it is used (formations and encounter areas, shops and chests, weapons that cast a spell; for a formation, the areas that use it and trapped chests). Shops and jobs have no usage list. The editor reopens on the entry you were last on.
+- **Spell, weapon, armor, medicine, tool, monster, shop, formation, job, command and actor lists:** names that differ from the loaded ROM are yellow. Ctrl-R reverts an entry, Ctrl-C / Ctrl-V copy and paste an entry (the target keeps its name), Ctrl-Z undoes the last change to an entry, Ctrl-U shows where it is used (formations and encounter areas, shops and chests, weapons that cast a spell; for a formation, the areas that use it and trapped chests). Shops and jobs have no usage list. The editor reopens on the entry you were last on.
 - **Search Everywhere** (main menu) finds a spell, item or monster by name and opens its editor on it.
 - **Compare with ROM File** (currently hidden from the main menu) diffs your current work against another ROM file.
 - **F1** shows key help in any menu. Deleting triggers, NPCs and messages asks for confirmation.

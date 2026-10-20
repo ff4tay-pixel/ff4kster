@@ -194,6 +194,8 @@ do
   'Start every editor on a black screen so nothing from the main menu is left behind.
   if choice >= menu_first_editor and choice <= menu_last_editor then cls
 
+  help_entry = choice
+
   select case choice
 
    case menu_save
@@ -250,6 +252,8 @@ do
     end if
 
   end select
+
+  help_entry = 0
 
   'Work out whether anything really changed (opening an editor and leaving does not count).
   if choice >= menu_first_editor and choice <= menu_last_editor then
