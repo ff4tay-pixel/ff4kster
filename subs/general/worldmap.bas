@@ -698,6 +698,12 @@ dim shared wv_pal_x as Integer 'palette cursor, 8 columns by 16 rows (tile = row
 dim shared wv_pal_y as Integer
 dim shared wv_map_active as Boolean = true 'Tab switches between the map and the palette
 dim shared wv_paste_mode as Boolean
+dim shared wv_overlay as Integer = 3 'O cycles: 3 triggers and encounter zones, 1 triggers, 2 zones, 0 none
+
+'Random battles: the game cuts each world into zones of 32 x 32 tiles and picks the encounter (a group
+'of 8 formations, the numbers in the Encounters editor) by zone. The overworld has 8 x 8 zones, the
+'underground 4 x 4 (its first 128 x 128 tiles) and the moon 2 x 2. The Encounters editor lists them as
+'areas 1-64, 65-80 and 81-84 in rows from the top left.
 
 
 function WorldPaletteTile() as Integer
@@ -735,6 +741,130 @@ sub DrawWorldCursor(px as Integer, py as Integer, tiles_wide as Integer, tiles_h
 end sub
 
 
+function WorldZoneArea(w as Integer, tile_x as Integer, tile_y as Integer) as Integer
+
+ 'The number of the encounter area (as the Encounters editor lists it) a tile is in, or 0 if none
+
+ select case w
+  case 0: return (tile_y \ 32) * 8 + tile_x \ 32 + 1
+  case 1
+   if tile_x < 128 and tile_y < 128 then return 64 + (tile_y \ 32) * 4 + tile_x \ 32 + 1
+  case 2
+   if tile_x < 64 and tile_y < 64 then return 80 + (tile_y \ 32) * 2 + tile_x \ 32 + 1
+ end select
+
+ return 0
+
+end function
+
+
+function WorldZoneExtent(w as Integer) as Integer
+
+ 'How many tiles across the zones cover
+
+ select case w
+  case 0: return 256
+  case 1: return 128
+ end select
+
+ return 64
+
+end function
+
+
+function WorldTriggerText(w as Integer, tile_x as Integer, tile_y as Integer) as String
+
+ 'A few words about the trigger on a tile, or "" if there is none
+
+ dim t as Trigger ptr
+ dim destination as String
+
+ for i as Integer = 1 to maps(252 + w).triggers.Length()
+  t = maps(252 + w).triggers.PointerAt(i)
+  if t->x = tile_x and t->y = tile_y then
+   if t->warp then
+    if w = 0 then
+     destination = map_names.ItemAt(t->new_map + 1)
+    elseif t->new_map < 128 then
+     destination = map_names.ItemAt(t->new_map + 257)
+    elseif t->new_map >= 251 then
+     destination = map_names.ItemAt(t->new_map + 1)
+    else
+     destination = FF4Text("unknown")
+    end if
+    return "Trigger: goes to " + trim(FF4Name(destination)) + " at " + str(t->new_x) + "," + str(t->new_y)
+   elseif t->treasure then
+    return "Trigger: treasure"
+   end if
+   return "Trigger: event " + str(t->event)
+  end if
+ next
+
+ return ""
+
+end function
+
+
+sub DrawWorldOverlays()
+
+ 'Triggers (yellow frames, like the map editor's) and the encounter zones (dashed lines, each
+ ' zone labelled with its encounter number). Drawn inside the map box.
+
+ dim w as Integer = wv_world
+ dim t as Trigger ptr
+ dim px as Integer
+ dim py as Integer
+ dim extent as Integer = WorldZoneExtent(w)
+ dim area as Integer
+ dim label_x as Integer
+ dim label_y as Integer
+ dim right_edge as Integer
+ dim bottom_edge as Integer
+
+ if (wv_overlay and 2) <> 0 then
+  right_edge = world_map_px + min(extent - wv_view_x, world_view_cols) * 16
+  bottom_edge = world_map_py + min(extent - wv_view_y, world_view_rows) * 16
+  for g as Integer = 0 to extent step 32
+   if g >= wv_view_x and g <= wv_view_x + world_view_cols then
+    px = world_map_px + (g - wv_view_x) * 16
+    line (px, world_map_py)-(px, bottom_edge - 1), RGB(255, 128, 0), , &hF0F0
+   end if
+   if g >= wv_view_y and g <= wv_view_y + world_view_rows then
+    py = world_map_py + (g - wv_view_y) * 16
+    line (world_map_px, py)-(right_edge - 1, py), RGB(255, 128, 0), , &hF0F0
+   end if
+  next
+  for zone_y as Integer = 0 to extent - 32 step 32
+   for zone_x as Integer = 0 to extent - 32 step 32
+    area = WorldZoneArea(w, zone_x, zone_y)
+    if area > 0 then
+     'put the label in the part of the zone that is on screen
+     label_x = max(zone_x, wv_view_x)
+     label_y = max(zone_y, wv_view_y)
+     if label_x + 3 < min(zone_x + 32, wv_view_x + world_view_cols) and label_y < min(zone_y + 32, wv_view_y + world_view_rows) then
+      WriteText(FF4Text("Enc " + Pad(str(encounter_tables(area)), 2, true)), (world_map_px + (label_x - wv_view_x) * 16) \ 8 + 1, (world_map_py + (label_y - wv_view_y) * 16) \ 8 + 1, 14)
+     end if
+    end if
+   next
+  next
+ end if
+
+ if (wv_overlay and 1) <> 0 then
+  for i as Integer = 1 to maps(252 + w).triggers.Length()
+   t = maps(252 + w).triggers.PointerAt(i)
+   if t->x >= wv_view_x and t->x < wv_view_x + world_view_cols and t->y >= wv_view_y and t->y < wv_view_y + world_view_rows then
+    px = world_map_px + (t->x - wv_view_x) * 16
+    py = world_map_py + (t->y - wv_view_y) * 16
+    line (px, py)-(px + 15, py + 15), RGB(0, 0, 0), b
+    line (px + 1, py + 1)-(px + 14, py + 14), RGB(255, 255, 0), b
+    line (px + 2, py + 2)-(px + 13, py + 13), RGB(255, 255, 0), b
+   end if
+  next
+ end if
+
+end sub
+
+
 function WorldFlagsText(w as Integer, tile_number as Integer) as String
 
  'What the tile allows, in a few words
@@ -758,6 +888,19 @@ function WorldFlagsText(w as Integer, tile_number as Integer) as String
 end function
 
 
+function WorldOverlayName() as String
+
+ select case wv_overlay
+  case 3: return "All"
+  case 1: return "Triggers"
+  case 2: return "Zones"
+ end select
+
+ return "Off"
+
+end function
+
+
 sub DrawWorldEditor()
 
  dim w as Integer = wv_world
@@ -774,6 +917,7 @@ sub DrawWorldEditor()
  dim box_w as Integer
  dim box_h as Integer
  dim status as String
+ dim info_line as String
  dim clip_x as Integer
  dim clip_y as Integer
 
@@ -801,6 +945,7 @@ sub DrawWorldEditor()
   next
  next
  view screen (world_map_px - 4, world_map_py - 4)-(world_map_px + world_view_cols * 16 + 3, world_map_py + world_view_rows * 16 + 3)
+ DrawWorldOverlays()
  if wv_paste_mode then
   'preview of what Enter would place
   for y as Integer = 0 to world_clip_h - 1
@@ -831,21 +976,30 @@ sub DrawWorldEditor()
  'The status box
  used = WorldDataBytes(w)
  WorldSelectionRect(x0, y0, x1, y1)
- status = "Panel: " + iif(wv_map_active, "Map", "Palette") + "  Tile:" + hex(wv_tile, 2) + "  Size:" + str(x1 - x0 + 1) + "x" + str(y1 - y0 + 1) + "  X " + str(wv_cursor_x) + " Y " + str(wv_cursor_y)
+ status = "Panel:" + iif(wv_map_active, "Map", "Palette") + "  Tile:" + hex(wv_tile, 2) + "  Size:" + str(x1 - x0 + 1) + "x" + str(y1 - y0 + 1) + "  X " + str(wv_cursor_x) + " Y " + str(wv_cursor_y) + "  Overlay:" + WorldOverlayName()
  BlueBox(0, 52, 76, 3)
- WriteText(FF4Text(Pad(status, 74)), 1, 53, 15)
+ WriteText(FF4Text(Pad(left(status, 58), 58)), 1, 53, 15)
  if used > world_capacity(w) then
-  WriteText(FF4Text(Pad("Over by " + str(used - world_capacity(w)) + " bytes", 22, true)), 54, 53, 12)
+  WriteText(FF4Text(Pad("Over by " + str(used - world_capacity(w)) + " bytes", 17, true)), 60, 53, 12)
  else
-  WriteText(FF4Text(Pad("Room " + str(world_capacity(w) - used) + " bytes", 22, true)), 54, 53, 15)
+  WriteText(FF4Text(Pad("Room " + str(world_capacity(w) - used) + " bytes", 17, true)), 60, 53, 15)
  end if
  if wv_paste_mode then
   WriteText(FF4Text(Pad("PASTE: arrows move, Enter place, Esc cancel", 74)), 1, 54, 14)
  else
-  WriteText(FF4Text(Pad("Tab panel  Enter place  Space fill  R replace  Esc back", 74)), 1, 54, 15)
+  WriteText(FF4Text(Pad("Tab panel  Enter place  Space fill  R replace  O overlay  Esc back", 74)), 1, 54, 15)
  end if
  tile_number = world_tiles(w, wv_cursor_y, wv_cursor_x) and 127
- WriteText(FF4Text(Pad(left(WorldNameText(w) + " " + hex(tile_number, 2) + ": " + WorldFlagsText(w, tile_number), 74), 74)), 1, 55, 10)
+ info_line = ""
+ if (wv_overlay and 1) <> 0 then info_line = WorldTriggerText(w, wv_cursor_x, wv_cursor_y)
+ if info_line <> "" then
+  if (wv_overlay and 2) <> 0 and WorldZoneArea(w, wv_cursor_x, wv_cursor_y) > 0 then info_line += ".  Enc " + str(encounter_tables(WorldZoneArea(w, wv_cursor_x, wv_cursor_y)))
+  WriteText(FF4Text(Pad(left(info_line, 74), 74)), 1, 55, 14)
+ else
+  info_line = WorldNameText(w) + " " + hex(tile_number, 2) + ": " + WorldFlagsText(w, tile_number)
+  if (wv_overlay and 2) <> 0 and WorldZoneArea(w, wv_cursor_x, wv_cursor_y) > 0 then info_line = "Enc " + str(encounter_tables(WorldZoneArea(w, wv_cursor_x, wv_cursor_y))) + ". " + info_line
+  WriteText(FF4Text(Pad(left(info_line, 74), 74)), 1, 55, 10)
+ end if
 
  screenunlock
 
@@ -1079,6 +1233,8 @@ sub EditOneWorld(w as Integer)
       if wv_map_active then WorldFill()
      case asc("r"), asc("R")
       if wv_map_active then WorldReplaceAll()
+     case asc("o"), asc("O")
+      wv_overlay = (wv_overlay + 3) mod 4
      case 3
       if wv_map_active then WorldCopySelection()
      case 22

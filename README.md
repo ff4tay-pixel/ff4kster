@@ -265,7 +265,11 @@ flood fills, R replaces every tile like the one under the cursor in the whole wo
 Backspace picks the tile under the cursor into the palette, Shift with the arrows
 selects a block, Ctrl-C copies the block, Ctrl-V shows it as a preview that the arrows
 move, Enter places and Esc cancels, and Ctrl-Z / Ctrl-Y undo and redo. Esc goes back to
-the list of worlds. With the mouse a left click on the map paints (drag to keep
+the list of worlds. O cycles the overlay: the world's triggers are drawn as yellow frames (the
+status box says where the one under the cursor goes), and the encounter zones as dashed lines
+with each zone's encounter number (Enc, as in the Encounters editor; the game picks the
+random battle by 32 by 32 tile zone: 8 by 8 on the overworld, 4 by 4 underground, 2 by 2 on
+the moon). With the mouse a left click on the map paints (drag to keep
 painting), a right click picks the tile, a click on the palette chooses a tile, a click
 on the small map jumps there and the wheel moves the cursor; in paste mode a click
 places the block. The map is shown as stored in the ROM; the game changes a few
@@ -1270,7 +1274,7 @@ VERSION HISTORY
 * Since 0.8
     - Edit World Maps: edit the overworld, underground and moon (paint, fill, replace,
       copy / paste, undo, mouse painting); saved into the fixed room the game gives
-      each world, with a space check
+      each world, with a space check; O shows triggers and encounter zones over the map
     - Revert, copy / paste, undo and changed marks for solobattles, autobattles, spell
       sets and encounter areas; Changed Entries lists commands, actors and those too
     - Edit Graphics shows and edits the palette a boss really uses
