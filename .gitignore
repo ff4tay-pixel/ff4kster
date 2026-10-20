@@ -5,3 +5,4 @@ tracked.txt
 exports/
 lastrom.cfg
 *.smc
+*.bak
