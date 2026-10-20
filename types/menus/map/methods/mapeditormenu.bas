@@ -39,8 +39,12 @@ sub MapEditorMenu.Display()
  end if
 
  BlueBox(0, 52, 53, 2)
- WriteText(FF4Text("Panel: " + iif(map_menu.active, "Map", "Palette") + "  Tile:" + palette_menu.options.ItemAt(palette_menu.cursor_x + 1, palette_menu.cursor_y + 1) + "  Size:" + str(abs(map_menu.cursor_w) + 1) + "x" + str(abs(map_menu.cursor_h) + 1)), 1, 53, 15)
- WriteText(FF4Text("H toggles the keyboard sidebar"), 1, 54, 15)
+ WriteText(FF4Text(Pad("Panel: " + iif(map_menu.active, "Map", "Palette") + "  Tile:" + palette_menu.options.ItemAt(palette_menu.cursor_x + 1, palette_menu.cursor_y + 1) + "  Size:" + str(abs(map_menu.cursor_w) + 1) + "x" + str(abs(map_menu.cursor_h) + 1) + "  Overlay:" + iif(overlay_visible, "On", "Off"), 51)), 1, 53, 15)
+ if paste_mode then
+  WriteText(FF4Text(Pad("PASTE: arrows move, Enter place, Esc cancel", 51)), 1, 54, 14)
+ else
+  WriteText(FF4Text(Pad("H toggles the keyboard sidebar", 51)), 1, 54, 15)
+ end if
 
  if controls_visible and keyboard_sidebar_enabled then
   DisplayKeyboardSidebar()
@@ -54,22 +58,25 @@ end sub
 sub MapEditorMenu.DisplayKeyboardSidebar()
 
  if sidebar_snapshot = 0 then
-  sidebar_snapshot = ImageCreate(26 * 8, 15 * 8, RGB(0, 0, 0))
-  get (54 * 8, 42 * 8)-(80 * 8 - 1, 57 * 8 - 1), sidebar_snapshot
+  sidebar_snapshot = ImageCreate(26 * 8, 19 * 8, RGB(0, 0, 0))
+  get (54 * 8, 38 * 8)-(80 * 8 - 1, 57 * 8 - 1), sidebar_snapshot
  end if
- BlueBox(54, 42, 25, 14)
- WriteText(FF4Text("KEYBOARD"), 55, 43, 15)
- WriteText(FF4Text("J  Jump to map"), 55, 44, 15)
- WriteText(FF4Text("F  Find map name"), 55, 45, 15)
- WriteText(FF4Text("I  Grid details"), 55, 46, 15)
- WriteText(FF4Text("ENTER  Edit map"), 55, 47, 15)
- WriteText(FF4Text("BACKSP  Erase map"), 55, 48, 15)
- WriteText(FF4Text("ESC  Back"), 55, 49, 15)
- WriteText(FF4Text("HOLD H  Show"), 55, 50, 15)
- WriteText(FF4Text("TAB  Map/palette"), 55, 51, 15)
- WriteText(FF4Text("CTRL+C  Copy"), 55, 52, 15)
- WriteText(FF4Text("CTRL+V  Paste"), 55, 53, 15)
- WriteText(FF4Text("CTRL+Z  Undo"), 55, 54, 15)
+ BlueBox(54, 38, 25, 18)
+ WriteText(FF4Text("KEYBOARD"), 55, 39, 15)
+ WriteText(FF4Text("J  Jump to map"), 55, 40, 15)
+ WriteText(FF4Text("F  Find map name"), 55, 41, 15)
+ WriteText(FF4Text("I  Grid details"), 55, 42, 15)
+ WriteText(FF4Text("ENTER  Edit map"), 55, 43, 15)
+ WriteText(FF4Text("BACKSP  Erase map"), 55, 44, 15)
+ WriteText(FF4Text("ESC  Back"), 55, 45, 15)
+ WriteText(FF4Text("HOLD H  Show"), 55, 46, 15)
+ WriteText(FF4Text("TAB  Map/palette"), 55, 47, 15)
+ WriteText(FF4Text("CTRL+C  Copy"), 55, 48, 15)
+ WriteText(FF4Text("CTRL+V  Paste preview"), 55, 49, 15)
+ WriteText(FF4Text("CTRL+Z  Undo"), 55, 50, 15)
+ WriteText(FF4Text("CTRL+Y  Redo"), 55, 51, 15)
+ WriteText(FF4Text("R  Replace all tile"), 55, 52, 15)
+ WriteText(FF4Text("O  NPC/trigger overlay"), 55, 53, 15)
 
 end sub
 
@@ -77,7 +84,7 @@ end sub
 sub MapEditorMenu.HideKeyboardSidebar()
 
  if sidebar_snapshot <> 0 then
-  put (54 * 8, 42 * 8), sidebar_snapshot, pset
+  put (54 * 8, 38 * 8), sidebar_snapshot, pset
   ImageDestroy(sidebar_snapshot)
   sidebar_snapshot = 0
  end if
@@ -123,6 +130,101 @@ sub MapEditorMenu.PasteSelection()
 end sub
 
 
+sub MapEditorMenu.BeginPaste()
+
+ if copy_available and map_menu.Columns() > 0 then
+  if map_menu.ghost <> 0 then ImageDestroy(map_menu.ghost)
+  map_menu.ghost = ImageCreate(copy_width * 16, copy_height * 16, RGB(0, 0, 0))
+  for i as Integer = 0 to copy_width - 1
+   for j as Integer = 0 to copy_height - 1
+    tilesets(map_menu.tileset_index + 1).tiles(copy_tiles(i, j) + 1).Display(i * 2, j * 2, map_menu.ghost, 0)
+   next
+  next
+  map_menu.cursor_w = 0
+  map_menu.cursor_h = 0
+  paste_mode = true
+ end if
+
+end sub
+
+
+sub MapEditorMenu.EndPaste()
+
+ if map_menu.ghost <> 0 then
+  ImageDestroy(map_menu.ghost)
+  map_menu.ghost = 0
+ end if
+ paste_mode = false
+
+end sub
+
+
+sub MapEditorMenu.RefreshOverlay()
+
+ dim t as Trigger ptr
+ dim p as Placement ptr
+
+ map_menu.marker_count = 0
+ if overlay_visible and map_number >= 1 and map_number <= total_maps then
+  for i as Integer = 1 to maps(map_number).triggers.Length()
+   t = maps(map_number).triggers.PointerAt(i)
+   if t->x < 32 and t->y < 32 and map_menu.marker_count < 256 then
+    map_menu.marker_x(map_menu.marker_count) = t->x
+    map_menu.marker_y(map_menu.marker_count) = t->y
+    map_menu.marker_color(map_menu.marker_count) = RGB(255, 255, 0)
+    map_menu.marker_count += 1
+   end if
+  next
+  for i as Integer = 1 to placement_groups(map_number).placements.Length()
+   p = placement_groups(map_number).placements.PointerAt(i)
+   if p->x < 32 and p->y < 32 and map_menu.marker_count < 256 then
+    map_menu.marker_x(map_menu.marker_count) = p->x
+    map_menu.marker_y(map_menu.marker_count) = p->y
+    map_menu.marker_color(map_menu.marker_count) = RGB(0, 255, 255)
+    map_menu.marker_count += 1
+   end if
+  next
+ end if
+
+end sub
+
+
+sub MapEditorMenu.ReplaceTile()
+
+ 'Replaces every tile matching the one under the cursor with the palette tile,
+ 'within the selection, or across the whole map if only one tile is selected
+ dim old_tile as String
+ dim new_tile as String
+ dim start_x as Integer
+ dim start_y as Integer
+ dim end_x as Integer
+ dim end_y as Integer
+
+ old_tile = map_menu.options.ItemAt(map_menu.cursor_x + 1, map_menu.cursor_y + 1)
+ new_tile = palette_menu.options.ItemAt(palette_menu.cursor_x + 1, palette_menu.cursor_y + 1)
+ if old_tile <> new_tile then
+  if map_menu.cursor_w = 0 and map_menu.cursor_h = 0 then
+   start_x = 0
+   start_y = 0
+   end_x = map_menu.Columns() - 1
+   end_y = map_menu.Rows() - 1
+  else
+   if map_menu.cursor_w < 0 then start_x = map_menu.cursor_x + map_menu.cursor_w else start_x = map_menu.cursor_x
+   if map_menu.cursor_h < 0 then start_y = map_menu.cursor_y + map_menu.cursor_h else start_y = map_menu.cursor_y
+   end_x = start_x + abs(map_menu.cursor_w)
+   end_y = start_y + abs(map_menu.cursor_h)
+  end if
+  SaveUndo()
+  for i as Integer = start_x to end_x
+   for j as Integer = start_y to end_y
+    if map_menu.options.ItemAt(i + 1, j + 1) = old_tile then map_menu.options.Assign(i + 1, j + 1, new_tile)
+   next
+  next
+ end if
+
+end sub
+
+
 sub MapEditorMenu.SetTo(index as UInteger)
 
  dim underground as Integer
@@ -132,7 +234,10 @@ sub MapEditorMenu.SetTo(index as UInteger)
  if index > &h100 then underground = &h100 else underground = 0
  map_menu.options.Destroy()
  map_index = maps(index).grid_index + underground + 1
+ map_number = index
  undo_count = 0
+ redo_count = 0
+ EndPaste()
  
  'if index < 252 or index > 256 then
   'open "debug.txt" for output as #1
@@ -169,13 +274,22 @@ sub MapEditorMenu.SetTo(index as UInteger)
   next
   
   map_menu.SetBackgroundMap(maps(index).background + underground + 1)
- 
+  RefreshOverlay()
+
  'end if
 
 end sub
 
 
 sub MapEditorMenu.SaveUndo()
+
+ PushUndo()
+ redo_count = 0
+
+end sub
+
+
+sub MapEditorMenu.PushUndo()
 
  for history as Integer = max_map_undo - 1 to 1 step -1
   for i as Integer = 0 to 31
@@ -194,9 +308,45 @@ sub MapEditorMenu.SaveUndo()
 end sub
 
 
+sub MapEditorMenu.Redo()
+
+ if redo_count > 0 then
+  PushUndo()
+  for i as Integer = 0 to 31
+   for j as Integer = 0 to 31
+    map_menu.options.Assign(i + 1, j + 1, hex(redo_tiles(i, j, 0), 2))
+   next
+  next
+  for history as Integer = 0 to max_map_undo - 2
+   for i as Integer = 0 to 31
+    for j as Integer = 0 to 31
+     redo_tiles(i, j, history) = redo_tiles(i, j, history + 1)
+    next
+   next
+  next
+  redo_count -= 1
+ end if
+
+end sub
+
+
 sub MapEditorMenu.Undo()
 
  if undo_count > 0 then
+  'Remember the current state so it can be redone
+  for history as Integer = max_map_undo - 1 to 1 step -1
+   for i as Integer = 0 to 31
+    for j as Integer = 0 to 31
+     redo_tiles(i, j, history) = redo_tiles(i, j, history - 1)
+    next
+   next
+  next
+  for i as Integer = 0 to 31
+   for j as Integer = 0 to 31
+    redo_tiles(i, j, 0) = val("&h" + map_menu.options.ItemAt(i + 1, j + 1))
+   next
+  next
+  if redo_count < max_map_undo then redo_count += 1
   for i as Integer = 0 to 31
    for j as Integer = 0 to 31
     map_menu.options.Assign(i + 1, j + 1, hex(undo_tiles(i, j, 0), 2))
@@ -249,9 +399,27 @@ sub MapEditorMenu.UserSelect()
    loop while key = ""
   controls_visible = false
   HideKeyboardSidebar()
+  if paste_mode then
+   select case keycode
+    case ENTER_KEY
+     PasteSelection()
+     EndPaste()
+    case ESC_KEY
+     EndPaste()
+    case UP_KEY, DOWN_KEY, LEFT_KEY, RIGHT_KEY, HOME_KEY, END_KEY, PAGEUP_KEY, PAGEDOWN_KEY
+     map_menu.ProcessKey(keycode)
+   end select
+  else
   select case keycode
+    case asc("r"), asc("R")
+     if active_menu = @map_menu then ReplaceTile()
+    case asc("o"), asc("O")
+     overlay_visible = not overlay_visible
+     RefreshOverlay()
+    case 25
+     if active_menu = @map_menu then Redo()
     case TAB_KEY
-     if active_menu = @map_menu then 
+     if active_menu = @map_menu then
       active_menu = @palette_menu
       palette_menu.active = true
       map_menu.active = false
@@ -284,13 +452,13 @@ sub MapEditorMenu.UserSelect()
     case 3
      if active_menu = @map_menu then CopySelection()
     case 22
-     if active_menu = @map_menu then PasteSelection()
+     if active_menu = @map_menu then BeginPaste()
     case 26
      if active_menu = @map_menu then Undo()
     case DOWN_KEY
      if active_menu = @map_menu then
       if multikey(SC_LSHIFT) or multikey(SC_RSHIFT) then
-       if abs(map_menu.cursor_h) < map_menu.max_columns - 1 then
+       if abs(map_menu.cursor_h) < map_menu.max_rows - 1 then
         if map_menu.cursor_y < map_menu.Rows() - 1 then map_menu.cursor_h -= 1
         map_menu.ProcessKey(keycode)
        end if
@@ -305,7 +473,7 @@ sub MapEditorMenu.UserSelect()
     case RIGHT_KEY
      if active_menu = @map_menu then
       if multikey(SC_LSHIFT) or multikey(SC_RSHIFT) then
-       if abs(map_menu.cursor_w) < map_menu.max_rows - 1 then
+       if abs(map_menu.cursor_w) < map_menu.max_columns - 1 then
         if map_menu.cursor_x < map_menu.Columns() - 1 then map_menu.cursor_w -= 1
         map_menu.ProcessKey(keycode)
        end if
@@ -320,7 +488,7 @@ sub MapEditorMenu.UserSelect()
     case UP_KEY
      if active_menu = @map_menu then
       if multikey(SC_LSHIFT) or multikey(SC_RSHIFT) then
-       if abs(map_menu.cursor_h) < map_menu.max_columns - 1 then
+       if abs(map_menu.cursor_h) < map_menu.max_rows - 1 then
         if map_menu.cursor_y > 0 then map_menu.cursor_h += 1
         map_menu.ProcessKey(keycode)
        end if
@@ -335,7 +503,7 @@ sub MapEditorMenu.UserSelect()
     case LEFT_KEY
      if active_menu = @map_menu then
       if multikey(SC_LSHIFT) or multikey(SC_RSHIFT) then
-       if abs(map_menu.cursor_w) < map_menu.max_rows - 1 then
+       if abs(map_menu.cursor_w) < map_menu.max_columns - 1 then
         if map_menu.cursor_x > 0 then map_menu.cursor_w += 1
         map_menu.ProcessKey(keycode)
        end if
@@ -350,7 +518,8 @@ sub MapEditorMenu.UserSelect()
     case else
      done = active_menu->ProcessKey(keycode)
    end select
-   
+  end if
+
   loop until done
   
   active_menu->active = false

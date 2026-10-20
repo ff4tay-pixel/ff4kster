@@ -139,10 +139,11 @@ sub GridMenu.Animate()
     put canvas, (8, 8), background(frame + 1), (0, 0)-(Width() * 16 - 1, Height() * 16 - 1), pset
     put canvas, (0, 0), foreground, trans
    end if
+   DrawOverlays(canvas)
    put canvas, ((cx - window_x) * 16 + 4, (cy - window_y) * 16 + 4), cursor, trans
    put (x * 8, y * 8), canvas, trans
   end if
-  
+
  elseif delay = 0 then
  
   delay = timer
@@ -191,13 +192,34 @@ sub GridMenu.Display()
   end if
   if cursor_w < 0 then cx = cursor_x + cursor_w else cx = cursor_x
   if cursor_h < 0 then cy = cursor_y + cursor_h else cy = cursor_y
+  DrawOverlays(canvas)
   put canvas, ((cx - window_x) * 16 + 4, (cy - window_y) * 16 + 4), cursor, trans
  end if
- 
+
  put (x * 8, y * 8), canvas, trans
- 
+
  ImageDestroy(canvas)
-  
+
+end sub
+
+
+sub GridMenu.DrawOverlays(canvas as Any ptr)
+
+ dim px as Integer
+ dim py as Integer
+
+ for i as Integer = 0 to marker_count - 1
+  if marker_x(i) >= window_x and marker_x(i) < window_x + Width() and marker_y(i) >= window_y and marker_y(i) < window_y + Height() then
+   px = (marker_x(i) - window_x) * 16 + 8
+   py = (marker_y(i) - window_y) * 16 + 8
+   line canvas, (px, py)-(px + 15, py + 15), RGB(0, 0, 0), b
+   line canvas, (px + 1, py + 1)-(px + 14, py + 14), marker_color(i), b
+   line canvas, (px + 2, py + 2)-(px + 13, py + 13), marker_color(i), b
+  end if
+ next
+
+ if ghost <> 0 then put canvas, ((cursor_x - window_x) * 16 + 8, (cursor_y - window_y) * 16 + 8), ghost, alpha, 160
+
 end sub
 
 

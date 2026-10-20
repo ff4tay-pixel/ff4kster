@@ -24,7 +24,12 @@ type GridMenu
  bg_translucent as Boolean
  bg_dir as UByte
  bg_speed as UByte
- 
+ marker_count as Integer
+ marker_x(255) as Integer
+ marker_y(255) as Integer
+ marker_color(255) as UInteger
+ ghost as Any ptr = 0
+
  declare function Columns() as UInteger
  declare function Height() as UByte
  declare function ProcessKey(k as UInteger) as Boolean
@@ -34,6 +39,7 @@ type GridMenu
  
  declare sub Animate()
  declare sub ClearAll()
+ declare sub DrawOverlays(canvas as Any ptr)
  declare sub Display()
  declare sub FloodFill(x as UByte, y as UByte, tile as String)
  declare sub SetBackgroundMap(index as Integer)
