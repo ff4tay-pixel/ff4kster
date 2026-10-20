@@ -4,3 +4,4 @@ disk.txt
 tracked.txt
 exports/
 lastrom.cfg
+*.smc
