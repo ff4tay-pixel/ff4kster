@@ -13,7 +13,6 @@ const total_autobattles = 8
 const total_solobattles = 11
 
 const total_spells = &hBF
-'const total_player_spells = &h47
 const total_spell_effects = &h80
 const total_targets = 8
 const total_sound_effects = &h7F
