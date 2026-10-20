@@ -11,7 +11,11 @@ sub EditMaps()
  dim really as BlueMenu
  dim blank as Any ptr
  dim jump_to as BlueNumberInput
+ dim find_map as BlueTextInput
  dim shared_maps as Integer
+ dim shared_names as String
+ dim found_map as Integer
+ dim candidate as Integer
   
  select_map.swap_enabled = true
  select_map.max_rows = 8
@@ -23,6 +27,7 @@ sub EditMaps()
  jump_to = BlueNumberInput(30, 47)
  jump_to.min_value = 1
  jump_to.max_value = total_maps
+ find_map = BlueTextInput(28, 47, 24)
  
  really.x = 18
  really.y = 50
@@ -36,11 +41,16 @@ sub EditMaps()
    edit_map.SetTo(select_map.selected)
    edit_map.Display()
   shared_maps = 0
+  shared_names = ""
   for i as Integer = 1 to total_maps
-   if maps(i).grid_index + iif(i > &h100, &h100, 0) = maps(select_map.selected).grid_index + underground then shared_maps += 1
+   if maps(i).grid_index + iif(i > &h100, &h100, 0) = maps(select_map.selected).grid_index + underground then
+    shared_maps += 1
+    if i <> select_map.selected then
+     if len(shared_names) > 0 then shared_names += ", "
+      shared_names += "#" + str(i)
+    end if
+   end if
   next
-  BlueBox(0, 47, 28, 1)
-  WriteText(FF4Text("J: Jump to map index"), 1, 48, 15)
   BlueBox(0, 49, 22, 1)
   WriteText(FF4Text("Grid: " + Pad(str(maps(select_map.selected).grid_index + underground), 3, true) + "  Shared: " + str(shared_maps)), 1, 50, 15)
    select_map.Display()
@@ -50,10 +60,42 @@ sub EditMaps()
     keycode = asc(right(key, 1))
     if len(key) > 1 then keycode = keycode * &h100 + 255
     select case keycode
+     case asc("h"), asc("H")
+      edit_map.controls_visible = not edit_map.controls_visible
      case asc("j"), asc("J")
       jump_to.starting_number = select_map.selected
       jump_to.UserSelect()
       if jump_to.number >= 1 and jump_to.number <= total_maps then select_map.ChangeSelected(jump_to.number)
+    case asc("f"), asc("F")
+     find_map.ChangeStartingText("")
+     find_map.UserType()
+     if len(find_map.text) > 0 then
+      found_map = 0
+      for offset as Integer = 1 to total_maps
+        candidate = (select_map.selected + offset - 1) mod total_maps + 1
+        if instr(lcase(map_names.ItemAt(candidate)), lcase(find_map.text)) > 0 then
+         found_map = candidate
+        exit for
+       end if
+      next
+      if found_map > 0 then
+       select_map.ChangeSelected(found_map)
+      else
+       BlueBox(28, 49, 24, 1)
+       WriteText(FF4Text("No map matched"), 29, 50, 12)
+       getkey
+      end if
+     end if
+      case asc("i"), asc("I")
+       BlueBox(8, 20, 64, 3)
+      WriteText(FF4Text("Grid " + str(maps(select_map.selected).grid_index + underground) + " shared by map indices:"), 9, 21, 15)
+       if len(shared_names) > 0 then
+        WriteText(FF4Text(left(shared_names, 62)), 9, 22, 15)
+       else
+        WriteText(FF4Text("No other maps"), 9, 22, 15)
+       end if
+       WriteText(FF4Text("Press any key to close"), 9, 23, 15)
+       getkey
      case BACKSPACE_KEY
       if not mapgrids(maps(select_map.selected).grid_index + underground + 1).no_data then
        BlueBox(18, 47, 29, 1)

@@ -8,12 +8,19 @@ type MapEditorMenu
  map_index as UInteger
  undo_tiles(31, 31, max_map_undo - 1) as UByte
  undo_count as UByte
+ copy_tiles(31, 31) as UByte
+ copy_width as UByte
+ copy_height as UByte
+ copy_available as Boolean
+ controls_visible as Boolean
  
  declare constructor(starting_x as UByte = 0, starting_y as UByte = 0)
  
  'declare function BytesUsed()
  
  declare sub Display()
+ declare sub CopySelection()
+ declare sub PasteSelection()
  declare sub SetTo(map_index as UInteger)
  declare sub SaveUndo()
  declare sub Undo()
