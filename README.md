@@ -158,7 +158,8 @@ CONTROLS
   selected one. Deleting a trigger, an NPC placement or a message asks for
   confirmation first.
 
-  In the lists of spells, weapons, armors, medicines, tools and monsters:
+  In the lists of spells, weapons, armors, medicines, tools, monsters, shops,
+  formations and jobs (Ctrl-U works for all but shops and jobs):
 
     Ctrl-R:      Revert the entry to how it was when the ROM was loaded
     Ctrl-C / V:  Copy and paste an entry (the target keeps its name)
@@ -1205,6 +1206,8 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * Since 0.8
+    - Shop, formation and job lists now have the changed-entry colors, revert,
+      copy / paste and (formations) where-used keys; Changed Entries covers them
     - Save ROM lists every problem at once when it fails; the modified mark
       now reflects real changes only
     - Added Battle Sprites editor (after Edit Jobs)
@@ -1364,12 +1367,12 @@ VERSION HISTORY
 - **Automatic backup:** the first Save ROM of a session copies the ROM file to `<rom>.<date>-<time>.bak` before writing.
 - **Command line / last ROM:** `ff4kster-console.exe path	oom.smc` (or drag a ROM onto the exe) skips the file selector. Without an argument the editor offers the ROM used last time (`lastrom.cfg`).
 - **Window title** shows the ROM name and a `*` when there are unsaved edits.
-- **Spell, weapon, armor, medicine, tool and monster lists:** names that differ from the loaded ROM are yellow. Ctrl-R reverts an entry, Ctrl-C / Ctrl-V copy and paste an entry (the target keeps its name), Ctrl-U shows where it is used (formations and encounter areas, shops and chests, weapons that cast a spell). The editor reopens on the entry you were last on.
+- **Spell, weapon, armor, medicine, tool, monster, shop, formation and job lists:** names that differ from the loaded ROM are yellow. Ctrl-R reverts an entry, Ctrl-C / Ctrl-V copy and paste an entry (the target keeps its name), Ctrl-U shows where it is used (formations and encounter areas, shops and chests, weapons that cast a spell; for a formation, the areas that use it and trapped chests). Shops and jobs have no usage list. The editor reopens on the entry you were last on.
 - **Search Everywhere** (main menu) finds a spell, item or monster by name and opens its editor on it.
 - **Compare with ROM File** (currently hidden from the main menu) diffs your current work against another ROM file.
 - **F1** shows key help in any menu. Deleting triggers, NPCs and messages asks for confirmation.
 - **Space Usage** (main menu) shows how full each fixed ROM area is (events, triggers, map data, text banks, item descriptions); over 100% means Save ROM will refuse.
-- **Changed Entries** (main menu) lists every spell, item and monster changed since loading and opens the one you pick.
+- **Changed Entries** (main menu) lists every spell, item, monster, shop, formation and job changed since loading and opens the one you pick.
 - **Number boxes:** press X to switch between decimal and hexadecimal entry (A-F are accepted in hex mode).
 - **Saving** asks before overwriting a ROM file that changed on disk since it was loaded or last saved.
 - **CSV** now also covers shops and formations.

@@ -32,7 +32,7 @@ sub EditShops()
    select_shop.Display()
    edit_wares.Display()
    
-  loop until select_shop.UserInput()
+  loop until ListInput(select_shop, "shops")
   
   if not select_shop.cancelled then
    

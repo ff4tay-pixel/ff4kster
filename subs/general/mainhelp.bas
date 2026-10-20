@@ -31,7 +31,7 @@ sub DrawMainHelp(selected as Integer)
  HelpLine(lines(), n, "Ctrl-G        Go to entry number")
  HelpLine(lines(), n, "F1            Key help in any menu")
  HelpLine(lines(), n, "X            Hex or decimal in number boxes")
- HelpLine(lines(), n, "Tab           Switch panel two-pane editors")
+ HelpLine(lines(), n, "Tab           Switch panels in two-pane editors")
  HelpLine(lines(), n, "")
  HelpLine(lines(), n, "THIS ENTRY")
 
@@ -56,7 +56,14 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "Enter opens the entry's editor.")
   case 9
    HelpLine(lines(), n, "Edit what each shop sells.")
-  case 10, 13 to 14
+   HelpLine(lines(), n, "Yellow names are changed since load.")
+   HelpLine(lines(), n, "Ctrl-R revert  Ctrl-C / V copy / paste")
+  case 10
+   HelpLine(lines(), n, "Enter opens the entry's editor.")
+   HelpLine(lines(), n, "Yellow names are changed since load.")
+   HelpLine(lines(), n, "Ctrl-R revert  Ctrl-C / V copy / paste")
+   HelpLine(lines(), n, "In sub-menus: Tab switches between boxes.")
+  case 13 to 14
    HelpLine(lines(), n, "Enter opens the entry's editor.")
    HelpLine(lines(), n, "In sub-menus: Tab switches between boxes.")
   case 12
@@ -118,7 +125,12 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "their details.")
    HelpLine(lines(), n, "In Edit AI: L switches between the regular")
    HelpLine(lines(), n, "and the lunar AI script bank.")
-  case 23 to 26
+  case 23
+   HelpLine(lines(), n, "Enter opens the entry's editor.")
+   HelpLine(lines(), n, "Yellow names are changed since load.")
+   HelpLine(lines(), n, "Ctrl-R revert  Ctrl-C / V copy / paste")
+   HelpLine(lines(), n, "Ctrl-U shows the areas that use it.")
+  case 24 to 26
    HelpLine(lines(), n, "Enter opens the entry's editor.")
    HelpLine(lines(), n, "Autobattle scripts: Insert / Delete edit")
    HelpLine(lines(), n, "commands.")
@@ -130,8 +142,9 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "events, triggers, text, descriptions.")
    HelpLine(lines(), n, "Over 100% means Save ROM will refuse.")
   case 29
-   HelpLine(lines(), n, "Lists every spell, item and monster you")
-   HelpLine(lines(), n, "changed since loading, pick one to open it.")
+   HelpLine(lines(), n, "Lists every spell, item, monster, shop,")
+   HelpLine(lines(), n, "formation and job you changed since loading,")
+   HelpLine(lines(), n, "pick one to open it.")
   case else
    HelpLine(lines(), n, "Leave the editor. You are asked to save")
    HelpLine(lines(), n, "if there are unsaved edits.")

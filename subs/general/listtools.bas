@@ -2,17 +2,22 @@
 ' editors: modified markers, revert, copy/paste, "where is this used?", and
 ' jumping to an entry from the global search.
 '
+' Also used by the shop, formation and job lists.
+'
 ' Keys (in those lists):  Ctrl+R revert   Ctrl+C copy   Ctrl+V paste   Ctrl+U where used
 
-dim shared orig_rows(1 to 6, 0 to 255) as String
-dim shared clip_has(1 to 6) as Boolean
+dim shared orig_rows(1 to 9, 0 to 511) as String
+dim shared clip_has(1 to 9) as Boolean
 dim shared clip_spell as Spell
 dim shared clip_weapon as Weapon
 dim shared clip_armor as Armor
 dim shared clip_medicine as Medicine
 dim shared clip_tool as Tool
 dim shared clip_monster as Monster
-dim shared last_list_pos(1 to 6) as Integer
+dim shared clip_shop as Shop
+dim shared clip_formation as Formation
+dim shared clip_job as Job
+dim shared last_list_pos(1 to 9) as Integer
 dim shared jump_kind as String
 dim shared jump_index as Integer
 
@@ -26,6 +31,9 @@ function KindIndex(kind as String) as Integer
   case "medicines": return 4
   case "tools": return 5
   case "monsters": return 6
+  case "shops": return 7
+  case "formations": return 8
+  case "jobs": return 9
  end select
 
  return 0
@@ -37,9 +45,9 @@ sub SnapshotOriginalRows()
 
  'Remember how every entry looked when the ROM was loaded.
 
- dim kinds(1 to 6) as String = {"spells", "weapons", "armors", "medicines", "tools", "monsters"}
+ dim kinds(1 to 9) as String = {"spells", "weapons", "armors", "medicines", "tools", "monsters", "shops", "formations", "jobs"}
 
- for k as Integer = 1 to 6
+ for k as Integer = 1 to 9
   for i as Integer = 1 to CsvTableSize(kinds(k))
    orig_rows(k, i) = CsvRow(kinds(k), i)
   next
@@ -73,6 +81,9 @@ function KindTitle(kind as String) as String
   case "medicines": return "Medicines"
   case "tools": return "Tools"
   case "monsters": return "Monsters"
+  case "shops": return "Shops"
+  case "formations": return "Formations"
+  case "jobs": return "Jobs"
  end select
 
  return kind
@@ -89,6 +100,9 @@ function EntryName(kind as String, i as Integer) as String
   case "medicines": return medicines(i).name
   case "tools": return tools(i).name
   case "monsters": return monsters(i).name
+  case "shops": return shop_names.ItemAt(i)
+  case "formations": return formation_names.ItemAt(i)
+  case "jobs": return jobs(i).name
  end select
 
  return ""
@@ -105,6 +119,7 @@ sub SetEntryName(kind as String, i as Integer, new_name as String)
   case "medicines": medicines(i).name = new_name: item_names.Assign(i + total_weapons + total_armors + 2, new_name)
   case "tools": tools(i).name = new_name: item_names.Assign(i + total_weapons + total_armors + total_medicines + 2, new_name)
   case "monsters": monsters(i).name = new_name
+  case "jobs": jobs(i).name = new_name
  end select
 
 end sub
@@ -143,6 +158,18 @@ sub RevertEntry(kind as String, i as Integer)
    dim blank_monster as Monster
    monsters(i) = blank_monster
    monsters(i).ReadFromROM(i)
+  case "shops"
+   dim blank_shop as Shop
+   shops(i) = blank_shop
+   shops(i).ReadFromROM(i)
+  case "formations"
+   dim blank_formation as Formation
+   formations(i) = blank_formation
+   formations(i).ReadFromROM(i)
+  case "jobs"
+   dim blank_job as Job
+   jobs(i) = blank_job
+   jobs(i).ReadFromROM(i)
  end select
 
  ff4rom = saved_rom
@@ -160,6 +187,9 @@ sub ClipCopy(kind as String, i as Integer)
   case "medicines": clip_medicine = medicines(i)
   case "tools": clip_tool = tools(i)
   case "monsters": clip_monster = monsters(i)
+  case "shops": clip_shop = shops(i)
+  case "formations": clip_formation = formations(i)
+  case "jobs": clip_job = jobs(i)
  end select
  clip_has(KindIndex(kind)) = true
 
@@ -181,6 +211,9 @@ function ClipPaste(kind as String, i as Integer) as Boolean
   case "medicines": medicines(i) = clip_medicine
   case "tools": tools(i) = clip_tool
   case "monsters": monsters(i) = clip_monster
+  case "shops": shops(i) = clip_shop
+  case "formations": formations(i) = clip_formation
+  case "jobs": jobs(i) = clip_job
  end select
  SetEntryName(kind, i, keep_name)
 
@@ -200,6 +233,48 @@ function AreaName(index as Integer) as String
 end function
 
 
+function EncounterAreasText(found() as Boolean) as String
+
+ 'Lists the areas whose random encounter table contains any formation marked in found().
+
+ dim lines as String
+ dim count as Integer
+ dim shown as Integer
+ dim row as Integer
+ dim inside as Integer
+ dim underground as Integer
+ dim area_hit as Boolean
+ const max_lines = 14
+
+ lines = "||Random encounters:"
+ for index as Integer = 1 to total_encounter_tables
+  if index > 84 then inside = 16 else inside = 0
+  if index > 84 + &h100 or (index <= 84 and index > 64) then underground = &h100 else underground = 0
+  row = encounter_tables(index) + inside + 1
+  area_hit = false
+  if encounter_tables(index) > 0 and row <= total_encounters then
+   for s as Integer = 1 to 8
+    if encounters(row, s) + underground + 1 <= total_formations then
+     if found(encounters(row, s) + underground + 1) then area_hit = true
+    end if
+   next
+  end if
+  if area_hit then
+   count += 1
+   if shown < max_lines then
+    lines += "|  " + AreaName(index)
+    shown += 1
+   end if
+  end if
+ next
+ if count = 0 then lines += "|  none"
+ if count > shown then lines += "|  ...and " + str(count - shown) + " more areas"
+
+ return lines
+
+end function
+
+
 function UsageText(kind as String, id as Integer) as String
 
  'Lists where a monster, item or spell is used (lines separated by "|").
@@ -211,10 +286,6 @@ function UsageText(kind as String, id as Integer) as String
  dim is_item as Boolean
  dim t as Trigger ptr
  dim found(1 to total_formations) as Boolean
- dim row as Integer
- dim inside as Integer
- dim underground as Integer
- dim area_hit as Boolean
  dim desc as String
  const max_lines = 14
 
@@ -243,31 +314,7 @@ function UsageText(kind as String, id as Integer) as String
    next
    if count = 0 then lines += "|Not used in any formation."
    if count > shown then lines += "|...and " + str(count - shown) + " more formations"
-   lines += "||Random encounters:"
-   count = 0
-   shown = 0
-   for index as Integer = 1 to total_encounter_tables
-    if index > 84 then inside = 16 else inside = 0
-    if index > 84 + &h100 or (index <= 84 and index > 64) then underground = &h100 else underground = 0
-    row = encounter_tables(index) + inside + 1
-    area_hit = false
-    if encounter_tables(index) > 0 and row <= total_encounters then
-     for s as Integer = 1 to 8
-      if encounters(row, s) + underground + 1 <= total_formations then
-       if found(encounters(row, s) + underground + 1) then area_hit = true
-      end if
-     next
-    end if
-    if area_hit then
-     count += 1
-     if shown < max_lines then
-      lines += "|  " + AreaName(index)
-      shown += 1
-     end if
-    end if
-   next
-   if count = 0 then lines += "|  none"
-   if count > shown then lines += "|  ...and " + str(count - shown) + " more areas"
+   lines += EncounterAreasText(found())
 
   case "weapons", "armors", "medicines", "tools"
    select case kind
@@ -306,6 +353,29 @@ function UsageText(kind as String, id as Integer) as String
    next
    if count = 0 then lines += "|  none"
    if count > shown then lines += "|  ...and " + str(count - shown) + " more"
+
+  case "formations"
+   found(id) = true
+   lines += EncounterAreasText(found())
+   lines += "||Trapped chests that start this battle:"
+   for m as Integer = 1 to total_maps
+    for j as Integer = 1 to maps(m).triggers.Length()
+     t = maps(m).triggers.PointerAt(j)
+     if t->treasure and t->trapped and t->formation + 449 = id then
+      count += 1
+      if shown < 12 then
+       lines += "|  " + FF4Name(map_names.ItemAt(m)) + " at " + str(t->x) + "," + str(t->y)
+       shown += 1
+      end if
+     end if
+    next
+   next
+   if count = 0 then lines += "|  none"
+   if count > shown then lines += "|  ...and " + str(count - shown) + " more"
+   lines += "||Battles started by events are not listed."
+
+  case "shops", "jobs"
+   lines += "|Usage is not tracked for this kind of entry."
 
   case "spells"
    for w as Integer = 1 to total_weapons

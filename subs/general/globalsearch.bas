@@ -12,6 +12,9 @@ sub OpenEntry(kind as String, index as Integer)
   case "medicines": EditMedicines()
   case "tools": EditTools()
   case "monsters": EditMonsters()
+  case "shops": EditShops()
+  case "formations": EditFormations()
+  case "jobs": EditJobs()
  end select
  jump_kind = ""
 
@@ -64,14 +67,14 @@ sub ChangedEntries()
 
  'Everything that differs from the ROM as it was loaded; pick one to open it.
 
- dim kinds(1 to 6) as String = {"spells", "weapons", "armors", "medicines", "tools", "monsters"}
- dim labels(1 to 6) as String = {"Spell", "Weapon", "Armor", "Medicine", "Tool", "Monster"}
+ dim kinds(1 to 9) as String = {"spells", "weapons", "armors", "medicines", "tools", "monsters", "shops", "formations", "jobs"}
+ dim labels(1 to 9) as String = {"Spell", "Weapon", "Armor", "Medicine", "Tool", "Monster", "Shop", "Formation", "Job"}
  dim result_kind(1 to 300) as String
  dim result_index(1 to 300) as Integer
  dim n as Integer
  dim results as BlueMenu
 
- for k as Integer = 1 to 6
+ for k as Integer = 1 to 9
   for i as Integer = 1 to CsvTableSize(kinds(k))
    if n < 300 then
     if EntryModified(kinds(k), i) then
@@ -85,7 +88,7 @@ sub ChangedEntries()
  next
 
  if n = 0 then
-  InfoBox("No spells, items or monsters have been changed.||Press any key")
+  InfoBox("Nothing has been changed since the ROM was loaded.||Press any key")
   exit sub
  end if
 

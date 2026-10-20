@@ -36,7 +36,7 @@ sub EditJobs()
    spell_link_menu.SetTo(select_job.selected)
    spell_link_menu.Display()
    spell_name_menu.Display()
-  loop until select_job.UserInput()
+  loop until ListInput(select_job, "jobs")
   if not select_job.cancelled then
    edit_job.UserSelect()
    if not edit_job.cancelled then

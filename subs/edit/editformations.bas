@@ -16,7 +16,7 @@ sub EditFormations()
   do
    edit_formation.SetTo(select_formation.selected)
    edit_formation.Display()
-  loop until select_formation.UserInput()
+  loop until ListInput(select_formation, "formations")
   
   if not select_formation.cancelled then edit_formation.UserSelect()
   

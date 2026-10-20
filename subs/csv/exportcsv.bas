@@ -42,6 +42,7 @@ function CsvTableSize(kind as String) as Integer
   case "monsters": return total_monsters
   case "shops": return total_shops
   case "formations": return total_formations
+  case "jobs": return total_jobs
  end select
 
  return 0
@@ -157,6 +158,12 @@ function CsvRow(kind as String, i as Integer) as String
      str(.monster_qty(1)) + "," + str(.monster_qty(2)) + "," + str(.monster_qty(3)) + "," + str(.arrangement) + "," + _
      str(BoolInt(.no_flee)) + "," + str(BoolInt(.no_gameover)) + "," + str(.battle_music) + "," + str(BoolInt(.character_battle)) + "," + _
      str(BoolInt(.auto_battle)) + "," + str(BoolInt(.floating)) + "," + str(BoolInt(.transparent)) + "," + str(.mystery_byte) + "," + str(BoolInt(.rewards))
+   end with
+
+  case "jobs"
+   with jobs(i)
+    result = str(i) + "," + CsvQuote(FF4Name(.name)) + "," + str(.white) + "," + str(.black) + "," + str(.summon) + "," + _
+     str(.menu_white) + "," + str(.menu_black) + "," + str(.menu_summon)
    end with
 
   case "monsters"

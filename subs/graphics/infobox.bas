@@ -128,7 +128,7 @@ sub ShowKeyHelp()
   "Ctrl-N        Find next match|" + _
   "Ctrl-G        Go to entry number|" + _
   "F1            This help||" + _
-  "SPELL / ITEM / MONSTER LISTS|" + _
+  "SPELL / ITEM / MONSTER / SHOP / JOB LISTS|" + _
   "Yellow names  Changed since load|" + _
   "Ctrl-R        Revert entry to loaded ROM|" + _
   "Ctrl-C / V    Copy / paste entry|" + _
