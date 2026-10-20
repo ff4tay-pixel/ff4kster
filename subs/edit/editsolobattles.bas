@@ -31,7 +31,7 @@ sub EditSoloBattles()
    edit_solobattle.ChangeOption(2, FF4Text("Actor:     ") + actor_names.ItemAt(solobattles(select_solobattle.selected).actor), 15)
    edit_solobattle.ChangeOption(3, FF4Text("Non-solo:  ") + Pad(actor_names.ItemAt(solobattle_actor), actor_names.Width(),, FF4Text(" ")), 15)
    edit_solobattle.Display()
-  loop until select_solobattle.UserInput()
+  loop until ListInput(select_solobattle, "solobattles")
   
   if not select_solobattle.cancelled then
   

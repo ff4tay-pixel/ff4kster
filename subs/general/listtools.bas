@@ -6,8 +6,8 @@
 '
 ' Keys (in those lists):  Ctrl+R revert   Ctrl+C copy   Ctrl+V paste   Ctrl+U where used
 
-dim shared orig_rows(1 to 11, 0 to 511) as String
-dim shared clip_has(1 to 11) as Boolean
+dim shared orig_rows(1 to 15, 0 to 511) as String
+dim shared clip_has(1 to 15) as Boolean
 dim shared clip_spell as Spell
 dim shared clip_weapon as Weapon
 dim shared clip_armor as Armor
@@ -19,7 +19,8 @@ dim shared clip_formation as Formation
 dim shared clip_job as Job
 dim shared clip_command as MenuCommand
 dim shared clip_actor as Actor
-dim shared last_list_pos(1 to 11) as Integer
+dim shared clip_text(1 to 15) as String 'copied entries that are kept as a row of text (see EntryRow)
+dim shared last_list_pos(1 to 15) as Integer
 dim shared jump_kind as String
 dim shared jump_index as Integer
 
@@ -38,9 +39,205 @@ function KindIndex(kind as String) as Integer
   case "jobs": return 9
   case "commands": return 10
   case "actors": return 11
+  case "solobattles": return 12
+  case "autobattles": return 13
+  case "spellsets": return 14
+  case "encounters": return 15
  end select
 
  return 0
+
+end function
+
+
+function BytesToHex(s as String) as String
+
+ dim result as String
+
+ for i as Integer = 1 to len(s)
+  result += hex(asc(mid(s, i, 1)), 2)
+ next
+
+ return result
+
+end function
+
+
+function HexToBytes(h as String) as String
+
+ dim result as String
+
+ for i as Integer = 1 to len(h) step 2
+  result += chr(val("&h" + mid(h, i, 2)))
+ next
+
+ return result
+
+end function
+
+
+function RowField(row as String, n as Integer) as String
+
+ 'Field n (1 = first) of a comma separated row
+
+ dim start as Integer = 1
+ dim finish as Integer
+
+ for i as Integer = 2 to n
+  start = instr(start, row, ",")
+  if start = 0 then return ""
+  start += 1
+ next
+ finish = instr(start, row, ",")
+ if finish = 0 then return mid(row, start)
+
+ return mid(row, start, finish - start)
+
+end function
+
+
+function EntryCount(kind as String) as Integer
+
+ select case kind
+  case "solobattles": return total_solobattles
+  case "autobattles": return total_autobattles
+  case "spellsets": return spellsets.Length()
+  case "encounters": return total_encounter_tables
+ end select
+
+ return CsvTableSize(kind)
+
+end function
+
+
+function EncounterRowOf(area as Integer, table_number as Integer) as Integer
+
+ 'The row of the encounter table (1-96) that an area uses; areas past the first 84 add 16
+
+ if area > 84 then return table_number + 16 + 1
+
+ return table_number + 1
+
+end function
+
+
+function EntryRow(kind as String, i as Integer) as String
+
+ 'A row of text that holds everything about an entry, so it can be compared with the loaded ROM and
+ ' put back (ApplyRow). The kinds the CSV export knows use its rows.
+
+ dim result as String
+ dim set_pointer as SpellSet ptr
+ dim levels as String
+ dim spell_ids as String
+ dim starting as String
+ dim row as Integer
+
+ select case kind
+
+  case "solobattles"
+   return str(i) + "," + str(solobattles(i).actor) + "," + str(solobattles(i).formation)
+
+  case "autobattles"
+   return str(i) + "," + str(autobattles(i).formation_index) + "," + BytesToHex(autobattles(i).script(0)) + "," + BytesToHex(autobattles(i).script(1)) + "," + BytesToHex(autobattles(i).script(2))
+
+  case "spellsets"
+   set_pointer = spellsets.PointerAt(i)
+   for j as Integer = 1 to set_pointer->starting_spells.Length()
+    starting += chr(asc(set_pointer->starting_spells.ItemAt(j)))
+   next
+   for j as Integer = 1 to set_pointer->learning_spells.Length()
+    levels += chr(asc(set_pointer->learning_levels.ItemAt(j)))
+    spell_ids += chr(asc(set_pointer->learning_spells.ItemAt(j)))
+   next
+   return str(i) + "," + BytesToHex(starting) + "," + BytesToHex(levels) + "," + BytesToHex(spell_ids)
+
+  case "encounters"
+   row = EncounterRowOf(i, encounter_tables(i))
+   result = str(i) + "," + str(encounter_tables(i))
+   for j as Integer = 1 to 8
+    if row <= total_encounters then result += "," + str(encounters(row, j)) else result += ",0"
+   next
+   return result
+
+ end select
+
+ return CsvRow(kind, i)
+
+end function
+
+
+sub ApplyRow(kind as String, i as Integer, row_text as String)
+
+ 'Puts an entry back the way a row from EntryRow describes it. Field 1 (the entry number) is ignored,
+ ' so a row copied from another entry can be pasted over this one.
+
+ dim set_pointer as SpellSet ptr
+ dim starting as String
+ dim levels as String
+ dim spell_ids as String
+ dim row as Integer
+
+ select case kind
+
+  case "solobattles"
+   solobattles(i).actor = val(RowField(row_text, 2))
+   solobattles(i).formation = val(RowField(row_text, 3))
+
+  case "autobattles"
+   autobattles(i).formation_index = val(RowField(row_text, 2))
+   autobattles(i).script(0) = HexToBytes(RowField(row_text, 3))
+   autobattles(i).script(1) = HexToBytes(RowField(row_text, 4))
+   autobattles(i).script(2) = HexToBytes(RowField(row_text, 5))
+
+  case "spellsets"
+   set_pointer = spellsets.PointerAt(i)
+   starting = HexToBytes(RowField(row_text, 2))
+   levels = HexToBytes(RowField(row_text, 3))
+   spell_ids = HexToBytes(RowField(row_text, 4))
+   set_pointer->starting_spells.Destroy()
+   set_pointer->learning_levels.Destroy()
+   set_pointer->learning_spells.Destroy()
+   for j as Integer = 1 to len(starting)
+    set_pointer->starting_spells.Append(mid(starting, j, 1))
+   next
+   for j as Integer = 1 to len(levels)
+    set_pointer->learning_levels.Append(mid(levels, j, 1))
+    set_pointer->learning_spells.Append(mid(spell_ids, j, 1))
+   next
+
+  case "encounters"
+   encounter_tables(i) = val(RowField(row_text, 2))
+   row = EncounterRowOf(i, encounter_tables(i))
+   if row <= total_encounters then
+    for j as Integer = 1 to 8
+     encounters(row, j) = val(RowField(row_text, 2 + j))
+    next
+   end if
+
+ end select
+
+end sub
+
+
+function EncounterAreaLabel(i as Integer) as String
+
+ 'The name the encounter editor lists an area under
+
+ if i <= 64 then return FF4Text("Overworld section " + str(i) + "/64")
+ if i <= 80 then return FF4Text("Underground section " + str(i - 64) + "/16")
+ if i <= 84 then return FF4Text(Pad("Moon section " + str(i - 80) + "/4", screen_width - 2))
+
+ return map_names.ItemAt(i - 84)
+
+end function
+
+
+function IsRowKind(kind as String) as Boolean
+
+ 'Kinds that are saved and restored as a row of text rather than as an object
+
+ return kind = "solobattles" or kind = "autobattles" or kind = "spellsets" or kind = "encounters"
 
 end function
 
@@ -49,11 +246,11 @@ sub SnapshotOriginalRows()
 
  'Remember how every entry looked when the ROM was loaded.
 
- dim kinds(1 to 11) as String = {"spells", "weapons", "armors", "medicines", "tools", "monsters", "shops", "formations", "jobs", "commands", "actors"}
+ dim kinds(1 to 15) as String = {"spells", "weapons", "armors", "medicines", "tools", "monsters", "shops", "formations", "jobs", "commands", "actors", "solobattles", "autobattles", "spellsets", "encounters"}
 
- for k as Integer = 1 to 11
-  for i as Integer = 1 to CsvTableSize(kinds(k))
-   orig_rows(k, i) = CsvRow(kinds(k), i)
+ for k as Integer = 1 to 15
+  for i as Integer = 1 to EntryCount(kinds(k))
+   orig_rows(k, i) = EntryRow(kinds(k), i)
   next
  next
 
@@ -62,7 +259,7 @@ end sub
 
 function EntryModified(kind as String, i as Integer) as Boolean
 
- return CsvRow(kind, i) <> orig_rows(KindIndex(kind), i)
+ return EntryRow(kind, i) <> orig_rows(KindIndex(kind), i)
 
 end function
 
@@ -90,6 +287,10 @@ function KindTitle(kind as String) as String
   case "jobs": return "Jobs"
   case "commands": return "Commands"
   case "actors": return "Actors"
+  case "solobattles": return "Solobattles"
+  case "autobattles": return "Autobattles"
+  case "spellsets": return "Spell Sets"
+  case "encounters": return "Encounters"
  end select
 
  return kind
@@ -111,6 +312,10 @@ function EntryName(kind as String, i as Integer) as String
   case "jobs": return jobs(i).name
   case "commands": return menucommands(i).name
   case "actors": return actor_names.ItemAt(i)
+  case "solobattles": return FF4Text("Solobattle " + Pad(str(i), 2, true))
+  case "autobattles": return FF4Text("Autobattle " + str(i))
+  case "spellsets": return spellset_names.ItemAt(i)
+  case "encounters": return EncounterAreaLabel(i)
  end select
 
  return ""
@@ -139,6 +344,11 @@ sub RevertEntry(kind as String, i as Integer)
  'Puts one entry back the way it was when the ROM was loaded.
 
  dim saved_rom as String = ff4rom
+
+ if IsRowKind(kind) then
+  ApplyRow(kind, i, orig_rows(KindIndex(kind), i))
+  exit sub
+ end if
 
  ff4rom = original_rom
 
@@ -210,6 +420,7 @@ sub ClipCopy(kind as String, i as Integer)
   case "commands": clip_command = menucommands(i)
   case "actors": clip_actor = actors(i)
  end select
+ if IsRowKind(kind) then clip_text(KindIndex(kind)) = EntryRow(kind, i)
  clip_has(KindIndex(kind)) = true
 
 end sub
@@ -222,6 +433,10 @@ function ClipPaste(kind as String, i as Integer) as Boolean
  dim keep_name as String = EntryName(kind, i)
 
  if not clip_has(KindIndex(kind)) then return false
+ if IsRowKind(kind) then
+  ApplyRow(kind, i, clip_text(KindIndex(kind)))
+  return true
+ end if
 
  select case kind
   case "spells": spells(i) = clip_spell
@@ -395,7 +610,7 @@ function UsageText(kind as String, id as Integer) as String
    if count > shown then lines += "|  ...and " + str(count - shown) + " more"
    lines += "||Battles started by events are not listed."
 
-  case "shops", "jobs", "commands", "actors"
+  case "shops", "jobs", "commands", "actors", "solobattles", "autobattles", "spellsets", "encounters"
    lines += "|Usage is not tracked for this kind of entry."
 
   case "spells"
@@ -442,6 +657,7 @@ dim shared undo_formation(1 to undo_max) as Formation
 dim shared undo_job(1 to undo_max) as Job
 dim shared undo_command(1 to undo_max) as MenuCommand
 dim shared undo_actor(1 to undo_max) as Actor
+dim shared undo_text(1 to undo_max) as String 'the row of an entry kept as text
 dim shared undo_count as Integer
 dim shared undo_pending as Boolean 'the newest copy has not been checked for a real change yet
 dim shared undo_pending_row as String
@@ -461,6 +677,7 @@ sub UndoStore(slot as Integer, kind as String, i as Integer)
   case "jobs": undo_job(slot) = jobs(i)
   case "commands": undo_command(slot) = menucommands(i)
   case "actors": undo_actor(slot) = actors(i)
+  case "solobattles", "autobattles", "spellsets", "encounters": undo_text(slot) = EntryRow(kind, i)
  end select
 
 end sub
@@ -480,6 +697,7 @@ sub UndoLoad(slot as Integer, kind as String, i as Integer)
   case "jobs": jobs(i) = undo_job(slot)
   case "commands": menucommands(i) = undo_command(slot)
   case "actors": actors(i) = undo_actor(slot)
+  case "solobattles", "autobattles", "spellsets", "encounters": ApplyRow(kind, i, undo_text(slot))
  end select
 
 end sub
@@ -503,6 +721,7 @@ sub UndoMove(to_slot as Integer, from_slot as Integer)
   case "jobs": undo_job(to_slot) = undo_job(from_slot)
   case "commands": undo_command(to_slot) = undo_command(from_slot)
   case "actors": undo_actor(to_slot) = undo_actor(from_slot)
+  case "solobattles", "autobattles", "spellsets", "encounters": undo_text(to_slot) = undo_text(from_slot)
  end select
 
 end sub
@@ -525,7 +744,7 @@ sub UndoSettle()
  if not undo_pending then exit sub
  undo_pending = false
  if undo_count < 1 then exit sub
- if CsvRow(undo_kind(undo_count), undo_index(undo_count)) = undo_pending_row then undo_count -= 1
+ if EntryRow(undo_kind(undo_count), undo_index(undo_count)) = undo_pending_row then undo_count -= 1
 
 end sub
 
@@ -539,7 +758,7 @@ sub UndoPush(kind as String, i as Integer)
  undo_index(undo_count) = i
  UndoStore(undo_count, kind, i)
  undo_pending = true
- undo_pending_row = CsvRow(kind, i)
+ undo_pending_row = EntryRow(kind, i)
 
 end sub
 

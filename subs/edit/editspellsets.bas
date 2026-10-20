@@ -27,7 +27,7 @@ sub EditSpellSets()
    learning_menu.SetTo(select_spellset.selected)
    starting_menu.Display()
    learning_menu.Display()
-  loop until select_spellset.UserInput()
+  loop until ListInput(select_spellset, "spellsets")
   
   if not select_spellset.cancelled then
   

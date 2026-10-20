@@ -55,6 +55,9 @@ sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
    HelpLine(lines(), n, "Weapons: the panel shows the weapon sprite.")
   case 4
    HelpLine(lines(), n, "Enter opens the entry's editor.")
+   HelpLine(lines(), n, "Yellow names are changed since load.")
+   HelpLine(lines(), n, "Ctrl-R revert  Ctrl-C / V copy / paste")
+   HelpLine(lines(), n, "Ctrl-Z undo the last change in this list")
   case 9
    HelpLine(lines(), n, "Edit what each shop sells.")
    HelpLine(lines(), n, "Yellow names are changed since load.")
@@ -144,6 +147,9 @@ sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
    HelpLine(lines(), n, "Ctrl-U shows the areas that use it.")
   case 24 to 26
    HelpLine(lines(), n, "Enter opens the entry's editor.")
+   HelpLine(lines(), n, "Yellow names are changed since load.")
+   HelpLine(lines(), n, "Ctrl-R revert  Ctrl-C / V copy / paste")
+   HelpLine(lines(), n, "Ctrl-Z undo the last change in this list")
    HelpLine(lines(), n, "Autobattle scripts: Insert / Delete edit")
    HelpLine(lines(), n, "commands.")
   case 27

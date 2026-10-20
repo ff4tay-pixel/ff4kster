@@ -28,7 +28,7 @@ sub EditEncounters()
   do
    edit_encounter.SetTo(select_map.selected)
    edit_encounter.Display()
-  loop until select_map.UserInput()
+  loop until ListInput(select_map, "encounters")
   
   if not select_map.cancelled then
 

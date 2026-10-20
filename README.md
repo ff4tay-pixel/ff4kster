@@ -157,8 +157,10 @@ CONTROLS
   confirmation first.
 
   In the lists of spells, weapons, armors, medicines, tools, monsters, shops,
-  formations, jobs, commands and actors (Ctrl-U works for spells, items,
-  monsters and formations):
+  formations, jobs, commands, actors, spell sets, encounter areas, autobattles
+  and solobattles (Ctrl-U works for spells, items, monsters and formations;
+  in the encounter list copy and paste copy an area's table choice and its
+  formations, and revert / undo restore them):
 
     Ctrl-R:      Revert the entry to how it was when the ROM was loaded
     Ctrl-C / V:  Copy and paste an entry (the target keeps its name)
@@ -974,6 +976,11 @@ little explanation.
             sizes", which have their own tile layout, palette and position, so
             the preview follows the special size menu as you edit it) and party
             members used as enemies (drawn from their battle sprite).
+            A boss does not use the monster's own palette: the game takes the
+            palette from the boss's special size entry (checked in the game
+            code), so for a boss the menu shows "Boss pal" and editing it
+            changes that entry. Zeromus's last form and the Dummy are 16 color
+            art and also use the palette after the chosen one.
 
 * Sprite Image: "Sprite Image" in the monster's edit menu exports the monster's
             picture to exports/monster_sprites/monster_NNN_Name.bmp or imports
@@ -1237,6 +1244,9 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * Since 0.8
+    - Revert, copy / paste, undo and changed marks for solobattles, autobattles, spell
+      sets and encounter areas; Changed Entries lists commands, actors and those too
+    - Edit Graphics shows and edits the palette a boss really uses
     - Monster graphics pointers below 8000h are drawn as 4 bits per pixel (fixes the
       Zeromus and Dummy previews)
     - Monster sprite export and import (Sprite Image in the monster edit menu)
@@ -1413,7 +1423,7 @@ VERSION HISTORY
 - **Compare with ROM File** (currently hidden from the main menu) diffs your current work against another ROM file.
 - **F1** shows key help in any menu. Deleting triggers, NPCs and messages asks for confirmation.
 - **Space Usage** (main menu) shows how full each fixed ROM area is (events, triggers, map data, text banks, item descriptions); over 100% means Save ROM will refuse.
-- **Changed Entries** (main menu) lists every spell, item, monster, shop, formation and job changed since loading and opens the one you pick.
+- **Changed Entries** (main menu) lists every spell, item, monster, shop, formation, job, command, actor, spell set, encounter area, autobattle and solobattle changed since loading and opens the one you pick.
 - **Number boxes:** press X to switch between decimal and hexadecimal entry (A-F are accepted in hex mode).
 - **Saving** asks before overwriting a ROM file that changed on disk since it was loaded or last saved.
 - **CSV** now also covers shops and formations.

@@ -46,7 +46,12 @@ sub MonsterGfxMenu.UpdateMenu()
 
  main_menu.ChangeOption(1, FF4Text("Pointer: " + Pad(str(gfx_ptr), 5)), 15)
  main_menu.ChangeOption(2, FF4Text("Size:    ") + monstersizenames.ItemAt(size + 1), 15)
- main_menu.ChangeOption(3, FF4Text("Palette: " + Pad(str(pal), 3)), 15)
+ if size >= &h80 and size <= &hBF then
+  'A boss takes its palette from its special size entry; the monster's own palette is not used
+  main_menu.ChangeOption(3, FF4Text("Boss pal: " + Pad(str(special_sizes(size - &h80 + 1).palette_index), 3)), 15)
+ else
+  main_menu.ChangeOption(3, FF4Text("Palette: " + Pad(str(pal), 3)), 15)
+ end if
 
 end sub
 
@@ -57,6 +62,7 @@ sub MonsterGfxMenu.UserSelect()
  dim template_menu as BlueMenu
  dim preview as Any ptr 
  dim sprite_snapshot as Any ptr = 0
+ dim is_boss as Boolean
  
  enter_byte = BlueNumberInput(main_menu.x + 9)
  
@@ -192,10 +198,16 @@ sub MonsterGfxMenu.UserSelect()
     case 3 'Palette
      enter_byte.y = main_menu.y + 2
      enter_byte.max_value = total_monster_palettes - 1
-     enter_byte.starting_number = pal
+     is_boss = (size >= &h80 and size <= &hBF)
+     if is_boss then
+      enter_byte.starting_number = special_sizes(size - &h80 + 1).palette_index
+     else
+      enter_byte.starting_number = pal
+     end if
      enter_byte.number = enter_byte.starting_number
      preview = ImageCreate(10 * 8, 3 * 8, RGB(0, 0, 0))
      do
+      if is_boss then special_sizes(size - &h80 + 1).palette_index = enter_byte.number
       bluebox(0, 0, 8, 1, preview)
       for i as Integer = 0 to 7
        line preview, ((i + 1) * 8, 8)-((i + 2) * 8 - 1, 16 - 1), monster_palettes(enter_byte.number + 1, i), bf 
@@ -207,7 +219,11 @@ sub MonsterGfxMenu.UserSelect()
      preview = ImageCreate(10 * 8, 3 * 8, RGB(0, 0, 0))
      put ((x + main_menu.options.Width() + 2) * 8, (enter_byte.y) * 8), preview, pset
      ImageDestroy(preview)
-     pal = enter_byte.number
+     if is_boss then
+      special_sizes(size - &h80 + 1).palette_index = enter_byte.number
+     else
+      pal = enter_byte.number
+     end if
    
    end select
    

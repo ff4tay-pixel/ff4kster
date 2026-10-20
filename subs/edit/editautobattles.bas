@@ -88,7 +88,7 @@ sub EditAutoBattles()
    if select_autobattle.selected >= 7 then script_menu(2).Display()
    formation_index.Display()
    edit_script->Display()
-  loop until select_autobattle.UserInput()
+  loop until ListInput(select_autobattle, "autobattles")
   
   if not select_autobattle.cancelled then
   
