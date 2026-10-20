@@ -325,6 +325,16 @@ function ImagePoseId(image_pose as Integer) as Integer
 end function
 
 
+function ImagePoseIndex(pose as Integer) as Integer
+
+ 'Position of a game pose among the poses shown in the editor and in the pose image
+
+ if pose = special_pose_id then return image_pose_count - 1
+ return pose
+
+end function
+
+
 function PoseSpriteCount(pose as Integer) as Integer
 
  if pose = special_pose_id then return 8

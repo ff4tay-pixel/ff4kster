@@ -488,7 +488,7 @@ BATTLE SPRITES
 This editor (in the main menu right after Edit Jobs) edits the sprites the
 characters use in battle: Cecil, Kain, Rydia and the others, plus the frog. Pick
 a character and press Enter. The screen shows the character's 64 tiles on the
-left, the selected pose large in the middle and all twelve poses small below it,
+left, the selected pose large in the middle and all thirteen poses (the Special pose included) small below it,
 so you can see every pose change as you edit. A tile can be shared by several
 poses (the head and body tiles are used by up to five), so changing one tile
 changes each pose that uses it.

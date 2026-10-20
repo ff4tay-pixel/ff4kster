@@ -79,7 +79,7 @@ sub DrawBattlePose(sheet as Integer, pose as Integer, x as Integer, y as Integer
 
  position_id = ByteAt(battle_pose_offset_table + pose)
 
- for k as Integer = 0 to 5
+ for k as Integer = 0 to PoseSpriteCount(pose) - 1
   tile_id = ByteAt(battle_tile_table + pose * 6 + k)
   if tile_id < 64 then
    sx = ByteAt(battle_sprite_offset_table + position_id * 32 + k * 4)
@@ -209,11 +209,11 @@ sub DrawBattleSpriteScreen(sheet as Integer, tile_id as Integer, pose as Integer
  end if
 
  'Every pose, small
- for p as Integer = 0 to battle_pose_count - 1
-  px = 300 + (p mod 6) * 52
-  py = 240 + (p \ 6) * 56
-  DrawBattlePose(sheet, p, px, py, 2, pal)
-  if p = pose then line (px - 2, py - 2)-(px + 49, py + 49), RGB(255, 255, 0), b
+ for img as Integer = 0 to image_pose_count - 1
+  px = 300 + (img mod 7) * 48
+  py = 232 + (img \ 7) * 52
+  DrawBattlePose(sheet, ImagePoseId(img), px, py, 2, pal)
+  if ImagePoseId(img) = pose then line (px - 1, py - 1)-(px + 48, py + 48), RGB(255, 255, 0), b
  next
 
  'Palette
@@ -411,9 +411,9 @@ sub EditBattleSheet(sheet as Integer)
     case ENTER_KEY
      mode = 1
     case PAGEUP_KEY
-     pose = (pose + battle_pose_count - 1) mod battle_pose_count
+     pose = ImagePoseId((ImagePoseIndex(pose) + image_pose_count - 1) mod image_pose_count)
     case PAGEDOWN_KEY
-     pose = (pose + 1) mod battle_pose_count
+     pose = ImagePoseId((ImagePoseIndex(pose) + 1) mod image_pose_count)
     case asc(",")
      pal = (pal + 15) mod 16
     case asc(".")
