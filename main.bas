@@ -18,6 +18,7 @@
 'The main menu has header rows between groups of entries. menu_id maps a row
 ' to its entry number (1 = Save ROM ... 30 = Quit), 0 for a header row.
 const menu_world_map = 31 'Edit World Maps (numbered last so the other entries keep their numbers)
+const menu_portraits = 32 'Edit Portraits
 dim shared menu_id(1 to 60) as Integer
 dim shared menu_rows as Integer
 dim shared entry_number as Integer
@@ -150,6 +151,7 @@ AddMainEntry(editor_menu, "Edit Shops")
 AddMainHeader(editor_menu, "Party")
 AddMainEntry(editor_menu, "Edit Jobs")
 AddMainEntry(editor_menu, "Edit Battle Sprites")
+AddMainEntry(editor_menu, "Edit Portraits", menu_portraits)
 AddMainEntry(editor_menu, "Edit Characters")
 AddMainEntry(editor_menu, "Edit Commands")
 AddMainEntry(editor_menu, "Edit Actors")
@@ -200,7 +202,7 @@ do
  if not editor_menu.cancelled then
 
   'Start every editor on a black screen so nothing from the main menu is left behind.
-  if (choice >= menu_first_editor and choice <= menu_last_editor) or choice = menu_world_map then cls
+  if (choice >= menu_first_editor and choice <= menu_last_editor) or choice = menu_world_map or choice = menu_portraits then cls
 
   help_entry = choice
 
@@ -239,6 +241,7 @@ do
    case 28: ShowSpaceUsage()
    case 29: ChangedEntries()
    case menu_world_map: EditWorldMaps()
+   case menu_portraits: EditPortraits()
 
    case else
     if not modified then
@@ -265,7 +268,7 @@ do
   help_entry = 0
 
   'Work out whether anything really changed (opening an editor and leaving does not count).
-  if (choice >= menu_first_editor and choice <= menu_last_editor) or choice = menu_world_map then
+  if (choice >= menu_first_editor and choice <= menu_last_editor) or choice = menu_world_map or choice = menu_portraits then
    modified = HasUnsavedEdits()
   end if
   editor_menu.ChangeOption(menu_save, FF4Text(iif(modified, "Save ROM *", "Save ROM")))

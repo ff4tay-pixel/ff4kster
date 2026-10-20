@@ -55,6 +55,7 @@
 #include once "subs/read/readais.bas"
 #include once "subs/read/readspellcolornames.bas"
 #include once "subs/read/readbattlechargfx.bas"
+#include once "subs/read/readportraits.bas"
 #include once "subs/read/readmapgrids.bas"
 #include once "subs/read/readdata.bas"
 
@@ -70,6 +71,7 @@
 #include once "subs/write/saveais.bas"
 #include once "subs/write/savespellcolornames.bas"
 #include once "subs/write/savebattlechargfx.bas"
+#include once "subs/write/saveportraits.bas"
 #include once "subs/write/savemapgrids.bas"
 #include once "subs/write/savedata.bas"
 
@@ -118,6 +120,7 @@
 #include once "subs/edit/editautobattles.bas"
 #include once "subs/edit/editsolobattles.bas"
 #include once "subs/edit/editbattlesprites.bas"
+#include once "subs/edit/editportraits.bas"
 #include once "subs/edit/exportimport.bas"
 #include once "subs/general/globalsearch.bas"
 #include once "subs/general/spaceusage.bas"

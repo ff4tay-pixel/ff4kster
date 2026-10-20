@@ -109,6 +109,8 @@ dim shared scripts(total_scripts) as List
 dim shared special_sizes(total_special_sizes) as SpecialSize
 dim shared battle_char_gfx(total_battle_char_sheets - 1, 63, 7, 7) as UByte 'sheet, tile, row, column: color 0-15
 dim shared battle_palette_raw(15, 15) as UInteger 'battle character palettes as SNES colors: 0bbbbbgggggrrrrr
+dim shared portrait_gfx(16, 31, 31) as UByte 'menu portrait, row, column: color 0-7
+dim shared portrait_palette_raw(15, 7) as UInteger 'menu portrait palettes as SNES colors
 dim shared formations(total_formations) as Formation
 dim shared encounters(total_encounters, 8) as UByte
 dim shared encounter_tables(total_encounter_tables) as UByte

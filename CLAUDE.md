@@ -12,7 +12,7 @@ memory and written only by "Save ROM". `README.md` documents every editor, key a
 keep it in sync when behavior changes (it has a "Since 0.8" version-history entry to extend).
 
 Editors on the main menu: Features, Spells (with animation preview), Spell Sets, Weapons (with sprite
-preview), Armors, Medicines, Tools, Shops, Jobs, **Battle Sprites** (tile/palette editor, BMP export/import),
+preview), Armors, Medicines, Tools, Shops, Jobs, **Battle Sprites** (tile/palette editor, BMP export/import), **Portraits** (menu faces, 32x32 3bpp, entry 32),
 Characters (full-screen **level up editor** with totals), Commands, Actors, Messages, Events, Triggers and NPCs
 (with overview minimaps), Tilesets, Map Info, Maps (paste preview, redo, replace tile, NPC/trigger overlay),
 Monsters (sprite preview, reorganized screen), Formations (**battlefield preview**), Encounters, Autobattles,
@@ -86,6 +86,7 @@ the rip JSON and in `.asm` comments are SNES `bank/address` or file offsets: use
 | Weapon sprites | `&hE5B00` | sprite N starts at tile 4N; 8 tiles = two 16x16 frames |
 | Weapon visuals (palette, sprite, slash, swing) | `&h7A010` | 4 bytes per weapon |
 | Battle character graphics | `&hD0200` | 15 sheets x 0x800, 4bpp; poses: tile table `&h6FB61`, positions `&h6FA61`, pose to position `&h6FA3C` |
+| Menu portraits | gfx `&hED5C0`, palettes `&h688D0` | 17 x 0x180 bytes (4x4 tiles, 3bpp, 24 bytes each); 16 palettes x 8 colors; palette number = portrait number, Pig/Small/Toad use the transformed character's |
 | Level up data | pointers `&h7B700`, data from `&h7B728` | 5 bytes per level; rules in `battle/win.asm` |
 | World maps | see header of `subs/general/worldmap.bas` | one RLE row per pointer: overworld/underground 256x256, moon 64x64, fixed room 4000h/1D00h/1E80h bytes, only changed worlds are rewritten; the disassembly writes addresses as bank*10000h+address, so convert with `(a shr 16)*&h8000 + (a and &h7FFF)` (+&h200) |
 

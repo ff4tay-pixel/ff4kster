@@ -395,6 +395,10 @@ sub ReadData(filename as String)
  ReadBattleCharGfx()
  print "DONE"
 
+ print "Reading menu portraits... ";
+ ReadPortraits()
+ print "DONE"
+
  print "Reading world maps... ";
  ReadWorldMaps()
  print "DONE"

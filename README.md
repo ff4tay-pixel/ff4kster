@@ -246,7 +246,7 @@ whatever means your operating system provides for doing so.
 The main menu groups the editors under yellow headings (Items and magic,
 Party, Story and text, World, Battles, Overview); the cursor skips the
 headings. The editors are in this order: Features, Spells, Spell Sets,
-Weapons, Armors, Medicines, Tools, Shops, Jobs, Battle Sprites, Characters,
+Weapons, Armors, Medicines, Tools, Shops, Jobs, Battle Sprites, Portraits, Characters,
 Commands, Actors, Messages, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
 Monsters, Formations, Encounters, Autobattles and Solobattles, followed by
 Search Everywhere, Space Usage and Changed Entries. "Edit World Maps" (under World) first lists
@@ -480,6 +480,46 @@ command in battle.
 Fields. "Edit name" changes the job's name. "Edit spell set links" chooses the
 black, white and call spell set the job uses in battle and in the menu. "Edit
 spell set names" renames the spell sets themselves.
+
+
+PORTRAITS
+---------
+
+"Edit Portraits" (in the Party group, after Edit Battle Sprites) edits the 17
+faces the game shows in the status, item, magic and equip menus: Cecil, Kain,
+Rydia and the others, plus the Pig, Small and Toad pictures. Pick a portrait
+and press Enter. Each portrait is 32x32 pixels with 8 colors (color 0 is
+transparent). The screen shows the picture large with a cursor, the picture at
+three sizes, every portrait small, and the palette.
+
+    Arrows:         Move the cursor
+    0 - 7:          Paint with that color (and make it the brush)
+    SPACE / ENTER:  Paint with the brush
+    [ and ]:        Previous / next brush color
+    F:              Fill the area of the cursor's color with the brush
+    X / Y:          Flip horizontally / vertically
+    Ctrl-C / V:     Copy / paste the whole picture
+    Ctrl-Z:         Undo
+    R:              Revert this portrait to the loaded ROM
+    , and .:        Look at the picture with another palette
+    P:              Edit the palette colors (Left Right pick a color, Q A red,
+                    W S green, E D blue, Ctrl-Z undo, Ctrl-R revert, Esc back)
+    PAGE UP/DOWN:   Other portrait
+    HOME / END:     Cursor to the first / last row
+    ESC:            Back
+
+The game uses the palette with the same number as the portrait, and the Pig,
+Small and Toad pictures take the palette of whoever was transformed, so changing
+palette 3 recolors every picture shown with it. The editor starts each portrait
+with its own palette number (Pig 14, Small and Toad 15).
+
+The last two list entries export and import one BMP per portrait,
+portrait_NN_pal_PP.bmp in exports\portraits. They are 33x32 indexed images:
+the 8 pixels in the top right corner (x = 32, y = 0 to 7) are the palette's
+colors, and every other pixel takes the number of the palette pixel of the same
+color, as in the battle sprite images. Import also sets palette PP (colors 1 to
+7), so several files that name the same palette must agree on its colors. Like
+everything else it only changes the in-memory data until Save ROM.
 
 
 BATTLE SPRITES
@@ -1342,6 +1382,7 @@ VERSION HISTORY
       copy / paste and (formations) where-used keys; Changed Entries covers them
     - Save ROM lists every problem at once when it fails; the modified mark
       now reflects real changes only
+    - Added Portraits editor (menu faces, 32x32, palette editor, BMP export and import)
     - Added Battle Sprites editor (after Edit Jobs)
        - Tile editor with live pose previews, copy/paste, undo
        - Palette editor
