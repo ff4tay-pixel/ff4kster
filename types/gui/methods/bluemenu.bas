@@ -128,7 +128,10 @@ function BlueMenu.UserInput() as Boolean
  ShowCursor()
  do
   key = inkey
-  if key = "" then sleep 10
+  if key = "" then
+   if cast(Any ptr, idle_hook) <> 0 then idle_hook()
+   sleep 10
+  end if
  loop while key = ""
  key_code = asc(right(key, 1))
  if len(key) > 1 then key_code = key_code * &h100 + 255

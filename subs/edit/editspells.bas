@@ -18,6 +18,8 @@ sub EditSpells()
  edit_spell.AddOption(FF4Text("Elements"))
  edit_spell.x = 78 - edit_spell.options.Width()
  
+ idle_hook = @SpellAnimTick
+ 
  effect_menu = SpellEffectMenu(10, 3)
  visual_menu = SpellVisualMenu(10, 15)
  element_menu = ElementMenu(10, 22)
@@ -99,6 +101,9 @@ sub EditSpells()
   end if
   
  loop until select_spell.cancelled
+ 
+ idle_hook = 0
+ SpellAnimClose()
  
  'select_spell.ClearAll()
  'edit_spell.ClearAll()

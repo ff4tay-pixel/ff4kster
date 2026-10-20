@@ -25,6 +25,8 @@ sub SpellVisualMenu.Display()
  
  main_menu.Display()
  
+ SpellAnimSet(colors - 1, sprites, visual1, visual2)
+ 
 end sub
 
 

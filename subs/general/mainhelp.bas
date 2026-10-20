@@ -50,6 +50,7 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "Shift-Enter twice swaps two entries")
    HelpLine(lines(), n, "spells, weapons, armors.")
    HelpLine(lines(), n, "Enter opens the entry's editor.")
+   HelpLine(lines(), n, "Spells: the panel plays the animation sequence.")
   case 4
    HelpLine(lines(), n, "Enter opens the entry's editor.")
   case 9

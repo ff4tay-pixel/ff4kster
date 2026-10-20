@@ -4,6 +4,7 @@ dim shared baseline_rom as String 'what Save ROM would write with no edits
 dim shared font(&hFF) as Any ptr
 dim shared asc2ff4 as String
 dim shared warning as Boolean
+dim shared idle_hook as sub() 'called by menus while they wait for a key (for animated previews)
 dim shared modified as Boolean
 dim shared unheadered as Boolean
 dim shared number_hex_mode as Boolean 'X toggles hex entry in number boxes

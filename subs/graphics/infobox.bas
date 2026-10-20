@@ -89,6 +89,7 @@ function ConfirmBox(message as String) as Boolean
  dim backdrop as Any ptr
  dim choice as BlueMenu
  dim result as Boolean
+ dim saved_hook as sub()
 
  backdrop = ImageCreate((w + 2) * 8, 7 * 8)
  get (x * 8, y * 8)-((x + w + 2) * 8 - 1, (y + 7) * 8 - 1), backdrop
@@ -98,7 +99,10 @@ function ConfirmBox(message as String) as Boolean
  choice.y = y + 3
  choice.AddOption(FF4Text("No"))
  choice.AddOption(FF4Text("Yes"))
+ saved_hook = idle_hook 'an animated preview must not draw over the box
+ idle_hook = 0
  choice.UserSelect()
+ idle_hook = saved_hook
  result = (not choice.cancelled) and choice.selected = 2
 
  put (x * 8, y * 8), backdrop, pset

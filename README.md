@@ -220,10 +220,14 @@ A "spell" in this context refers not only to the player spells (the black and
 white spells, the summons, ninja, and twin magic) but also to monster
 techniques (big bang, black hole, "counter", explode, etc).
 
-The "sprites", "sequence", and "effect" parameters affect the graphics
-and animation used by the spell. For now, these are merely text descriptions,
-and not all combinations will work together the way one might expect. For
-now it will have to remain a case of trial and error.
+The "palette", "sprites", "sequence", and "effect" parameters affect the
+graphics and animation used by the spell. A preview panel on the right of the
+Spells screen plays the spell's sequence (the sprite animation) using its
+palette and sprites, and updates as you change them. The "effect" is a piece of
+the game's own code (screen shakes, flashes, projectiles, the summons), so it
+is not shown: for spells whose animation is drawn by the effect the panel says
+so. Not all combinations will work together the way one might expect, so it
+can still be a case of trial and error.
 
 In addition, there are certain spells which have hard-coded components
 (particularly the summons). Thus, if you change one of these with the editor,
