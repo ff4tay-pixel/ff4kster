@@ -60,7 +60,12 @@ editor (so instead of having to remember "ok whenever I see a whip symbol that
 means book", you would just see the book symbol you put in there). Ideally
 though, I'd like it to also display things like, the weapon graphic for the
 weapon you're editing, with the correct palette (as opposed to the text
-description it has there right now). Likewise, the monster graphics and so on.
+description it has there right now).
+
+It already draws the map tiles and tilesets, monster sprites (while editing a
+monster's graphics), the characters' battle sprites (in the Battle Sprites
+editor) and the animation sequence of a spell (in the Spells editor), all read
+from the ROM you are editing. Weapon and item graphics are not drawn yet.
 
 
 INSTALLATION INSTRUCTIONS
@@ -140,6 +145,23 @@ CONTROLS
     Shift-Enter: Highlight the current entry; pressing Enter on another
                  entry will then swap the two instead of confirming (only
                  certain menus can do this)
+    Ctrl-F:      Find an entry by name
+    Ctrl-N:      Jump to the next entry that matches the search
+    Ctrl-G:      Go to an entry by its number
+    F1:          Show key help for the current menu
+
+  In editors that list things (messages, triggers, NPC placements, event
+  calls, scripts and so on), Insert adds an entry and Delete removes the
+  selected one. Deleting a trigger, an NPC placement or a message asks for
+  confirmation first.
+
+  In the lists of spells, weapons, armors, medicines, tools and monsters:
+
+    Ctrl-R:      Revert the entry to how it was when the ROM was loaded
+    Ctrl-C / V:  Copy and paste an entry (the target keeps its name)
+    Ctrl-U:      Show where the entry is used
+    Yellow names mark entries that differ from the loaded ROM, and the list
+    reopens on the entry you were last on.
   F1 shows key help in any menu. The main menu also lists the keys that matter
   for whichever editor is highlighted, and the map editor, the battle sprite
   editor and the level up editor print their own keys on screen.
@@ -155,6 +177,8 @@ CONTROLS
     Page Down: -10
     Home:      Minimum value
     End:       Maximum value
+    X:         Switch between decimal and hexadecimal entry (A-F are accepted
+               in hex mode)
     Backspace: Divide current number by 10, rounding down (effectively erases
                last digit)
     0-9 keys:  Multiply the current number by 10 and add the typed digit
@@ -612,6 +636,15 @@ symbols or other effects:
 All of these codes can by typed manually, but most of them can also be 
 accessed via a sub menu which appears when you press INSERT while editing.
 
+Bank 2 messages belong to a map: pick the map, then the message. In that list
+INSERT adds a blank message before the selected one, DELETE removes the
+selected one (after asking, and never the last one), and SHIFT-ENTER followed by
+ENTER on another message swaps the two. Bank 2 messages and the other banks
+are checked for space when you save; if a bank has too much text the editor
+shows an overflow warning ("Bank 1 overflow!" and so on) and does not write the
+ROM, so shorten some messages first. The Space Usage entry on the main menu
+shows how full each bank is.
+
 
 EVENTS
 ------
@@ -637,13 +670,23 @@ the program completely and re-load the rom. If you already saved it with
 the event cleared out, you're out of luck; you'll just have to restore from
 a backup if you made one.
 
+The event list itself has a few extra keys:
+
+    TAB:                Choose which map the event is previewed as (this only
+                        affects what the editor shows, such as bank 2
+                        messages and placement names).
+    SHIFT-ENTER, ENTER: Mark an event, then ENTER on another event swaps the
+                        two.
+    SHIFT-ENTER, INSERT: Mark an event, then INSERT on another event appends
+                        the marked event's script (and its "no" script) to
+                        the end of the selected event's script, replacing the
+                        selected script's final item.
+
 There is only a certain amount of space in the rom set aside for event
-scripts. Currently, the editor does not check the amount of space taken up by
-events after you have edited them, so it is possible that if you add too much
-information without deleting enough, that saving the rom could cause the
-event data to overstep its bounds and bleed into another kind of data. In a
-future version I will add safeguards to prevent this scenario, but for now,
-just be careful and be sure to backup your rom before saving.
+scripts. The editor checks it when you save: if the events are too long it
+shows "Events overflow!" and does not write the ROM, so remove or shorten
+some scripts and save again. The Space Usage entry on the main menu shows how
+full the event area is while you work.
 
 
 TRIGGERS
@@ -677,10 +720,18 @@ There are three types of triggers:
 Note that if you wish to put a trigger somewhere, the map tile at that
 trigger's coordinates must be one that can launch that kind of trigger.
 
-Like the event editor, the trigger editor does not verify whether or not you
-have added too much data, and if you have, it will overwrite something else in
-the rom when you save it. Thus, be careful about adding too many extra
-triggers, and always backup your rom.
+Press SHIFT-ENTER and then ENTER on another trigger to swap the order of two
+triggers. The trigger editor checks the space available when you save: if there
+are too many triggers it shows "Triggers Overflow!" and does not write the rom.
+The Space Usage entry on the main menu shows how full the trigger area is.
+
+An overview of the map is drawn in the bottom right, one 4x4 square per tile:
+purple tiles are warp tiles, green tiles can start random battles, yellow
+tiles can launch triggers, light gray tiles are walkable and dark gray ones are
+not. Each trigger is a blue square and the selected trigger is yellow. Press
+TAB to switch to a crosshair that you move around the overview with the arrow
+keys; ENTER selects the trigger under it, and ESC or TAB returns to the list.
+This makes it easy to find which trigger is where on the map.
 
 
 NPCS
@@ -693,9 +744,13 @@ As with the trigger editor, first select a map, then you can edit the NPC
 placements for that map. You can add or remove placements with INSERT or
 DELETE, and you can edit them with ENTER.
 
-Unlike the event and trigger editors, the NPC editor DOES check whether there
-is room to spare before allowing you to add a new NPC placement. Thus, it is
-safe from bleeding into other data when you save.
+The NPC editor checks whether there is room to spare before allowing you to
+add a new NPC placement, so it cannot bleed into other data when you save.
+
+The same kind of overview map is drawn in the bottom right of the NPC editor,
+with each placement shown as a red square and the selected one in yellow. Press
+TAB to move a crosshair around it with the arrow keys and press ENTER to select
+the placement under it.
 
 
 TILESETS
