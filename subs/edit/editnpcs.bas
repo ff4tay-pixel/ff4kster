@@ -1,3 +1,7 @@
+declare sub UpdateMinimap(map_index as UInteger, pg as PlacementGroup, selected_placement as UInteger, minimap_img as Any ptr, minimap_canvas as Any ptr)
+declare sub DrawMinimapCursor(cx as Integer, cy as Integer)
+declare function FindPlacementAt(cx as Integer, cy as Integer, pg as PlacementGroup) as Integer
+
 sub EditNPCs()
 
  dim select_map as BlueMenu
@@ -14,6 +18,8 @@ sub EditNPCs()
  dim a as UInteger
  dim temp as Integer
  dim underground as Integer
+ dim minimap_img as Any ptr
+ dim minimap_canvas as Any ptr
 
  blank = ImageCreate(640, 480, RGB(0, 0, 0))
  
@@ -46,21 +52,36 @@ sub EditNPCs()
   select_npc.AddOption(npc_names.ItemAt(i))
  next
  
+minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
+ minimap_canvas = ImageCreate(128, 128, RGB(0, 0, 0))
+ dim minimap_mode as Boolean = false
+ dim minimap_cursor_x as Integer = 0
+ dim minimap_cursor_y as Integer = 0
+ 
  do
-  
-  do
-   select_placement.ClearAll()
-   for i as Integer = 1 to placement_groups(select_map.selected).placements.Length()
-    select_placement.AddOption(FF4Text("Placement " + Pad(str(i), 2, true)))
-   next
-   if select_placement.options.Length() = 0 then select_placement.AddOption(FF4Text(Pad("-- EMPTY --", 12)))
-   put (select_placement.x * 8, select_placement.y * 8), blank, pset
-   select_placement.Display()
-  loop until select_map.UserInput()
-  
-  if not select_map.cancelled then
+   
+   do
+    select_placement.ClearAll()
+    for i as Integer = 1 to placement_groups(select_map.selected).placements.Length()
+     select_placement.AddOption(FF4Text("Placement " + Pad(str(i), 2, true)))
+    next
+    if select_placement.options.Length() = 0 then select_placement.AddOption(FF4Text(Pad("-- EMPTY --", 12)))
+    put (select_placement.x * 8, select_placement.y * 8), blank, pset
+    select_placement.Display()
+    UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
+    put (52 * 8, 42 * 8), minimap_img, trans
+    if minimap_mode then
+     DrawMinimapCursor(minimap_cursor_x, minimap_cursor_y)
+    end if
+   loop until select_map.UserInput()
+   
+   if not select_map.cancelled then
+    put (52 * 8, 42 * 8), blank, pset
 
    select_placement.ChangeSelected(1)
+   minimap_cursor_x = 0
+   minimap_cursor_y = 0
+   minimap_mode = false
 
    do
     
@@ -92,14 +113,84 @@ sub EditNPCs()
      end if
      select_placement.Display()
      select_placement.ShowCursor()
+     UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
+     put (52 * 8, 42 * 8), minimap_img, trans
+     if minimap_mode then
+      DrawMinimapCursor(minimap_cursor_x, minimap_cursor_y)
+     end if
      a = getkey
      select case a
+      case TAB_KEY
+       minimap_mode = not minimap_mode
+       if minimap_mode then
+        ' Find nearest NPC to center cursor on
+        if placement_groups(select_map.selected).placements.Length() > 0 then
+         p = placement_groups(select_map.selected).placements.PointerAt(select_placement.selected)
+         minimap_cursor_x = p->x * 4
+         minimap_cursor_y = p->y * 4
+        end if
+        DrawMinimapCursor(minimap_cursor_x, minimap_cursor_y)
+       else
+        UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
+        put (52 * 8, 42 * 8), minimap_img, trans
+       end if
+      case LEFT_KEY
+       if minimap_mode then
+        if minimap_cursor_x > 0 then minimap_cursor_x -= 1
+        DrawMinimapCursor(minimap_cursor_x, minimap_cursor_y)
+       else
+        done = select_placement.ProcessKey(a)
+       end if
+      case RIGHT_KEY
+       if minimap_mode then
+        if minimap_cursor_x < 127 then minimap_cursor_x += 1
+        DrawMinimapCursor(minimap_cursor_x, minimap_cursor_y)
+       else
+        done = select_placement.ProcessKey(a)
+       end if
+      case UP_KEY
+       if minimap_mode then
+        if minimap_cursor_y > 0 then minimap_cursor_y -= 1
+        DrawMinimapCursor(minimap_cursor_x, minimap_cursor_y)
+       else
+        done = select_placement.ProcessKey(a)
+       end if
+      case DOWN_KEY
+       if minimap_mode then
+        if minimap_cursor_y < 127 then minimap_cursor_y += 1
+        DrawMinimapCursor(minimap_cursor_x, minimap_cursor_y)
+       else
+        done = select_placement.ProcessKey(a)
+       end if
+      case ENTER_KEY
+       if minimap_mode then
+        ' Find NPC at cursor position and select it
+        dim found_placement as Integer = FindPlacementAt(minimap_cursor_x, minimap_cursor_y, placement_groups(select_map.selected))
+        if found_placement > 0 then
+         select_placement.ChangeSelected(found_placement)
+         minimap_mode = false
+         UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
+         put (52 * 8, 42 * 8), minimap_img, trans
+        end if
+       else
+        done = select_placement.ProcessKey(a)
+       end if
+      case ESC_KEY
+       if minimap_mode then
+        minimap_mode = false
+        UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
+        put (52 * 8, 42 * 8), minimap_img, trans
+       else
+        done = select_placement.ProcessKey(a)
+       end if
       case DELETE_KEY
        if placement_groups(select_map.selected).placements.Length() > 0 then
         placement_groups(select_map.selected).placements.Remove(select_placement.selected)
         select_placement.Remove(select_placement.options.Length())
         if placement_groups(select_map.selected).placements.Length() = 0 then select_placement.AddOption(FF4Text(Pad("-- EMPTY --", 12)))
         put (select_placement.x * 8, select_placement.y * 8), blank, pset
+        UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
+        put (52 * 8, 42 * 8), minimap_img, trans
        end if
       case INSERT_KEY
        dim space_after_insert as Integer
@@ -110,9 +201,13 @@ sub EditNPCs()
         placement_groups(select_map.selected).placements.Append(p)
         select_placement.AddOption(FF4Text("Placement " + Pad(str(placement_groups(select_map.selected).placements.Length()), 2, true)))
         if placement_groups(select_map.selected).placements.Length() = 1 then select_placement.Remove(1)
+        UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
+        put (52 * 8, 42 * 8), minimap_img, trans
        end if
       case else
-       done = select_placement.ProcessKey(a)
+       if not minimap_mode then
+        done = select_placement.ProcessKey(a)
+       end if
      end select
     loop until done
     
@@ -126,7 +221,7 @@ sub EditNPCs()
      
        select case edit_placement.selected
        
-        case 1 'X
+case 1 'X
          enter_number.x = edit_placement.x + 12
          enter_number.y = edit_placement.y
          enter_number.max_value = &hFF
@@ -135,7 +230,9 @@ sub EditNPCs()
          p->x = enter_number.number
          edit_placement.ChangeOption(1, FF4Text("X:          " + Pad(str(p->x), 3)), 15)
          edit_placement.Display()
-        
+         UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
+         put (52 * 8, 42 * 8), minimap_img, trans
+       
         case 2 'Y
          enter_number.x = edit_placement.x + 12
          enter_number.y = edit_placement.y + 1
@@ -145,6 +242,8 @@ sub EditNPCs()
          p->y = enter_number.number
          edit_placement.ChangeOption(2, FF4Text("Y:          " + Pad(str(p->y), 3)), 15)
          edit_placement.Display()
+         UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
+         put (52 * 8, 42 * 8), minimap_img, trans
         
         case 3 'Speed
          enter_number.x = edit_placement.x + 12
@@ -251,4 +350,159 @@ sub EditNPCs()
 
  loop until select_map.cancelled
 
+ ImageDestroy(minimap_img)
+ ImageDestroy(minimap_canvas)
+
 end sub
+
+
+sub UpdateMinimap(map_index as UInteger, pg as PlacementGroup, selected_placement as UInteger, minimap_img as Any ptr, minimap_canvas as Any ptr)
+
+ dim map_grid as UInteger
+ dim tileset_idx as UByte
+ dim x as Integer, y as Integer
+ dim tile_val as UByte
+ dim i as Integer, j as Integer
+ dim pg_ptr as Placement ptr
+ 
+ if map_index > &h100 then
+  map_grid = maps(map_index).grid_index + &h100 + 1
+ else
+  map_grid = maps(map_index).grid_index + 1
+ end if
+ 
+ if mapgrids(map_grid).no_data then exit sub
+ 
+ tileset_idx = maps(map_index).tileset_index
+ 
+ ' Clear minimap
+ for y = 0 to 127
+  for x = 0 to 127
+   pset minimap_img, (x, y), RGB(0, 0, 0)
+  next
+ next
+ 
+ ' Draw map tiles at 4x4 pixels per tile (32x32 tiles -> 128x128)
+ ' Simple color coding based on tile properties
+ for y = 0 to 31
+  for x = 0 to 31
+   tile_val = mapgrids(map_grid).tiles(x, y)
+   dim t as Tile ptr = @tilesets(tileset_idx + 1).tiles(tile_val + 1)
+   
+   ' Color based on tile properties
+   if t->warp then
+    ' Warp tiles - purple
+    for j = 0 to 3
+     for i = 0 to 3
+      pset minimap_img, (x * 4 + i, y * 4 + j), RGB(128, 0, 128)
+     next
+    next
+   elseif t->encounters then
+    ' Encounter tiles - green
+    for j = 0 to 3
+     for i = 0 to 3
+      pset minimap_img, (x * 4 + i, y * 4 + j), RGB(0, 128, 0)
+     next
+    next
+   elseif t->triggerable then
+    ' Trigger tiles - yellow
+    for j = 0 to 3
+     for i = 0 to 3
+      pset minimap_img, (x * 4 + i, y * 4 + j), RGB(128, 128, 0)
+     next
+    next
+   elseif t->layer_1 or t->layer_2 then
+    ' Walkable layers - light gray
+    for j = 0 to 3
+     for i = 0 to 3
+      pset minimap_img, (x * 4 + i, y * 4 + j), RGB(100, 100, 100)
+     next
+    next
+   else
+    ' Default - dark gray
+    for j = 0 to 3
+     for i = 0 to 3
+      pset minimap_img, (x * 4 + i, y * 4 + j), RGB(40, 40, 40)
+     next
+    next
+   end if
+  next
+ next
+ 
+ ' Draw NPC markers (red dots) at placement positions
+ for i = 1 to pg.placements.Length()
+  pg_ptr = pg.placements.PointerAt(i)
+  x = pg_ptr->x * 4
+  y = pg_ptr->y * 4
+  ' Draw a 3x3 red square for each NPC
+  for j = 0 to 2
+   pset minimap_img, (x + j, y), RGB(255, 0, 0)
+   pset minimap_img, (x + j, y + 1), RGB(255, 0, 0)
+   pset minimap_img, (x + j, y + 2), RGB(255, 0, 0)
+  next
+ next
+ 
+ ' Draw selected NPC highlight (yellow)
+ if pg.placements.Length() > 0 and selected_placement <= pg.placements.Length() then
+  pg_ptr = pg.placements.PointerAt(selected_placement)
+  x = pg_ptr->x * 4
+  y = pg_ptr->y * 4
+  for j = 0 to 3
+   pset minimap_img, (x + j, y), RGB(255, 255, 0)
+   pset minimap_img, (x + j, y + 1), RGB(255, 255, 0)
+   pset minimap_img, (x + j, y + 2), RGB(255, 255, 0)
+   pset minimap_img, (x + j, y + 3), RGB(255, 255, 0)
+  next
+ end if
+ 
+ ' Add border
+ for x = 0 to 127
+  pset minimap_img, (x, 0), RGB(100, 100, 100)
+  pset minimap_img, (x, 127), RGB(100, 100, 100)
+ next
+ for y = 0 to 127
+  pset minimap_img, (0, y), RGB(100, 100, 100)
+  pset minimap_img, (127, y), RGB(100, 100, 100)
+ next
+
+end sub
+
+
+sub DrawMinimapCursor(cx as Integer, cy as Integer)
+
+ ' Draw a white crosshair cursor on the minimap at screen position (52*8 + cx, 2*8 + cy)
+ dim screen_x as Integer = 52 * 8 + cx
+ dim screen_y as Integer = 42 * 8 + cy
+ 
+ ' Draw crosshair
+ line (screen_x - 4, screen_y)-(screen_x + 4, screen_y), RGB(255, 255, 255)
+ line (screen_x, screen_y - 4)-(screen_x, screen_y + 4), RGB(255, 255, 255)
+ ' Draw center dot
+ pset (screen_x, screen_y), RGB(255, 255, 255)
+
+end sub
+
+
+function FindPlacementAt(cx as Integer, cy as Integer, pg as PlacementGroup) as Integer
+
+ dim result as Integer = 0
+ dim i as Integer
+ dim pg_ptr as Placement ptr
+ dim px as Integer, py as Integer
+ 
+ ' Convert minimap coordinates (4x scale) back to tile coordinates
+ dim tile_x as Integer = cx \ 4
+ dim tile_y as Integer = cy \ 4
+ 
+ ' Check each placement to see if it's at this position
+ for i = 1 to pg.placements.Length()
+  pg_ptr = pg.placements.PointerAt(i)
+  if pg_ptr->x = tile_x and pg_ptr->y = tile_y then
+   result = i
+   exit for
+  end if
+ next
+ 
+ return result
+
+end function
