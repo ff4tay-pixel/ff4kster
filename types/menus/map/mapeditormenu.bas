@@ -13,6 +13,7 @@ type MapEditorMenu
  copy_height as UByte
  copy_available as Boolean
  controls_visible as Boolean
+ sidebar_snapshot as Any ptr
  
  declare constructor(starting_x as UByte = 0, starting_y as UByte = 0)
  
@@ -20,6 +21,8 @@ type MapEditorMenu
  
  declare sub Display()
  declare sub CopySelection()
+ declare sub DisplayKeyboardSidebar()
+ declare sub HideKeyboardSidebar()
  declare sub PasteSelection()
  declare sub SetTo(map_index as UInteger)
  declare sub SaveUndo()

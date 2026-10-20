@@ -21,7 +21,9 @@ end constructor
 sub MapEditorMenu.Display()
 
  dim amount as Integer
- dim blank as Any ptr
+ 
+ keyboard_sidebar_enabled = multikey(SC_H)
+ HideKeyboardSidebar()
  
  palette_menu.Display()
  map_menu.Display()
@@ -40,24 +42,44 @@ sub MapEditorMenu.Display()
  WriteText(FF4Text("Panel: " + iif(map_menu.active, "Map", "Palette") + "  Tile:" + palette_menu.options.ItemAt(palette_menu.cursor_x + 1, palette_menu.cursor_y + 1) + "  Size:" + str(abs(map_menu.cursor_w) + 1) + "x" + str(abs(map_menu.cursor_h) + 1)), 1, 53, 15)
  WriteText(FF4Text("H toggles the keyboard sidebar"), 1, 54, 15)
 
- if controls_visible then
-  BlueBox(54, 42, 25, 14)
-  WriteText(FF4Text("KEYBOARD"), 55, 43, 15)
-  WriteText(FF4Text("J  Jump to map"), 55, 44, 15)
-  WriteText(FF4Text("F  Find map name"), 55, 45, 15)
-  WriteText(FF4Text("I  Grid details"), 55, 46, 15)
-  WriteText(FF4Text("ENTER  Edit map"), 55, 47, 15)
-  WriteText(FF4Text("BACKSP  Erase map"), 55, 48, 15)
-  WriteText(FF4Text("ESC  Back"), 55, 49, 15)
-  WriteText(FF4Text("H  Hide sidebar"), 55, 50, 15)
-  WriteText(FF4Text("TAB  Map/palette"), 55, 51, 15)
-  WriteText(FF4Text("CTRL+C  Copy"), 55, 52, 15)
-  WriteText(FF4Text("CTRL+V  Paste"), 55, 53, 15)
-  WriteText(FF4Text("CTRL+Z  Undo"), 55, 54, 15)
+ if controls_visible and keyboard_sidebar_enabled then
+  DisplayKeyboardSidebar()
  else
-  blank = ImageCreate(26 * 8, 15 * 8, RGB(0, 0, 0))
-  put (54 * 8, 42 * 8), blank, pset
-  ImageDestroy(blank)
+  HideKeyboardSidebar()
+ end if
+
+end sub
+
+
+sub MapEditorMenu.DisplayKeyboardSidebar()
+
+ if sidebar_snapshot = 0 then
+  sidebar_snapshot = ImageCreate(26 * 8, 15 * 8, RGB(0, 0, 0))
+  get (54 * 8, 42 * 8)-(80 * 8 - 1, 57 * 8 - 1), sidebar_snapshot
+ end if
+ BlueBox(54, 42, 25, 14)
+ WriteText(FF4Text("KEYBOARD"), 55, 43, 15)
+ WriteText(FF4Text("J  Jump to map"), 55, 44, 15)
+ WriteText(FF4Text("F  Find map name"), 55, 45, 15)
+ WriteText(FF4Text("I  Grid details"), 55, 46, 15)
+ WriteText(FF4Text("ENTER  Edit map"), 55, 47, 15)
+ WriteText(FF4Text("BACKSP  Erase map"), 55, 48, 15)
+ WriteText(FF4Text("ESC  Back"), 55, 49, 15)
+ WriteText(FF4Text("HOLD H  Show"), 55, 50, 15)
+ WriteText(FF4Text("TAB  Map/palette"), 55, 51, 15)
+ WriteText(FF4Text("CTRL+C  Copy"), 55, 52, 15)
+ WriteText(FF4Text("CTRL+V  Paste"), 55, 53, 15)
+ WriteText(FF4Text("CTRL+Z  Undo"), 55, 54, 15)
+
+end sub
+
+
+sub MapEditorMenu.HideKeyboardSidebar()
+
+ if sidebar_snapshot <> 0 then
+  put (54 * 8, 42 * 8), sidebar_snapshot, pset
+  ImageDestroy(sidebar_snapshot)
+  sidebar_snapshot = 0
  end if
 
 end sub
@@ -199,8 +221,11 @@ sub MapEditorMenu.UserSelect()
  dim keycode as UInteger
  dim done as Boolean
  dim active_menu as GridMenu ptr
+ dim sidebar_state as Boolean
  
  if map_menu.Columns() > 0 then
+
+  controls_visible = true
 
   palette_menu.active = false
   map_menu.active = true
@@ -209,16 +234,22 @@ sub MapEditorMenu.UserSelect()
   do
    
    Display()
+   sidebar_state = keyboard_sidebar_enabled
    do
+    if multikey(SC_H) <> sidebar_state then
+     Display()
+     sidebar_state = keyboard_sidebar_enabled
+    end if
     key = inkey
+    if key = "" then sleep 10
     keycode = asc(right(key, 1))
     if len(key) > 1 then keycode = keycode * &h100 + 255
     map_menu.Animate()
     palette_menu.Animate()
    loop while key = ""
-   select case keycode
-    case asc("h"), asc("H")
-     controls_visible = not controls_visible
+  controls_visible = false
+  HideKeyboardSidebar()
+  select case keycode
     case TAB_KEY
      if active_menu = @map_menu then 
       active_menu = @palette_menu

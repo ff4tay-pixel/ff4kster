@@ -3,6 +3,7 @@ dim shared font(&hFF) as Any ptr
 dim shared asc2ff4 as String
 dim shared warning as Boolean
 dim shared modified as Boolean
+dim shared keyboard_sidebar_enabled as Boolean
 dim shared unheadered as Boolean
 dim shared ifpatch as Boolean
 dim shared system_path as String

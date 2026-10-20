@@ -103,8 +103,6 @@ function BlueMenu.ProcessKey(key_code as UInteger) as Boolean
   indexed_mode = not indexed_mode
   RestoreSnapshot()
   TakeSnapshot()
- case asc("h"), asc("H")
-  keyboard_visible = not keyboard_visible
  end select
  
  return result
@@ -115,11 +113,25 @@ end function
 function BlueMenu.UserInput() as Boolean
  
  dim result as Boolean
+ dim key_code as UInteger
+ dim key as String
+ dim sidebar_state as Boolean
  
- 'screensync
  Display()
  ShowCursor()
- result = ProcessKey(getkey)
+ sidebar_state = keyboard_sidebar_enabled
+ do
+  if multikey(SC_H) <> sidebar_state then
+   Display()
+   ShowCursor()
+   sidebar_state = keyboard_sidebar_enabled
+  end if
+  key = inkey
+  if key = "" then sleep 10
+ loop while key = ""
+ key_code = asc(right(key, 1))
+ if len(key) > 1 then key_code = key_code * &h100 + 255
+ result = ProcessKey(key_code)
 
  return result
  
@@ -204,6 +216,10 @@ sub BlueMenu.Display()
  dim menu_image as Any ptr
  dim text_width as Integer
  dim item_width as Integer
+
+ keyboard_sidebar_enabled = multikey(SC_H)
+
+ HideKeyboardSidebar()
  
  if max_rows = 0 then top_row = 1
  
@@ -230,7 +246,7 @@ sub BlueMenu.Display()
  
  put (x * 8, y * 8), menu_image, trans
  ImageDestroy(menu_image)
- DisplayKeyboardSidebar()
+ if keyboard_sidebar_enabled then DisplayKeyboardSidebar() else HideKeyboardSidebar()
 
   
 end sub
@@ -238,9 +254,11 @@ end sub
 
 sub BlueMenu.DisplayKeyboardSidebar()
 
- dim blank as Any ptr
-
  if keyboard_visible then
+    if keyboard_snapshot = 0 then
+     keyboard_snapshot = ImageCreate(20 * 8, 15 * 8, RGB(0, 0, 0))
+     get (60 * 8, 42 * 8)-(80 * 8 - 1, 57 * 8 - 1), keyboard_snapshot
+    end if
   BlueBox(60, 42, 19, 14)
   WriteText(FF4Text("KEYBOARD"), 61, 43, 15)
   WriteText(FF4Text("ARROWS  Move"), 61, 44, 15)
@@ -251,11 +269,20 @@ sub BlueMenu.DisplayKeyboardSidebar()
   WriteText(FF4Text("PGUP/DN Page"), 61, 49, 15)
   WriteText(FF4Text("/       Index"), 61, 50, 15)
   if swap_enabled then WriteText(FF4Text("SHIFT+ENTER Swap"), 61, 51, 15)
-  WriteText(FF4Text("H       Hide"), 61, 52, 15)
+   WriteText(FF4Text("HOLD H  Show"), 61, 52, 15)
  else
-  blank = ImageCreate(20 * 8, 15 * 8, RGB(0, 0, 0))
-  put (60 * 8, 42 * 8), blank, pset
-  ImageDestroy(blank)
+    HideKeyboardSidebar()
+ end if
+
+end sub
+
+
+sub BlueMenu.HideKeyboardSidebar()
+
+ if keyboard_snapshot <> 0 then
+    put (60 * 8, 42 * 8), keyboard_snapshot, pset
+    ImageDestroy(keyboard_snapshot)
+    keyboard_snapshot = 0
  end if
 
 end sub
@@ -321,11 +348,13 @@ end sub
 
 sub BlueMenu.UserSelect()
 
+ keyboard_visible = true
  TakeSnapshot()
  do until UserInput()
  loop
  RestoreSnapshot()
  ImageDestroy(snapshot)
  snapshot = 0
+ HideKeyboardSidebar()
  
 end sub

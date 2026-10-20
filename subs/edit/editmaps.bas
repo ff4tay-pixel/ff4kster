@@ -54,15 +54,15 @@ sub EditMaps()
   next
   BlueBox(0, 49, 22, 1)
   WriteText(FF4Text("Grid: " + Pad(str(maps(select_map.selected).grid_index + underground), 3, true) + "  Shared: " + str(shared_maps)), 1, 50, 15)
-   select_map.Display()
+  select_map.Display()
    select_map.ShowCursor()
    do
+    if multikey(SC_H) <> keyboard_sidebar_enabled then edit_map.Display()
     key = inkey
+    if key = "" then sleep 10
     keycode = asc(right(key, 1))
     if len(key) > 1 then keycode = keycode * &h100 + 255
     select case keycode
-     case asc("h"), asc("H")
-      edit_map.controls_visible = not edit_map.controls_visible
      case asc("j"), asc("J")
       jump_to.starting_number = select_map.selected
       jump_to.UserSelect()
