@@ -17,8 +17,7 @@ type MapEditorMenu
  copy_width as UByte
  copy_height as UByte
  copy_available as Boolean
- controls_visible as Boolean
- sidebar_snapshot as Any ptr
+ editing as Boolean 'true while the map itself is being edited
  
  declare constructor(starting_x as UByte = 0, starting_y as UByte = 0)
  
@@ -26,8 +25,6 @@ type MapEditorMenu
  
  declare sub Display()
  declare sub CopySelection()
- declare sub DisplayKeyboardSidebar()
- declare sub HideKeyboardSidebar()
  declare sub PasteSelection()
  declare sub BeginPaste()
  declare sub EndPaste()

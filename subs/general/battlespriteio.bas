@@ -1,15 +1,14 @@
 'Export and import of battle character sprites and palettes.
 '
-'Two image layouts are supported. Each is a 4 bits per pixel BMP. The palette is stored in the image
-'itself: the 16 pixels in the top right corner, from top to bottom (x = width - 1, y = 0 to 15), are
-'palette colors 0-15 (pixel N has palette index N). The column next to them is left empty. The
-'palette number is kept in the file name.
+'Each character is one 4 bits per pixel BMP, exports\battle_sprites\poses_NN_pal_PP.bmp (130x56), with the poses in
+'16x24 cells, 8 per row. The palette is stored in the image itself: the 16 pixels in the top right
+'corner, from top to bottom (x = width - 1, y = 0 to 15), are palette colors 0-15 (pixel N has
+'palette index N). The column next to them is left empty. The palette number PP is kept in the
+'file name.
 '
-'exports\battle_sprites\sheet_NN_pal_PP.bmp   66x64: the 64 tiles of sheet NN in order, 8 per row
-'exports\battle_sprites\poses_NN_pal_PP.bmp   130x56: the poses in 16x24 cells, 8 per row
 '    row 1: Standing, Ready, Running, Kneeling, Right arm up, Left arm down, Left arm up
 '    row 2: Hit, Victory, Dead (two cells wide), Chant 1, Chant 2, Special (two cells wide)
-'    bottom strip: the tiles that no pose uses
+'    bottom strip: the tiles that no pose uses (if any)
 '
 'On import the 16 palette pixels define palette PP, and every other pixel takes the palette index
 'of the palette pixel with the same color. That keeps indices right even if an image editor
@@ -19,8 +18,6 @@
 'differently in two poses, the first pose (in list order) wins and the import says so.
 
 const image_strip = 2 'columns on the right that hold the palette pixels
-const sheet_image_width = 64 + image_strip
-const sheet_image_height = 64
 const pose_image_width = 128 + image_strip
 const pose_image_height = 56
 const pose_image_extras_y = 48
@@ -396,27 +393,6 @@ sub PoseExtraTiles(extras() as Integer, byref extra_count as Integer, used() as 
 end sub
 
 
-function WriteBattleSheetBMP(path as String, sheet as Integer, pal as Integer) as Boolean
-
- for y as Integer = 0 to 63
-  for x as Integer = 0 to sheet_image_width - 1
-   bmp_px(y, x) = 0
-  next
- next
-
- for y as Integer = 0 to 63
-  for x as Integer = 0 to 63
-   bmp_px(y, x) = battle_char_gfx(sheet, (y \ 8) * 8 + x \ 8, y mod 8, x mod 8)
-  next
- next
-
- PutPaletteSwatches(sheet_image_width)
-
- return WriteIndexedBMP(path, sheet_image_width, sheet_image_height, pal)
-
-end function
-
-
 function WriteBattlePosesBMP(path as String, sheet as Integer, pal as Integer) as Boolean
 
  dim tile_id as Integer
@@ -463,27 +439,6 @@ function WriteBattlePosesBMP(path as String, sheet as Integer, pal as Integer) a
  PutPaletteSwatches(pose_image_width)
 
  return WriteIndexedBMP(path, pose_image_width, pose_image_height, pal)
-
-end function
-
-
-function ReadBattleSheetBMP(path as String, sheet as Integer, pal as Integer, byref problem as String) as Boolean
-
- dim new_palette(15) as UInteger
-
- if not ReadIndexedBMP(path, sheet_image_width, sheet_image_height, problem) then return false
- if not ResolveSwatchPalette(sheet_image_width, sheet_image_height, new_palette(), problem) then return false
-
- for y as Integer = 0 to 63
-  for x as Integer = 0 to 63
-   battle_char_gfx(sheet, (y \ 8) * 8 + x \ 8, y mod 8, x mod 8) = bmp_px(y, x)
-  next
- next
- for i as Integer = 0 to 15
-  battle_palette_raw(pal, i) = new_palette(i)
- next
-
- return true
 
 end function
 
@@ -610,42 +565,38 @@ function ReadBattlePosesBMP(path as String, sheet as Integer, pal as Integer, by
 end function
 
 
-function ExportBattleSprites(by_poses as Boolean) as String
+function ExportBattleSprites() as String
 
  'Returns a message for the user
 
  dim written as Integer
  dim failed as Integer
  dim file_name as String
- dim ok as Boolean
-
  for s as Integer = 0 to total_battle_char_sheets - 1
-  file_name = iif(by_poses, "poses_", "sheet_") + Pad(str(s), 2, true, "0") + "_pal_" + Pad(str(s), 2, true, "0") + ".bmp"
-  if by_poses then ok = WriteBattlePosesBMP(BattleSpritePath(file_name), s, s) else ok = WriteBattleSheetBMP(BattleSpritePath(file_name), s, s)
-  if ok then written += 1 else failed += 1
+  file_name = "poses_" + Pad(str(s), 2, true, "0") + "_pal_" + Pad(str(s), 2, true, "0") + ".bmp"
+  if WriteBattlePosesBMP(BattleSpritePath(file_name), s, s) then written += 1 else failed += 1
  next
 
  if failed > 0 then return "Export had " + str(failed) + " error(s)|Check that exports\battle_sprites can be written"
- return "Wrote " + str(written) + iif(by_poses, " pose images", " sprite sheets") + "|to exports\battle_sprites"
+ return "Wrote " + str(written) + " pose images|to exports\battle_sprites"
 
 end function
 
 
-function ImportBattleSprites(by_poses as Boolean) as String
+function ImportBattleSprites() as String
 
  'Returns a message for the user
 
  dim number as Integer
  dim sheets_read as Integer
  dim name_found as String
- dim prefix as String = iif(by_poses, "poses_", "sheet_")
  dim pal as Integer
  dim problem as String
  dim report as String
  dim ok as Boolean
 
  for s as Integer = 0 to total_battle_char_sheets - 1
-  name_found = dir(BattleSpritePath(prefix + Pad(str(s), 2, true, "0") + "_pal_*.bmp"))
+  name_found = dir(BattleSpritePath("poses_" + Pad(str(s), 2, true, "0") + "_pal_*.bmp"))
   if len(name_found) > 0 then
    pal = s
    if len(name_found) >= 15 then
@@ -653,8 +604,7 @@ function ImportBattleSprites(by_poses as Boolean) as String
     if number >= 0 and number <= 15 and mid(name_found, 14, 2) = Pad(str(number), 2, true, "0") then pal = number
    end if
    problem = ""
-   if by_poses then ok = ReadBattlePosesBMP(BattleSpritePath(name_found), s, pal, problem) else ok = ReadBattleSheetBMP(BattleSpritePath(name_found), s, pal, problem)
-   if ok then
+   if ReadBattlePosesBMP(BattleSpritePath(name_found), s, pal, problem) then
     sheets_read += 1
     if len(problem) > 0 then report += "|" + name_found + ":" + problem
    else
@@ -665,6 +615,6 @@ function ImportBattleSprites(by_poses as Boolean) as String
 
  if sheets_read = 0 and report = "" then return "Nothing to import|Looked in exports\battle_sprites"
 
- return "Imported " + str(sheets_read) + iif(by_poses, " pose images", " sheets") + " (sprites and palettes)" + report
+ return "Imported " + str(sheets_read) + " pose images (sprites and palettes)" + report
 
 end function

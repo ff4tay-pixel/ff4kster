@@ -57,7 +57,6 @@ sub EditMaps()
   select_map.Display()
    select_map.ShowCursor()
    do
-    if multikey(SC_H) <> keyboard_sidebar_enabled then edit_map.Display()
     key = inkey
     if key = "" then sleep 10
     keycode = asc(right(key, 1))

@@ -52,33 +52,42 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "Enter opens the entry's editor.")
   case 9
    HelpLine(lines(), n, "Edit what each shop sells.")
-  case 10 to 13
+  case 10, 12 to 14
    HelpLine(lines(), n, "Enter opens the entry's editor.")
    HelpLine(lines(), n, "In sub-menus: Tab switches between boxes.")
-  case 14
+  case 11
+   HelpLine(lines(), n, "Edit the in-battle sprite of each character.")
+   HelpLine(lines(), n, "Enter edits a tile, PgUp / PgDn changes the")
+   HelpLine(lines(), n, "pose preview, , and . change the palette,")
+   HelpLine(lines(), n, "P edits the palette colors. The last two list")
+   HelpLine(lines(), n, "entries export / import one BMP per character")
+   HelpLine(lines(), n, "with all its poses. The 16 pixels in the top")
+   HelpLine(lines(), n, "right corner of each BMP are its palette colors.")
+   HelpLine(lines(), n, "Golbez and Anna are not included yet.")
+  case 15
    HelpLine(lines(), n, "Pick a map, then a message.")
    HelpLine(lines(), n, "Shift-Enter marks a message to swap.")
    HelpLine(lines(), n, "Insert adds a message, Delete removes.")
-  case 15
+  case 16
    HelpLine(lines(), n, "Tab        Preview / pick the linked map")
    HelpLine(lines(), n, "Shift-Enter marks an event, Insert appends")
    HelpLine(lines(), n, "           its script to the current one")
    HelpLine(lines(), n, "In scripts: Insert / Delete / Backspace")
    HelpLine(lines(), n, "edit commands, Tab switches script.")
-  case 16
+  case 17
    HelpLine(lines(), n, "Tab        Toggle the minimap cursor")
    HelpLine(lines(), n, "Insert     Add a trigger")
    HelpLine(lines(), n, "Delete     Remove the trigger")
    HelpLine(lines(), n, "Shift-Enter marks a trigger to swap.")
-  case 17
+  case 18
    HelpLine(lines(), n, "Tab        Toggle the minimap cursor")
    HelpLine(lines(), n, "Insert     Add an NPC / placement")
    HelpLine(lines(), n, "Delete     Remove it")
-  case 18
-   HelpLine(lines(), n, "Tab        Edit the palette")
   case 19
-   HelpLine(lines(), n, "Enter opens the map's properties.")
+   HelpLine(lines(), n, "Tab        Edit the palette")
   case 20
+   HelpLine(lines(), n, "Enter opens the map's properties.")
+  case 21
    HelpLine(lines(), n, "J  Jump to map number   F  Find map name")
    HelpLine(lines(), n, "I  Grid details         Backspace  Erase map")
    HelpLine(lines(), n, "In the map editor:")
@@ -86,8 +95,12 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "Enter        Place tile    Space  Fill")
    HelpLine(lines(), n, "Backspace    Pick tile under cursor")
    HelpLine(lines(), n, "Shift-Arrow  Select an area")
-   HelpLine(lines(), n, "Ctrl-C / V   Copy / paste   Ctrl-Z  Undo")
-  case 21
+   HelpLine(lines(), n, "Ctrl-C / V   Copy / paste preview (Enter places)")
+   HelpLine(lines(), n, "Ctrl-Z / Y   Undo / redo")
+   HelpLine(lines(), n, "R            Replace all of the tile under the")
+   HelpLine(lines(), n, "             cursor with the palette tile")
+   HelpLine(lines(), n, "O            Show NPCs and triggers on the map")
+  case 22
    HelpLine(lines(), n, "Enter opens the monster's editor.")
    HelpLine(lines(), n, "Yellow = changed.  Ctrl-R revert, Ctrl-U")
    HelpLine(lines(), n, "where used, Ctrl-C / V copy / paste.")
@@ -95,42 +108,20 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "their details.")
    HelpLine(lines(), n, "In Edit AI: L switches between the regular")
    HelpLine(lines(), n, "and the lunar AI script bank.")
-  case 22 to 25
+  case 23 to 26
    HelpLine(lines(), n, "Enter opens the entry's editor.")
    HelpLine(lines(), n, "Autobattle scripts: Insert / Delete edit")
    HelpLine(lines(), n, "commands.")
-  case 26
-   HelpLine(lines(), n, "Writes spells, items, monsters, shops and")
-   HelpLine(lines(), n, "formations to exports/NAME.csv.")
   case 27
-   HelpLine(lines(), n, "Reads exports/NAME.csv back in. Only")
-   HelpLine(lines(), n, "the columns in the file are changed.")
-   HelpLine(lines(), n, "Use Save ROM afterwards to keep them.")
-  case 28
-   HelpLine(lines(), n, "Shows what your edits changed, and writes")
-   HelpLine(lines(), n, "exports/rom_diff.txt with offsets.")
-  case 29
-   HelpLine(lines(), n, "Pick another ROM file; shows every byte")
-   HelpLine(lines(), n, "region that differs from your current work.")
-  case 30
    HelpLine(lines(), n, "Type part of a spell, item or monster name,")
    HelpLine(lines(), n, "pick a match, and its editor opens on it.")
-  case 31
+  case 28
    HelpLine(lines(), n, "Shows how full each fixed ROM area is")
    HelpLine(lines(), n, "events, triggers, text, descriptions.")
    HelpLine(lines(), n, "Over 100% means Save ROM will refuse.")
-  case 32
+  case 29
    HelpLine(lines(), n, "Lists every spell, item and monster you")
    HelpLine(lines(), n, "changed since loading; pick one to open it.")
-  case 33
-   HelpLine(lines(), n, "Edit the in-battle sprite of each character.")
-   HelpLine(lines(), n, "Enter edits a tile, PgUp / PgDn changes the")
-   HelpLine(lines(), n, "pose preview, , and . change the palette,")
-   HelpLine(lines(), n, "P edits the palette colors. The last four list")
-   HelpLine(lines(), n, "entries export / import BMPs (per sheet or per")
-   HelpLine(lines(), n, "pose set). The 16 pixels in the top right corner")
-   HelpLine(lines(), n, "of each BMP are its palette colors.")
-   HelpLine(lines(), n, "Golbez and Anna are not included yet.")
   case else
    HelpLine(lines(), n, "Leave the editor. You are asked to save")
    HelpLine(lines(), n, "if there are unsaved edits.")

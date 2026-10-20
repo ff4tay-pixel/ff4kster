@@ -440,12 +440,10 @@ sub EditBattleSprites()
 
  RefreshBattlePalettes()
 
- select_sheet.max_rows = total_battle_char_sheets + 4
+ select_sheet.max_rows = total_battle_char_sheets + 2
  for i as Integer = 0 to total_battle_char_sheets - 1
   select_sheet.AddOption(BattleSheetName(i))
  next
- select_sheet.AddOption(FF4Text("Export sheets + palettes"))
- select_sheet.AddOption(FF4Text("Import sheets + palettes"))
  select_sheet.AddOption(FF4Text("Export poses + palettes"))
  select_sheet.AddOption(FF4Text("Import poses + palettes"))
 
@@ -462,14 +460,6 @@ sub EditBattleSprites()
    else
     select case select_sheet.selected - total_battle_char_sheets
      case 1
-      WriteText(FF4Text("Writes one BMP per sheet (the 64 tiles in order)"), 37, 8, 15)
-      WriteText(FF4Text("to exports\battle_sprites. The 16 pixels in the top"), 37, 9, 15)
-      WriteText(FF4Text("right corner, top to bottom, are the palette colors."), 37, 10, 15)
-     case 2
-      WriteText(FF4Text("Reads every sheet_NN_pal_PP.bmp. The 16 top right"), 37, 8, 15)
-      WriteText(FF4Text("pixels become palette PP and the sprites take the"), 37, 9, 15)
-      WriteText(FF4Text("index of the palette pixel with the same color."), 37, 10, 15)
-     case 3
       WriteText(FF4Text("Writes one BMP per character with all the poses, in"), 37, 8, 15)
       WriteText(FF4Text("16x24 cells (poses_NN_pal_PP.bmp), plus any tiles no"), 37, 9, 15)
       WriteText(FF4Text("pose uses on a strip below. The 16 palette colors are"), 37, 10, 15)
@@ -478,7 +468,7 @@ sub EditBattleSprites()
       WriteText(FF4Text("Reads every poses_NN_pal_PP.bmp and splits the poses"), 37, 8, 15)
       WriteText(FF4Text("back into tiles. Tiles shared by several poses take"), 37, 9, 15)
       WriteText(FF4Text("the pose you changed; if two differ, the first pose"), 37, 10, 15)
-      WriteText(FF4Text("wins and you are told."), 37, 11, 15)
+      WriteText(FF4Text("wins and you are told. The top right pixels set the palette."), 37, 11, 15)
     end select
    end if
    screenunlock
@@ -487,11 +477,11 @@ sub EditBattleSprites()
   if not select_sheet.cancelled then
    if select_sheet.selected <= total_battle_char_sheets then
     EditBattleSheet(select_sheet.selected - 1)
-   elseif select_sheet.selected = total_battle_char_sheets + 1 or select_sheet.selected = total_battle_char_sheets + 3 then
-    InfoBox(ExportBattleSprites(select_sheet.selected = total_battle_char_sheets + 3) + "||Press any key", 4, 20)
+   elseif select_sheet.selected = total_battle_char_sheets + 1 then
+    InfoBox(ExportBattleSprites() + "||Press any key", 4, 20)
    else
     if ConfirmBox("Import replaces the current sprites and palettes. Continue?") then
-     InfoBox(ImportBattleSprites(select_sheet.selected = total_battle_char_sheets + 4) + "||Press any key", 4, 20)
+     InfoBox(ImportBattleSprites() + "||Press any key", 4, 20)
      RefreshBattlePalettes()
     end if
    end if

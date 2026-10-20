@@ -13,7 +13,7 @@ constructor MapEditorMenu(starting_x as UByte = 0, starting_y as UByte = 0)
  map_menu.y = y 
  map_menu.max_columns = 16
  map_menu.max_rows = 16
- controls_visible = true
+ editing = false
 
 end constructor
 
@@ -21,9 +21,6 @@ end constructor
 sub MapEditorMenu.Display()
 
  dim amount as Integer
- 
- keyboard_sidebar_enabled = multikey(SC_H)
- HideKeyboardSidebar()
  
  palette_menu.Display()
  map_menu.Display()
@@ -43,50 +40,11 @@ sub MapEditorMenu.Display()
  if paste_mode then
   WriteText(FF4Text(Pad("PASTE: arrows move, Enter place, Esc cancel", 51)), 1, 54, 14)
  else
-  WriteText(FF4Text(Pad("H toggles the keyboard sidebar", 51)), 1, 54, 15)
- end if
-
- if controls_visible and keyboard_sidebar_enabled then
-  DisplayKeyboardSidebar()
- else
-  HideKeyboardSidebar()
- end if
-
-end sub
-
-
-sub MapEditorMenu.DisplayKeyboardSidebar()
-
- if sidebar_snapshot = 0 then
-  sidebar_snapshot = ImageCreate(26 * 8, 19 * 8, RGB(0, 0, 0))
-  get (54 * 8, 38 * 8)-(80 * 8 - 1, 57 * 8 - 1), sidebar_snapshot
- end if
- BlueBox(54, 38, 25, 18)
- WriteText(FF4Text("KEYBOARD"), 55, 39, 15)
- WriteText(FF4Text("J  Jump to map"), 55, 40, 15)
- WriteText(FF4Text("F  Find map name"), 55, 41, 15)
- WriteText(FF4Text("I  Grid details"), 55, 42, 15)
- WriteText(FF4Text("ENTER  Edit map"), 55, 43, 15)
- WriteText(FF4Text("BACKSP  Erase map"), 55, 44, 15)
- WriteText(FF4Text("ESC  Back"), 55, 45, 15)
- WriteText(FF4Text("HOLD H  Show"), 55, 46, 15)
- WriteText(FF4Text("TAB  Map/palette"), 55, 47, 15)
- WriteText(FF4Text("CTRL+C  Copy"), 55, 48, 15)
- WriteText(FF4Text("CTRL+V  Paste preview"), 55, 49, 15)
- WriteText(FF4Text("CTRL+Z  Undo"), 55, 50, 15)
- WriteText(FF4Text("CTRL+Y  Redo"), 55, 51, 15)
- WriteText(FF4Text("R  Replace all tile"), 55, 52, 15)
- WriteText(FF4Text("O  NPC/trigger overlay"), 55, 53, 15)
-
-end sub
-
-
-sub MapEditorMenu.HideKeyboardSidebar()
-
- if sidebar_snapshot <> 0 then
-  put (54 * 8, 38 * 8), sidebar_snapshot, pset
-  ImageDestroy(sidebar_snapshot)
-  sidebar_snapshot = 0
+  if editing then
+   WriteText(FF4Text(Pad("Tab panel Enter place Space fill R replace O overlay", 51)), 1, 54, 15)
+  else
+   WriteText(FF4Text(Pad("J jump  F find  I grid info  Enter edit  Bksp erase", 51)), 1, 54, 15)
+  end if
  end if
 
 end sub
@@ -371,11 +329,10 @@ sub MapEditorMenu.UserSelect()
  dim keycode as UInteger
  dim done as Boolean
  dim active_menu as GridMenu ptr
- dim sidebar_state as Boolean
  
  if map_menu.Columns() > 0 then
 
-  controls_visible = true
+  editing = true
 
   palette_menu.active = false
   map_menu.active = true
@@ -384,12 +341,7 @@ sub MapEditorMenu.UserSelect()
   do
    
    Display()
-   sidebar_state = keyboard_sidebar_enabled
    do
-    if multikey(SC_H) <> sidebar_state then
-     Display()
-     sidebar_state = keyboard_sidebar_enabled
-    end if
     key = inkey
     if key = "" then sleep 10
     keycode = asc(right(key, 1))
@@ -397,8 +349,6 @@ sub MapEditorMenu.UserSelect()
     map_menu.Animate()
     palette_menu.Animate()
    loop while key = ""
-  controls_visible = false
-  HideKeyboardSidebar()
   if paste_mode then
    select case keycode
     case ENTER_KEY
@@ -523,6 +473,7 @@ sub MapEditorMenu.UserSelect()
   loop until done
   
   active_menu->active = false
+  editing = false
   
  end if
 

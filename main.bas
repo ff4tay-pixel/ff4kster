@@ -94,6 +94,7 @@ editor_menu.AddOption(FF4Text("Edit Medicines"))
 editor_menu.AddOption(FF4Text("Edit Tools"))
 editor_menu.AddOption(FF4Text("Edit Shops"))
 editor_menu.AddOption(FF4Text("Edit Jobs"))
+editor_menu.AddOption(FF4Text("Edit Battle Sprites"))
 editor_menu.AddOption(FF4Text("Edit Characters"))
 editor_menu.AddOption(FF4Text("Edit Commands"))
 editor_menu.AddOption(FF4Text("Edit Actors"))
@@ -109,14 +110,9 @@ editor_menu.AddOption(FF4Text("Edit Formations"))
 editor_menu.AddOption(FF4Text("Edit Encounters"))
 editor_menu.AddOption(FF4Text("Edit Autobattles"))
 editor_menu.AddOption(FF4Text("Edit Solobattles"))
-editor_menu.AddOption(FF4Text("Export CSV"))
-editor_menu.AddOption(FF4Text("Import CSV"))
-editor_menu.AddOption(FF4Text("Compare to Original ROM"))
-editor_menu.AddOption(FF4Text("Compare with ROM File"))
 editor_menu.AddOption(FF4Text("Search Everywhere"))
 editor_menu.AddOption(FF4Text("Space Usage"))
 editor_menu.AddOption(FF4Text("Changed Entries"))
-editor_menu.AddOption(FF4Text("Edit Battle Sprites"))
 editor_menu.AddOption(FF4Text("Quit"))
 
 save_prompt.x = 24
@@ -137,13 +133,13 @@ do
 
  if not editor_menu.cancelled then
 
-  if (editor_menu.selected >= 2 and editor_menu.selected <= 25) or editor_menu.selected = 30 or editor_menu.selected = 32 or editor_menu.selected = 33 then
+  if (editor_menu.selected >= 2 and editor_menu.selected <= 26) or editor_menu.selected = 27 or editor_menu.selected = 29 then
    modified = true
    editor_menu.ChangeOption(1, FF4Text("Save ROM *"))
   end if
 
   'Start every editor on a black screen so nothing from the main menu is left behind.
-  if editor_menu.selected >= 2 and editor_menu.selected <= 33 then cls
+  if editor_menu.selected >= 2 and editor_menu.selected <= 29 then cls
 
   select case editor_menu.selected
 
@@ -174,29 +170,25 @@ do
    case 8: EditTools()
    case 9: EditShops()
    case 10: EditJobs()
-   case 11: EditCharacters()
-   case 12: EditCommands()
-   case 13: EditActors()
-   case 14: EditMessages()
-   case 15: EditEvents()
-   case 16: EditTriggers()
-   case 17: EditNPCs()
-   case 18: EditTilesets()
-   case 19: EditMapProperties()
-   case 20: EditMaps()
-   case 21: EditMonsters()
-   case 22: EditFormations()
-   case 23: EditEncounters()
-   case 24: EditAutoBattles()
-   case 25: EditSoloBattles()
-   case 26: ExportImportTables(false)
-   case 27: ExportImportTables(true)
-   case 28: CompareWithOriginal()
-   case 29: CompareWithFile()
-   case 30: SearchEverywhere()
-   case 31: ShowSpaceUsage()
-   case 32: ChangedEntries()
-   case 33: EditBattleSprites()
+   case 11: EditBattleSprites()
+   case 12: EditCharacters()
+   case 13: EditCommands()
+   case 14: EditActors()
+   case 15: EditMessages()
+   case 16: EditEvents()
+   case 17: EditTriggers()
+   case 18: EditNPCs()
+   case 19: EditTilesets()
+   case 20: EditMapProperties()
+   case 21: EditMaps()
+   case 22: EditMonsters()
+   case 23: EditFormations()
+   case 24: EditEncounters()
+   case 25: EditAutoBattles()
+   case 26: EditSoloBattles()
+   case 27: SearchEverywhere()
+   case 28: ShowSpaceUsage()
+   case 29: ChangedEntries()
 
    case else
     if not modified then
