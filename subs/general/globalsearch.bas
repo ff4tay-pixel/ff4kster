@@ -22,6 +22,7 @@ sub OpenEntry(kind as String, index as Integer)
   case "actors": help_entry = 14
   case "spellsets": help_entry = 4
   case "encounters": help_entry = 24
+  case "events": help_entry = 16
   case "autobattles": help_entry = 25
   case "solobattles": help_entry = 26
  end select
@@ -39,6 +40,7 @@ sub OpenEntry(kind as String, index as Integer)
   case "actors": EditActors()
   case "spellsets": EditSpellSets()
   case "encounters": EditEncounters()
+  case "events": EditEvents()
   case "autobattles": EditAutoBattles()
   case "solobattles": EditSoloBattles()
  end select
@@ -94,14 +96,14 @@ sub ChangedEntries()
 
  'Everything that differs from the ROM as it was loaded; pick one to open it.
 
- dim kinds(1 to 15) as String = {"spells", "weapons", "armors", "medicines", "tools", "monsters", "shops", "formations", "jobs", "commands", "actors", "solobattles", "autobattles", "spellsets", "encounters"}
- dim labels(1 to 15) as String = {"Spell", "Weapon", "Armor", "Medicine", "Tool", "Monster", "Shop", "Formation", "Job", "Command", "Actor", "Solobattle", "Autobattle", "Spell Set", "Encounter"}
+ dim kinds(1 to 16) as String = {"spells", "weapons", "armors", "medicines", "tools", "monsters", "shops", "formations", "jobs", "commands", "actors", "solobattles", "autobattles", "spellsets", "encounters", "events"}
+ dim labels(1 to 16) as String = {"Spell", "Weapon", "Armor", "Medicine", "Tool", "Monster", "Shop", "Formation", "Job", "Command", "Actor", "Solobattle", "Autobattle", "Spell Set", "Encounter", "Event"}
  dim result_kind(1 to 300) as String
  dim result_index(1 to 300) as Integer
  dim n as Integer
  dim results as BlueMenu
 
- for k as Integer = 1 to 15
+ for k as Integer = 1 to 16
   for i as Integer = 1 to EntryCount(kinds(k))
    if n < 300 then
     if EntryModified(kinds(k), i) then

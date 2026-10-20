@@ -34,10 +34,8 @@ function SpaceUsageText() as String
  dim lines as String
  dim described as Integer
 
- for i as Integer = 1 to total_events
-  used += events(i).Length()
- next
- lines += SpaceLine("Events", used, &h6E00) + "|"
+ used = EventsBytesUsed()
+ lines += SpaceLine("Events", used, event_room) + "|"
 
  used = 0
  for i as Integer = 1 to total_maps

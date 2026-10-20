@@ -97,6 +97,7 @@
 #include once "subs/edit/editcommands.bas"
 #include once "subs/edit/editactors.bas"
 #include once "subs/edit/editmessages.bas"
+#include once "subs/general/eventtools.bas"
 #include once "subs/edit/editevents.bas"
 #include once "subs/edit/edittriggers.bas"
 #include once "subs/general/messagetools.bas"

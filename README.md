@@ -762,11 +762,16 @@ script box handling the "no" scenario. You can toggle between editing these
 scripts with the TAB key.
 
 In addition, you can completely clear out an entire script by pressing the
-BACKSPACE key. Be careful with this feature though, as there is no "undo"
-button, so once you've cleared it, the only way to get it back is to close
-the program completely and re-load the rom. If you already saved it with
-the event cleared out, you're out of luck; you'll just have to restore from
-a backup if you made one.
+BACKSPACE key (it asks first).
+
+Changes to a script can be undone and redone while you stay in that event:
+CTRL-Z undoes the last change (a deleted, inserted, edited, swapped, pasted
+or erased command) and CTRL-Y redoes it. CTRL-C copies the selected command
+and CTRL-V pastes it before the selected command, in the same event or in
+another one. The mouse works in the script boxes as in the other menus (a click
+selects, a second click edits, the wheel moves, the right button goes back).
+Hints for the keys are shown at the top right of the screen, and the top border
+of the lists shows how much room is left for all the events together.
 
 The event list itself has a few extra keys:
 
@@ -779,6 +784,13 @@ The event list itself has a few extra keys:
                         the marked event's script (and its "no" script) to
                         the end of the selected event's script, replacing the
                         selected script's final item.
+
+The event list also has the tools of the other lists: events that differ from
+the loaded ROM are yellow, CTRL-R reverts the event, CTRL-C / CTRL-V copy and
+paste a whole event over another, CTRL-Z undoes a change to an event (including
+a swap or an append), and CTRL-U shows where the event is used: the triggers
+(through their event calls) and the NPCs whose speech calls it. Changed Entries
+lists the changed events too. The list shows eight events at a time.
 
 There is only a certain amount of space in the rom set aside for event
 scripts. The editor checks it when you save: if the events are too long it
@@ -1309,7 +1321,7 @@ VERSION HISTORY
     - Edit World Maps: edit the overworld, underground and moon (paint, fill, replace,
       copy / paste, undo, mouse painting); saved into the fixed room the game gives
       each world, with a space check; O shows triggers and encounter zones over the map;
-      the text of a speech message can be edited from the speech menu (E); T / Insert / Delete edit the world triggers from the map; teleport triggers pick
+      Edit Events has key hints, a room gauge, undo / redo, copy / paste of commands and events, used-by, changed marks and mouse; the text of a speech message can be edited from the speech menu (E); T / Insert / Delete edit the world triggers from the map; teleport triggers pick
       their arrival spot on a picture of the destination map; NPC placements can be
       edited from the map editor too (N, Shift-Insert, Shift-Delete); the regular map editor
       has the same keys for the triggers of the map

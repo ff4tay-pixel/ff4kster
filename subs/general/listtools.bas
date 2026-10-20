@@ -6,8 +6,8 @@
 '
 ' Keys (in those lists):  Ctrl+R revert   Ctrl+C copy   Ctrl+V paste   Ctrl+U where used
 
-dim shared orig_rows(1 to 15, 0 to 511) as String
-dim shared clip_has(1 to 15) as Boolean
+dim shared orig_rows(1 to 16, 0 to 511) as String
+dim shared clip_has(1 to 16) as Boolean
 dim shared clip_spell as Spell
 dim shared clip_weapon as Weapon
 dim shared clip_armor as Armor
@@ -19,8 +19,8 @@ dim shared clip_formation as Formation
 dim shared clip_job as Job
 dim shared clip_command as MenuCommand
 dim shared clip_actor as Actor
-dim shared clip_text(1 to 15) as String 'copied entries that are kept as a row of text (see EntryRow)
-dim shared last_list_pos(1 to 15) as Integer
+dim shared clip_text(1 to 16) as String 'copied entries that are kept as a row of text (see EntryRow)
+dim shared last_list_pos(1 to 16) as Integer
 dim shared jump_kind as String
 dim shared jump_index as Integer
 
@@ -43,11 +43,55 @@ function KindIndex(kind as String) as Integer
   case "autobattles": return 13
   case "spellsets": return 14
   case "encounters": return 15
+  case "events": return 16
  end select
 
  return 0
 
 end function
+
+
+declare function EventUsageLines(id as Integer) as String
+declare function BytesToHex(s as String) as String
+declare function HexToBytes(h as String) as String
+
+
+function ListToText(l as List) as String
+
+ 'The items of a list as hex, separated by dots (an item is a few bytes, such as a script command)
+
+ dim result as String
+
+ for j as Integer = 1 to l.Length()
+  if j > 1 then result += "."
+  result += BytesToHex(l.ItemAt(j))
+ next
+
+ return result
+
+end function
+
+
+sub TextToList(l as List, t as String)
+
+ 'The list back from ListToText
+
+ dim start as Integer = 1
+ dim finish as Integer
+
+ l.Destroy()
+ if t = "" then exit sub
+ do
+  finish = instr(start, t, ".")
+  if finish = 0 then
+   l.Append(HexToBytes(mid(t, start)))
+   exit do
+  end if
+  l.Append(HexToBytes(mid(t, start, finish - start)))
+  start = finish + 1
+ loop
+
+end sub
 
 
 function BytesToHex(s as String) as String
@@ -103,6 +147,7 @@ function EntryCount(kind as String) as Integer
   case "autobattles": return total_autobattles
   case "spellsets": return spellsets.Length()
   case "encounters": return total_encounter_tables
+  case "events": return total_events
  end select
 
  return CsvTableSize(kind)
@@ -160,6 +205,9 @@ function EntryRow(kind as String, i as Integer) as String
    next
    return result
 
+  case "events"
+   return str(i) + "," + str(events(i).map_link) + "," + ListToText(events(i).script) + "," + ListToText(events(i).else_script)
+
  end select
 
  return CsvRow(kind, i)
@@ -206,6 +254,11 @@ sub ApplyRow(kind as String, i as Integer, row_text as String)
     set_pointer->learning_spells.Append(mid(spell_ids, j, 1))
    next
 
+  case "events"
+   events(i).map_link = val(RowField(row_text, 2))
+   TextToList(events(i).script, RowField(row_text, 3))
+   TextToList(events(i).else_script, RowField(row_text, 4))
+
   case "encounters"
    encounter_tables(i) = val(RowField(row_text, 2))
    row = EncounterRowOf(i, encounter_tables(i))
@@ -237,7 +290,7 @@ function IsRowKind(kind as String) as Boolean
 
  'Kinds that are saved and restored as a row of text rather than as an object
 
- return kind = "solobattles" or kind = "autobattles" or kind = "spellsets" or kind = "encounters"
+ return kind = "solobattles" or kind = "autobattles" or kind = "spellsets" or kind = "encounters" or kind = "events"
 
 end function
 
@@ -246,9 +299,9 @@ sub SnapshotOriginalRows()
 
  'Remember how every entry looked when the ROM was loaded.
 
- dim kinds(1 to 15) as String = {"spells", "weapons", "armors", "medicines", "tools", "monsters", "shops", "formations", "jobs", "commands", "actors", "solobattles", "autobattles", "spellsets", "encounters"}
+ dim kinds(1 to 16) as String = {"spells", "weapons", "armors", "medicines", "tools", "monsters", "shops", "formations", "jobs", "commands", "actors", "solobattles", "autobattles", "spellsets", "encounters", "events"}
 
- for k as Integer = 1 to 15
+ for k as Integer = 1 to 16
   for i as Integer = 1 to EntryCount(kinds(k))
    orig_rows(k, i) = EntryRow(kinds(k), i)
   next
@@ -291,6 +344,7 @@ function KindTitle(kind as String) as String
   case "autobattles": return "Autobattles"
   case "spellsets": return "Spell Sets"
   case "encounters": return "Encounters"
+  case "events": return "Events"
  end select
 
  return kind
@@ -316,6 +370,7 @@ function EntryName(kind as String, i as Integer) as String
   case "autobattles": return FF4Text("Autobattle " + str(i))
   case "spellsets": return spellset_names.ItemAt(i)
   case "encounters": return EncounterAreaLabel(i)
+  case "events": return Pad(event_names.ItemAt(i), 78, false, FF4Text(" "))
  end select
 
  return ""
@@ -613,6 +668,9 @@ function UsageText(kind as String, id as Integer) as String
   case "shops", "jobs", "commands", "actors", "solobattles", "autobattles", "spellsets", "encounters"
    lines += "|Usage is not tracked for this kind of entry."
 
+  case "events"
+   lines += EventUsageLines(id)
+
   case "spells"
    for w as Integer = 1 to total_weapons
     if weapons(w).casts = id then
@@ -677,7 +735,7 @@ sub UndoStore(slot as Integer, kind as String, i as Integer)
   case "jobs": undo_job(slot) = jobs(i)
   case "commands": undo_command(slot) = menucommands(i)
   case "actors": undo_actor(slot) = actors(i)
-  case "solobattles", "autobattles", "spellsets", "encounters": undo_text(slot) = EntryRow(kind, i)
+  case "solobattles", "autobattles", "spellsets", "encounters", "events": undo_text(slot) = EntryRow(kind, i)
  end select
 
 end sub
@@ -697,7 +755,7 @@ sub UndoLoad(slot as Integer, kind as String, i as Integer)
   case "jobs": jobs(i) = undo_job(slot)
   case "commands": menucommands(i) = undo_command(slot)
   case "actors": actors(i) = undo_actor(slot)
-  case "solobattles", "autobattles", "spellsets", "encounters": ApplyRow(kind, i, undo_text(slot))
+  case "solobattles", "autobattles", "spellsets", "encounters", "events": ApplyRow(kind, i, undo_text(slot))
  end select
 
 end sub
@@ -721,7 +779,7 @@ sub UndoMove(to_slot as Integer, from_slot as Integer)
   case "jobs": undo_job(to_slot) = undo_job(from_slot)
   case "commands": undo_command(to_slot) = undo_command(from_slot)
   case "actors": undo_actor(to_slot) = undo_actor(from_slot)
-  case "solobattles", "autobattles", "spellsets", "encounters": undo_text(to_slot) = undo_text(from_slot)
+  case "solobattles", "autobattles", "spellsets", "encounters", "events": undo_text(to_slot) = undo_text(from_slot)
  end select
 
 end sub

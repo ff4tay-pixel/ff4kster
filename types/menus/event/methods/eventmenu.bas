@@ -85,6 +85,9 @@ sub EventMenu.UserSelect()
   do until done
   
    SetTo(index)
+   DrawEventHints(true)
+   edit_event.title = EventRoomTitle("Script")
+   edit_else.title = "Else script"
    current_menu->Display()
    current_menu->ShowCursor()
    
@@ -100,7 +103,7 @@ sub EventMenu.UserSelect()
     put (edit_entry.x * 8, edit_entry.y * 8), blank, pset
    end if
    
-   a = getkey
+   a = EventKey(current_menu)
    select case a
    
     case TAB_KEY
@@ -115,8 +118,33 @@ sub EventMenu.UserSelect()
       end if
      end if
    
+    case 26 'Ctrl-Z
+     if EventUndo(index) then
+      SetTo(index)
+      current_menu->ChangeSelected(min(current_menu->selected, current_menu->options.Length()))
+     end if
+
+    case 25 'Ctrl-Y
+     if EventRedo(index) then
+      SetTo(index)
+      current_menu->ChangeSelected(min(current_menu->selected, current_menu->options.Length()))
+     end if
+
+    case 3 'Ctrl-C: copy the command
+     if current_menu->selected < current_menu->options.Length() then
+      event_clip = current_script->ItemAt(current_menu->selected)
+      event_clip_has = true
+     end if
+
+    case 22 'Ctrl-V: paste it before the selected command
+     if event_clip_has then
+      EventUndoPush(index)
+      current_script->Insert(current_menu->selected, event_clip)
+     end if
+
     case DELETE_KEY
      if current_menu->selected < current_menu->options.Length() then
+      EventUndoPush(index)
       current_menu->Remove(current_menu->selected)
       current_script->Remove(current_menu->selected)
       found_yesnobox = false
@@ -134,6 +162,7 @@ sub EventMenu.UserSelect()
      end if
      
     case INSERT_KEY
+     EventUndoPush(index)
      current_script->Insert(current_menu->selected, chr(0))
      current_menu->options.Insert(current_menu->selected, "")
      current_menu->colors.Insert(current_menu->selected, "15")
@@ -148,6 +177,7 @@ sub EventMenu.UserSelect()
      really_clear_event.ChangeSelected(1)
      really_clear_event.UserSelect()
      if not really_clear_event.cancelled and really_clear_event.selected = 2 then
+      EventUndoPush(index)
       current_script->Destroy()
       current_script->Append(chr(&hFF))
       current_menu->options.Destroy()
@@ -165,12 +195,15 @@ sub EventMenu.UserSelect()
   if not current_menu->cancelled then
    if current_menu->selected < current_menu->options.Length() then 
     if current_menu->highlighted > 0 then
+     EventUndoPush(index)
      current_script->Exchange(current_menu->highlighted, current_menu->selected)
      current_menu->options.Exchange(current_menu->highlighted, current_menu->selected)
      current_menu->highlighted = 0
     else
+     EventUndoPush(index)
      edit_entry.UserSelect()
      current_script->Assign(current_menu->selected, edit_entry.Entry())
+     EventUndoDropIfSame(index)
      current_menu->ChangeOption(current_menu->selected, events(index).ScriptEntry(current_script->ItemAt(current_menu->selected)), 15)
     end if
    end if
