@@ -11,12 +11,22 @@ function BlueMenu.CursorX(h as Boolean = false) as UByte
  dim result as UByte
  
  if h then 
-  result = x + ((highlighted - 1) mod columns) * (options.Width() + 2) + 1
+  result = x + ((highlighted - 1) mod columns) * (ItemWidth() + 2) + 1
  else
-  result = x + ((selected - 1) mod columns) * (options.Width() + 2)
+  result = x + ((selected - 1) mod columns) * (ItemWidth() + 2)
  end if
  
  return result
+
+end function
+
+
+function BlueMenu.ItemWidth() as UByte
+
+ 'Width of one entry: the widest one, unless a larger minimum width is set
+
+ if options.Width() < min_width then return min_width
+ return options.Width()
 
 end function
 
@@ -159,7 +169,7 @@ function BlueMenu.WindowWidth() as UByte
 
  dim result as UByte
  
- result = (options.Width() + 2) * columns - 2
+ result = (ItemWidth() + 2) * columns - 2
  if indexed_mode then result += len(str(options.Length())) + 2
  
  return result
@@ -262,12 +272,13 @@ sub BlueMenu.Display()
  
  if max_rows = 0 then top_row = 1
  
- item_width = options.Width()
+ item_width = ItemWidth()
  if indexed_mode then item_width += len(str(options.Length())) + 2
  text_width = (columns - 1) * (item_width + 2) + item_width
  
  menu_image = ImageCreate((text_width + 2) * 8, (WindowHeight() + 2) * 8, RGB(0, 0, 0))
  BlueBox(0, 0, text_width, WindowHeight(), menu_image)
+ if len(title) > 0 then WriteText(FF4Text(" " + left(title, text_width - 2) + " "), 1, 0, 14, menu_image)
  'if debug then print "OK": getkey: end
  
  for i as UByte = 1 to WindowHeight()

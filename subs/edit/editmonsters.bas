@@ -20,12 +20,23 @@ sub EditMonsters()
   select_monster.AddOption(monsters(i).name)
  next
  
+ 'Layout: the monster list, then a 36 cell wide column of boxes (so their edges line up),
+ ' then the AI column. Each box has a title in its top border.
  monster_info = MonsterInfoMenu(select_monster.options.Width() + 2, 0)
  monster_gfx = MonsterGfxMenu(monster_info.x, 8)
  monster_stats = MonsterStatsMenu(monster_info.x, monster_gfx.y + 5)
  monster_drops = MonsterDropMenu(monster_info.x, monster_stats.y + 6)
- monster_flags.x = monster_info.x + 22
+ monster_info.main_menu.min_width = 16
+ monster_info.main_menu.title = "Monster"
+ monster_gfx.main_menu.min_width = 16
+ monster_gfx.main_menu.title = "Graphics"
+ monster_stats.main_menu.min_width = 34
+ monster_stats.main_menu.title = "Stats"
+ monster_drops.main_menu.min_width = 21
+ monster_drops.main_menu.title = "Drops"
+ monster_flags.x = monster_info.x + 23
  monster_flags.y = monster_drops.y
+ monster_flags.title = "Extras"
  
  monster_flags.AddOption(FF4Text("Adds"))
  monster_flags.AddOption(FF4Text("Resistances"))
@@ -37,14 +48,26 @@ sub EditMonsters()
  attack_elements = FlagMenu(monster_info.x, monster_flags.y + 8, "status")
  resistances = FlagMenu(monster_info.x, attack_elements.y + 10, "status")
  weaknesses = FlagMenu(monster_info.x, resistances.y + 10, "element")
- races = FlagMenu(weaknesses.x + weaknesses.flag_names.Width() + 2, weaknesses.y, "race")
+ races = FlagMenu(weaknesses.x + 9, weaknesses.y, "race")
+ attack_elements.main_menu.min_width = 10
+ attack_elements.main_menu.title = "Adds"
+ resistances.main_menu.min_width = 10
+ resistances.main_menu.title = "Resist"
+ weaknesses.main_menu.min_width = 7
+ weaknesses.main_menu.title = "Weak"
+ races.main_menu.min_width = 7
+ races.main_menu.title = "Races"
  
- spell_power_menu.x = monster_info.x
- spell_power_menu.y = weaknesses.y + 10
- reaction_menu = AIMenu(46, 30)
- ai_menu = AIMenu(46, 0)
+ spell_power_menu.x = monster_info.x + 18
+ spell_power_menu.y = monster_gfx.y
+ spell_power_menu.min_width = 16
+ reaction_menu = AIMenu(46, 28)
+ reaction_menu.title = "REACTION AI"
+ ai_menu = AIMenu(46, 1)
+ ai_menu.title = "AI"
+ ai_menu.show_bank = true
  
- edit_monster = BlueMenu(monster_info.x + 17, 0)
+ edit_monster = BlueMenu(monster_info.x + 18, 0)
  edit_monster.AddOption(FF4Text("Edit Information"))
  edit_monster.AddOption(FF4Text("Edit Graphics"))
  edit_monster.AddOption(FF4Text("Edit AI"))

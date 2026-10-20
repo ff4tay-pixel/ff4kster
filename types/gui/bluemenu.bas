@@ -17,11 +17,14 @@ type BlueMenu
  keyboard_visible as Boolean = true
  last_key as UInteger
  marked as Boolean
+ title as String 'plain text shown in the top border of the box
+ min_width as UByte = 0 'makes the box at least this wide, so boxes can line up
  
  declare constructor(starting_x as UInteger = 0, starting_y as UInteger = 0)
  
  declare function CursorX(h as Boolean = false) as UByte
  declare function CursorY(h as Boolean = false) as UByte
+ declare function ItemWidth() as UByte
  declare function ProcessKey(key_code as UInteger) as Boolean
  declare function UserInput() as Boolean
  declare function WindowHeight() as UByte

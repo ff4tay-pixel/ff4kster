@@ -1,9 +1,13 @@
+const ai_header_width = 34 'room for the header line above the AI boxes
+
 type AIMenu
 
  x as UByte
  y as UByte
  index as UInteger
  lunar as Boolean
+ title as String 'header line drawn on the row above the menu (needs y > 0)
+ show_bank as Boolean 'also show which AI script bank is in use, and the L key hint
  index_menu as BlueMenu
  condition_menu as BlueMenu
  set_menu as BlueMenu

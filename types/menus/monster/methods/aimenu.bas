@@ -13,6 +13,14 @@ constructor AIMenu(starting_x as UByte = 0, starting_y as UByte = 0)
  script_menu = BlueMenu(x, script_index.y + 3)
  script_menu.max_rows = 10
  
+ 'Make the boxes line up: the whole block is ai_header_width cells wide
+ index_menu.min_width = ai_header_width - 2
+ condition_menu.min_width = ai_header_width - 6
+ script_index.min_width = ai_header_width - 2
+ script_menu.min_width = ai_header_width - 2
+ condition_menu.title = "Conditions"
+ script_menu.title = "Actions"
+ 
  for i as Integer = 1 to total_ai_groups
   index_menu.AddOption(FF4Text("Index: " + str(i)))
  next
@@ -109,17 +117,19 @@ end function
 
 sub AIMenu.Display()
  
+ dim header as String
+ 
  index_menu.ChangeSelected(index)
  index_menu.Display()
  set_menu.Display()
  RefreshConditions()
  RefreshScripts()
- if y < 20 then 'only the main AI view, not the reaction view
-  if lunar then
-   WriteText(FF4Text("AI bank: LUNAR    (L = switch)"), x, y + 28, 14)
-  else
-   WriteText(FF4Text("AI bank: Regular  (L = switch)"), x, y + 28, 15)
+ if y > 0 and len(title) > 0 then
+  header = title
+  if show_bank then
+   if lunar then header += "  LUNAR bank, L switches" else header += "  Regular bank, L switches"
   end if
+  WriteText(FF4Text(Pad(header, ai_header_width)), x, y - 1, iif(show_bank and lunar, 12, 14))
  end if
  
 end sub
@@ -132,6 +142,7 @@ sub AIMenu.Hide()
  condition_menu.Hide()
  script_index.Hide()
  script_menu.Hide()
+ if y > 0 and len(title) > 0 then line (x * 8, (y - 1) * 8)-((x + ai_header_width) * 8 - 1, y * 8 - 1), RGB(0, 0, 0), bf
 
 end sub
 
