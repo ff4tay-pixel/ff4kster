@@ -597,6 +597,8 @@ display a preview of its tileset on the left and a 16x16 tile section of
 the map itself in the middle. Pressing Enter will switch to map editing
 mode, where the following controls apply:
 
+    J: Jump directly to a map index from 1 to 384.
+
     TAB: Switch between the map editor and the tile selector.
     ARROWS: Move the cursor.
   
@@ -615,6 +617,13 @@ selector:
            highlighted tile.
     BACKSPACE: Change the selected tile to the highlighted one (much like
                the "dropper" feature of many image editors).
+
+While editing, the status panel at the bottom of the screen shows the active
+panel, selected tile, and current rectangle size, along with common controls.
+`CTRL+Z` steps backward through up to ten paint or flood-fill operations in
+the current map editing session.
+The map selector also shows the selected grid index and how many map entries
+share it before you begin editing.
 
 Note that certain maps share the same tile arrangements. This can be viewed
 and modified in the "Map Info" editor, under the label "Grid Index". If two

@@ -10,6 +10,8 @@ sub EditMaps()
  dim m as MapGrid ptr
  dim really as BlueMenu
  dim blank as Any ptr
+ dim jump_to as BlueNumberInput
+ dim shared_maps as Integer
   
  select_map.swap_enabled = true
  select_map.max_rows = 8
@@ -18,6 +20,9 @@ sub EditMaps()
  next
  
  edit_map = MapEditorMenu(0, 10)
+ jump_to = BlueNumberInput(30, 47)
+ jump_to.min_value = 1
+ jump_to.max_value = total_maps
  
  really.x = 18
  really.y = 50
@@ -30,6 +35,14 @@ sub EditMaps()
    if select_map.selected > &h100 then underground = &h100 else underground = 0
    edit_map.SetTo(select_map.selected)
    edit_map.Display()
+  shared_maps = 0
+  for i as Integer = 1 to total_maps
+   if maps(i).grid_index + iif(i > &h100, &h100, 0) = maps(select_map.selected).grid_index + underground then shared_maps += 1
+  next
+  BlueBox(0, 47, 28, 1)
+  WriteText(FF4Text("J: Jump to map index"), 1, 48, 15)
+  BlueBox(0, 49, 22, 1)
+  WriteText(FF4Text("Grid: " + Pad(str(maps(select_map.selected).grid_index + underground), 3, true) + "  Shared: " + str(shared_maps)), 1, 50, 15)
    select_map.Display()
    select_map.ShowCursor()
    do
@@ -37,6 +50,10 @@ sub EditMaps()
     keycode = asc(right(key, 1))
     if len(key) > 1 then keycode = keycode * &h100 + 255
     select case keycode
+     case asc("j"), asc("J")
+      jump_to.starting_number = select_map.selected
+      jump_to.UserSelect()
+      if jump_to.number >= 1 and jump_to.number <= total_maps then select_map.ChangeSelected(jump_to.number)
      case BACKSPACE_KEY
       if not mapgrids(maps(select_map.selected).grid_index + underground + 1).no_data then
        BlueBox(18, 47, 29, 1)
