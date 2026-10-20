@@ -147,6 +147,7 @@ sub EventCallMenu.UserSelect()
      Display()
      
     case DELETE_KEY
+     if ConfirmBox("Delete this event call entry?") then
      call_menu.Hide()
      if e->components.Length() > 1 then
       e->components.Remove(call_menu.selected)
@@ -158,6 +159,7 @@ sub EventCallMenu.UserSelect()
      end if
      Display()
      if call_menu.selected > call_menu.options.Length() then call_menu.ChangeSelected(call_menu.options.Length())
+     end if
      
     case INSERT_KEY
      c = callocate(SizeOf(CallComponent))

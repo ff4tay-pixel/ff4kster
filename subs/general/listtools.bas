@@ -452,7 +452,9 @@ function ListInput(list_menu as BlueMenu, kind as String) as Boolean
    ClipCopy(kind, list_menu.selected)
    InfoBox("Copied " + FF4Name(EntryName(kind, list_menu.selected)) + ".|Ctrl+V on another entry pastes it|(that entry keeps its own name).||Press any key")
   case 22 'Ctrl+V
-   if ClipPaste(kind, list_menu.selected) then
+   if clip_has(k) andalso EntryModified(kind, list_menu.selected) andalso not ConfirmBox("Paste over your edits to this entry?") then
+    'declined
+   elseif ClipPaste(kind, list_menu.selected) then
     RefreshEntryColor(list_menu, kind, list_menu.selected)
    else
     InfoBox("Nothing copied yet. Use Ctrl+C first.||Press any key")

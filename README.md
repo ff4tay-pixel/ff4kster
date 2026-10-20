@@ -122,9 +122,7 @@ The program opens a file selector for a compatible FF2US v1.1 ROM. The
 current code supports a 1 MiB unheadered ROM or a 1,049,088-byte headered ROM;
 the local `ff2.smc` test ROM is 1 MiB. Keep a backup before saving changes.
 Successful builds may show non-fatal warnings about mixed Boolean and
-non-Boolean operands in menu code. The files under `common/old`, `common/new`, and
-the `*-test.bas`/`*-old.bas` editor variants are historical experiments and
-are not included by the active `main.bas` include graph.
+non-Boolean operands in menu code.
 
 
 CONTROLS
@@ -232,7 +230,9 @@ with a black screen that seems to be doing nothing for a long time. If this
 happens, the only solution to my knowledge is to halt the task using
 whatever means your operating system provides for doing so.
 
-The main menu lists the editors in this order: Features, Spells, Spell Sets,
+The main menu groups the editors under yellow headings (Items and magic,
+Party, Story and text, World, Battles, Overview); the cursor skips the
+headings. The editors are in this order: Features, Spells, Spell Sets,
 Weapons, Armors, Medicines, Tools, Shops, Jobs, Battle Sprites, Characters,
 Commands, Actors, Messages, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
 Monsters, Formations, Encounters, Autobattles and Solobattles, followed by
@@ -1206,6 +1206,10 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * Since 0.8
+    - Main menu grouped under headings; confirmation before deleting an event
+      call entry or an AI condition/script pair, and before pasting over an
+      edited list entry
+    - Removed unused experimental files (common/old, common/new, old tileset editors)
     - Shop, formation and job lists now have the changed-entry colors, revert,
       copy / paste and (formations) where-used keys; Changed Entries covers them
     - Save ROM lists every problem at once when it fails; the modified mark

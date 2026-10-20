@@ -266,7 +266,7 @@ sub AIMenu.UserSelect()
      RefreshConditions()
      Display()
     elseif k = DELETE_KEY then
-     if set_menu.options.Length() > 1 then 'set_menu.selected < set_menu.options.Length() then
+     if set_menu.options.Length() > 1 andalso ConfirmBox("Delete this condition and script pair?") then
       aigroupconditions(index) = left(aigroupconditions(index), set_menu.selected - 1) + mid(aigroupconditions(index), set_menu.selected + 1)
       aigroupscripts(index) = left(aigroupscripts(index), set_menu.selected - 1) + mid(aigroupscripts(index), set_menu.selected + 1)
       RefreshConditions()

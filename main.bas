@@ -15,10 +15,56 @@
 #include once "subs.bas"
 #include once "methods.bas"
 
+'The main menu has header rows between groups of entries. menu_id maps a row
+' to its entry number (1 = Save ROM ... 30 = Quit), 0 for a header row.
+dim shared menu_id(1 to 60) as Integer
+dim shared menu_rows as Integer
+dim shared entry_number as Integer
+
+sub AddMainEntry(m as BlueMenu, label as String)
+
+ m.AddOption(FF4Text(label))
+ menu_rows += 1
+ entry_number += 1
+ menu_id(menu_rows) = entry_number
+
+end sub
+
+
+sub AddMainHeader(m as BlueMenu, label as String)
+
+ m.AddOption(FF4Text("- " + label + " -"), 14)
+ menu_rows += 1
+ menu_id(menu_rows) = 0
+
+end sub
+
+
+function MainMenuInput(m as BlueMenu) as Boolean
+
+ 'Like m.UserInput(), but the cursor never rests on a header row.
+
+ dim result as Boolean = m.UserInput()
+
+ if not result then
+  do while menu_id(m.selected) = 0
+   if m.last_key = UP_KEY then
+    m.ChangeSelected(m.selected - 1)
+   else
+    m.ChangeSelected(m.selected + 1)
+   end if
+  loop
+ end if
+
+ return result
+
+end function
+
 'Declare local variables.
 dim filename as String
 dim editor_menu as BlueMenu
 dim save_prompt as BlueMenu
+dim choice as Integer
 
 'Get a filename from the command line.
 'filename = command
@@ -83,37 +129,43 @@ line warp_overlay, (2, 12)-(0, 10), RGB(255, 0, 0)
 line warp_overlay, (2, 12)-(4, 10), RGB(255, 0, 0)
 
 
-'Set up main menu
-editor_menu.AddOption(FF4Text("Save ROM"))
-editor_menu.AddOption(FF4Text("Edit Features"))
-editor_menu.AddOption(FF4Text("Edit Spells"))
-editor_menu.AddOption(FF4Text("Edit Spell Sets"))
-editor_menu.AddOption(FF4Text("Edit Weapons"))
-editor_menu.AddOption(FF4Text("Edit Armors"))
-editor_menu.AddOption(FF4Text("Edit Medicines"))
-editor_menu.AddOption(FF4Text("Edit Tools"))
-editor_menu.AddOption(FF4Text("Edit Shops"))
-editor_menu.AddOption(FF4Text("Edit Jobs"))
-editor_menu.AddOption(FF4Text("Edit Battle Sprites"))
-editor_menu.AddOption(FF4Text("Edit Characters"))
-editor_menu.AddOption(FF4Text("Edit Commands"))
-editor_menu.AddOption(FF4Text("Edit Actors"))
-editor_menu.AddOption(FF4Text("Edit Messages"))
-editor_menu.AddOption(FF4Text("Edit Events"))
-editor_menu.AddOption(FF4Text("Edit Triggers"))
-editor_menu.AddOption(FF4Text("Edit NPCs"))
-editor_menu.AddOption(FF4Text("Edit Tilesets"))
-editor_menu.AddOption(FF4Text("Edit Map Info"))
-editor_menu.AddOption(FF4Text("Edit Maps"))
-editor_menu.AddOption(FF4Text("Edit Monsters"))
-editor_menu.AddOption(FF4Text("Edit Formations"))
-editor_menu.AddOption(FF4Text("Edit Encounters"))
-editor_menu.AddOption(FF4Text("Edit Autobattles"))
-editor_menu.AddOption(FF4Text("Edit Solobattles"))
-editor_menu.AddOption(FF4Text("Search Everywhere"))
-editor_menu.AddOption(FF4Text("Space Usage"))
-editor_menu.AddOption(FF4Text("Changed Entries"))
-editor_menu.AddOption(FF4Text("Quit"))
+'Set up main menu. Yellow header rows group the entries and the cursor skips them.
+AddMainEntry(editor_menu, "Save ROM")
+AddMainHeader(editor_menu, "Items and magic")
+AddMainEntry(editor_menu, "Edit Features")
+AddMainEntry(editor_menu, "Edit Spells")
+AddMainEntry(editor_menu, "Edit Spell Sets")
+AddMainEntry(editor_menu, "Edit Weapons")
+AddMainEntry(editor_menu, "Edit Armors")
+AddMainEntry(editor_menu, "Edit Medicines")
+AddMainEntry(editor_menu, "Edit Tools")
+AddMainEntry(editor_menu, "Edit Shops")
+AddMainHeader(editor_menu, "Party")
+AddMainEntry(editor_menu, "Edit Jobs")
+AddMainEntry(editor_menu, "Edit Battle Sprites")
+AddMainEntry(editor_menu, "Edit Characters")
+AddMainEntry(editor_menu, "Edit Commands")
+AddMainEntry(editor_menu, "Edit Actors")
+AddMainHeader(editor_menu, "Story and text")
+AddMainEntry(editor_menu, "Edit Messages")
+AddMainEntry(editor_menu, "Edit Events")
+AddMainEntry(editor_menu, "Edit Triggers")
+AddMainEntry(editor_menu, "Edit NPCs")
+AddMainHeader(editor_menu, "World")
+AddMainEntry(editor_menu, "Edit Tilesets")
+AddMainEntry(editor_menu, "Edit Map Info")
+AddMainEntry(editor_menu, "Edit Maps")
+AddMainHeader(editor_menu, "Battles")
+AddMainEntry(editor_menu, "Edit Monsters")
+AddMainEntry(editor_menu, "Edit Formations")
+AddMainEntry(editor_menu, "Edit Encounters")
+AddMainEntry(editor_menu, "Edit Autobattles")
+AddMainEntry(editor_menu, "Edit Solobattles")
+AddMainHeader(editor_menu, "Overview")
+AddMainEntry(editor_menu, "Search Everywhere")
+AddMainEntry(editor_menu, "Space Usage")
+AddMainEntry(editor_menu, "Changed Entries")
+AddMainEntry(editor_menu, "Quit")
 
 save_prompt.x = 24
 save_prompt.y = 25
@@ -133,15 +185,16 @@ do
  windowtitle "FF4kster - " + filename + iif(modified, " *", "")
  editor_menu.cancelled = false
  do
-  DrawMainHelp(editor_menu.selected)
- loop until editor_menu.UserInput()
+  DrawMainHelp(menu_id(editor_menu.selected))
+ loop until MainMenuInput(editor_menu)
+ choice = menu_id(editor_menu.selected)
 
  if not editor_menu.cancelled then
 
   'Start every editor on a black screen so nothing from the main menu is left behind.
-  if editor_menu.selected >= menu_first_editor and editor_menu.selected <= menu_last_editor then cls
+  if choice >= menu_first_editor and choice <= menu_last_editor then cls
 
-  select case editor_menu.selected
+  select case choice
 
    case menu_save
     editor_menu.Display()
@@ -199,7 +252,7 @@ do
   end select
 
   'Work out whether anything really changed (opening an editor and leaving does not count).
-  if editor_menu.selected >= menu_first_editor and editor_menu.selected <= menu_last_editor then
+  if choice >= menu_first_editor and choice <= menu_last_editor then
    modified = HasUnsavedEdits()
   end if
   editor_menu.ChangeOption(menu_save, FF4Text(iif(modified, "Save ROM *", "Save ROM")))
