@@ -126,11 +126,10 @@ CONTROLS
     Shift-Enter: Highlight the current entry; pressing Enter on another
                  entry will then swap the two instead of confirming (only
                  certain menus can do this)
-    H:           Show or hide the keyboard sidebar
-
   The standard list menus display these controls in a keyboard sidebar at the
-  bottom right. Specialized editors may add their own context-specific keys to
-  the sidebar.
+  bottom right only while the `H` key is held. Releasing `H` hides it and
+  restores the underlying menu. Specialized editors may add their own
+  context-specific keys to the sidebar.
 
   In numeric inputs:
 
@@ -143,7 +142,8 @@ CONTROLS
     Backspace: Divide current number by 10, rounding down (effectively erases
                last digit)
     0-9 keys:  Multiply the current number by 10 and add the typed digit
-               (effectively allows you to type out numbers)
+               (the first digit replaces the current value, then later digits
+               append; this allows you to type out a replacement number)
     
     NOTE - Some things look like numeric inputs but are actually menus (prices
            for example, as you can't just put any arbitrary number as a price)
@@ -629,9 +629,8 @@ selector:
     CTRL+C: Copy the selected rectangle.
     CTRL+V: Paste the copied rectangle at the cursor.
 
-The bottom-right keyboard sidebar lists one shortcut per line. Press `H` to
-hide or show the sidebar while browsing map indices or editing a map; the map
-status remains on the lower left.
+The bottom-right keyboard sidebar appears only while `H` is held in the map
+editor. Releasing `H` hides it and redraws the underlying map UI.
 `CTRL+Z` steps backward through up to ten paint or flood-fill operations in
 the current map editing session.
 The map selector shows the selected grid index and how many map entries share
