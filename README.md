@@ -958,10 +958,20 @@ selector:
     DELETE: Remove the trigger on the tile (after a confirmation).
     The game shares a fixed amount of room between the triggers of all maps
     (979), and the original ROM uses all of it, so delete one before adding.
+    N:      Edit the NPC placement standing on the tile under the cursor (the
+            same menus as Edit NPCs: position, speed, palette, walking, facing,
+            which NPC, and that NPC's sprite, visibility and speech); if there is
+            none it offers to add one. When several stand on the tile a short
+            list asks which one.
+    SHIFT+INSERT: Add an NPC placement at the cursor and open it.
+    SHIFT+DELETE: Remove the NPC placement on the tile (after a confirmation).
+    A map can have at most 12 placements, and all maps share a fixed amount of
+    room for them; the editor tells you when there is no room.
 
-The three lines at the bottom of the screen show the current panel, tile and
-selection size, whether the overlay is on, a reminder of the main keys, and the
-trigger under the cursor (what it does) or the keys that edit triggers.
+The four lines at the bottom of the screen show the current panel, tile and
+selection size, whether the overlay is on, a reminder of the main keys, the
+trigger under the cursor (what it does) or the keys that edit triggers, and the
+NPC under the cursor or the keys that edit NPCs.
 The map selector shows the selected grid index and how many map entries share
 it. Press `I` to open the shared map-index list when needed.
 
@@ -1293,7 +1303,8 @@ VERSION HISTORY
       copy / paste, undo, mouse painting); saved into the fixed room the game gives
       each world, with a space check; O shows triggers and encounter zones over the map;
       T / Insert / Delete edit the world triggers from the map; teleport triggers pick
-      their arrival spot on a picture of the destination map; the regular map editor
+      their arrival spot on a picture of the destination map; NPC placements can be
+      edited from the map editor too (N, Shift-Insert, Shift-Delete); the regular map editor
       has the same keys for the triggers of the map
     - Revert, copy / paste, undo and changed marks for solobattles, autobattles, spell
       sets and encounter areas; Changed Entries lists commands, actors and those too

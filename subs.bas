@@ -99,6 +99,7 @@
 #include once "subs/edit/editmessages.bas"
 #include once "subs/edit/editevents.bas"
 #include once "subs/edit/edittriggers.bas"
+#include once "subs/general/npctools.bas"
 #include once "subs/edit/editnpcs.bas"
 #include once "subs/edit/edittilesets.bas"
 #include once "subs/edit/editmapproperties.bas"
