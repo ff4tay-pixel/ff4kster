@@ -106,6 +106,7 @@
 #include once "subs/general/monstersprite.bas"
 #include once "subs/general/battlespriteio.bas"
 #include once "subs/general/monsterspriteio.bas"
+#include once "subs/general/triggertools.bas"
 #include once "subs/general/worldmap.bas"
 #include once "subs/general/formationview.bas"
 #include once "subs/edit/editmonsters.bas"

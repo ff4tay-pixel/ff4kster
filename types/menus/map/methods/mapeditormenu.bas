@@ -21,6 +21,7 @@ end constructor
 sub MapEditorMenu.Display()
 
  dim amount as Integer
+ dim trigger_text as String
  
  palette_menu.Display()
  map_menu.Display()
@@ -35,7 +36,7 @@ sub MapEditorMenu.Display()
   WriteText(FF4Text("Room:      " + Pad(str(amount), 5, true)), palette_menu.x + 1, palette_menu.y + palette_menu.rows * 2 + 3, 15)
  end if
 
- BlueBox(0, 52, 53, 2)
+ BlueBox(0, 52, 53, 3)
  WriteText(FF4Text(Pad("Panel: " + iif(map_menu.active, "Map", "Palette") + "  Tile:" + palette_menu.options.ItemAt(palette_menu.cursor_x + 1, palette_menu.cursor_y + 1) + "  Size:" + str(abs(map_menu.cursor_w) + 1) + "x" + str(abs(map_menu.cursor_h) + 1) + "  Overlay:" + iif(overlay_visible, "On", "Off"), 51)), 1, 53, 15)
  if paste_mode then
   WriteText(FF4Text(Pad("PASTE: arrows move, Enter place, Esc cancel", 51)), 1, 54, 14)
@@ -45,6 +46,17 @@ sub MapEditorMenu.Display()
   else
    WriteText(FF4Text(Pad("J jump  F find  I grid info  Enter edit  Bksp erase", 51)), 1, 54, 15)
   end if
+ end if
+ 'The trigger under the cursor, and the keys that edit it
+ if editing and not paste_mode and (map_number < 252 or map_number > 254) then
+  trigger_text = TriggerStatusText(map_number, map_menu.cursor_x, map_menu.cursor_y)
+  if trigger_text = "" then
+   WriteText(FF4Text(Pad("T trigger  Insert add one  Delete remove it", 51)), 1, 55, 15)
+  else
+   WriteText(FF4Text(Pad(left(trigger_text, 51), 51)), 1, 55, 14)
+  end if
+ else
+  WriteText(FF4Text(Pad("", 51)), 1, 55, 15)
  end if
 
 end sub
@@ -453,6 +465,21 @@ sub MapEditorMenu.UserSelect()
     case asc("o"), asc("O")
      overlay_visible = not overlay_visible
      RefreshOverlay()
+    case asc("t"), asc("T")
+     if active_menu = @map_menu and (map_number < 252 or map_number > 254) then
+      TriggerKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 1)
+      RefreshOverlay()
+     end if
+    case INSERT_KEY
+     if active_menu = @map_menu and (map_number < 252 or map_number > 254) then
+      if TriggerKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 2) then overlay_visible = true
+      RefreshOverlay()
+     end if
+    case DELETE_KEY
+     if active_menu = @map_menu and (map_number < 252 or map_number > 254) then
+      TriggerKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 3)
+      RefreshOverlay()
+     end if
     case 25
      if active_menu = @map_menu then Redo()
     case TAB_KEY

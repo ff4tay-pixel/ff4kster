@@ -945,9 +945,17 @@ selector:
             map. Can be undone.
     O:      Show or hide an overlay of the map's triggers (yellow squares) and
             NPC placements (cyan squares) on the map.
+    T:      Edit the trigger on the tile under the cursor (the same screen as
+            Edit Triggers); if there is none it offers to add one. When several
+            triggers share the tile a short list asks which one.
+    INSERT: Add a trigger at the cursor and open it for editing.
+    DELETE: Remove the trigger on the tile (after a confirmation).
+    The game shares a fixed amount of room between the triggers of all maps
+    (979), and the original ROM uses all of it, so delete one before adding.
 
-The two lines at the bottom of the screen show the current panel, tile and
-selection size, whether the overlay is on, and a reminder of the main keys.
+The three lines at the bottom of the screen show the current panel, tile and
+selection size, whether the overlay is on, a reminder of the main keys, and the
+trigger under the cursor (what it does) or the keys that edit triggers.
 The map selector shows the selected grid index and how many map entries share
 it. Press `I` to open the shared map-index list when needed.
 
@@ -1278,7 +1286,8 @@ VERSION HISTORY
     - Edit World Maps: edit the overworld, underground and moon (paint, fill, replace,
       copy / paste, undo, mouse painting); saved into the fixed room the game gives
       each world, with a space check; O shows triggers and encounter zones over the map;
-      T / Insert / Delete edit the world triggers from the map
+      T / Insert / Delete edit the world triggers from the map; the regular map editor
+      has the same keys for the triggers of the map
     - Revert, copy / paste, undo and changed marks for solobattles, autobattles, spell
       sets and encounter areas; Changed Entries lists commands, actors and those too
     - Edit Graphics shows and edits the palette a boss really uses

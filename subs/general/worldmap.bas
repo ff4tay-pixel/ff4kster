@@ -772,39 +772,6 @@ function WorldZoneExtent(w as Integer) as Integer
 end function
 
 
-function WorldTriggerText(w as Integer, tile_x as Integer, tile_y as Integer) as String
-
- 'A few words about the trigger on a tile, or "" if there is none
-
- dim t as Trigger ptr
- dim destination as String
-
- for i as Integer = 1 to maps(252 + w).triggers.Length()
-  t = maps(252 + w).triggers.PointerAt(i)
-  if t->x = tile_x and t->y = tile_y then
-   if t->warp then
-    if w = 0 then
-     destination = map_names.ItemAt(t->new_map + 1)
-    elseif t->new_map < 128 then
-     destination = map_names.ItemAt(t->new_map + 257)
-    elseif t->new_map >= 251 then
-     destination = map_names.ItemAt(t->new_map + 1)
-    else
-     destination = FF4Text("unknown")
-    end if
-    return "Trigger: goes to " + trim(FF4Name(destination)) + " at " + str(t->new_x) + "," + str(t->new_y)
-   elseif t->treasure then
-    return "Trigger: treasure"
-   end if
-   return "Trigger: event " + str(t->event)
-  end if
- next
-
- return ""
-
-end function
-
-
 sub DrawWorldOverlays()
 
  'Triggers (yellow frames, like the map editor's) and the encounter zones (dashed lines, each
@@ -860,94 +827,6 @@ sub DrawWorldOverlays()
     line (px + 2, py + 2)-(px + 13, py + 13), RGB(255, 255, 0), b
    end if
   next
- end if
-
-end sub
-
-
-function WorldTriggerIndexAt(w as Integer, tile_x as Integer, tile_y as Integer) as Integer
-
- 'The number of the (first) trigger on a tile, or 0
-
- dim t as Trigger ptr
-
- for i as Integer = 1 to maps(252 + w).triggers.Length()
-  t = maps(252 + w).triggers.PointerAt(i)
-  if t->x = tile_x and t->y = tile_y then return i
- next
-
- return 0
-
-end function
-
-
-sub WorldEditTrigger(index as Integer)
-
- 'The trigger editor's own screen for one trigger (the same menus as Edit Triggers)
-
- dim info as TriggerInfoMenu
-
- info = TriggerInfoMenu(12, 10)
- info.t = maps(252 + wv_world).triggers.PointerAt(index)
- info.m = 252 + wv_world
- info.underworld = (wv_world > 0)
- cls
- WriteText(FF4Text("Trigger " + str(index) + " of " + WorldNameText(wv_world)), 12, 6, 14)
- info.Display()
- info.UserSelect()
- cls
- RecomputeTreasureIndexes()
-
-end sub
-
-
-sub WorldAddTrigger()
-
- 'A new trigger on the tile under the cursor, opened for editing
-
- dim t as Trigger ptr
-
- if WorldTriggerIndexAt(wv_world, wv_cursor_x, wv_cursor_y) > 0 then
-  InfoBox("There is already a trigger on this tile.|Press T to edit it.||Press any key", 20, 20)
-  exit sub
- end if
- if maps(252).triggers.Length() + maps(253).triggers.Length() + maps(254).triggers.Length() >= max_overworld_triggers then
-  InfoBox("The game has room for " + str(max_overworld_triggers) + " world triggers in all.|Delete one first.||Press any key", 20, 20)
-  exit sub
- end if
- t = callocate(SizeOf(Trigger))
- t->x = wv_cursor_x
- t->y = wv_cursor_y
- maps(252 + wv_world).triggers.Append(t)
- wv_overlay = wv_overlay or 1
- WorldEditTrigger(maps(252 + wv_world).triggers.Length())
-
-end sub
-
-
-sub WorldDeleteTrigger()
-
- dim index as Integer = WorldTriggerIndexAt(wv_world, wv_cursor_x, wv_cursor_y)
-
- if index = 0 then exit sub
- if ConfirmBox("Delete this trigger?") then
-  maps(252 + wv_world).triggers.Remove(index)
-  RecomputeTreasureIndexes()
- end if
-
-end sub
-
-
-sub WorldTriggerKey()
-
- 'T: edit the trigger under the cursor; if there is none, offer to add one
-
- dim index as Integer = WorldTriggerIndexAt(wv_world, wv_cursor_x, wv_cursor_y)
-
- if index > 0 then
-  WorldEditTrigger(index)
- elseif ConfirmBox("No trigger here. Add one?") then
-  WorldAddTrigger()
  end if
 
 end sub
@@ -1079,7 +958,7 @@ sub DrawWorldEditor()
  end if
  tile_number = world_tiles(w, wv_cursor_y, wv_cursor_x) and 127
  info_line = ""
- if (wv_overlay and 1) <> 0 then info_line = WorldTriggerText(w, wv_cursor_x, wv_cursor_y)
+ if (wv_overlay and 1) <> 0 then info_line = TriggerStatusText(252 + w, wv_cursor_x, wv_cursor_y)
  if info_line <> "" then
   if (wv_overlay and 2) <> 0 and WorldZoneArea(w, wv_cursor_x, wv_cursor_y) > 0 then info_line += ".  Enc " + str(encounter_tables(WorldZoneArea(w, wv_cursor_x, wv_cursor_y)))
   WriteText(FF4Text(Pad(left(info_line, 74), 74)), 1, 55, 14)
@@ -1324,11 +1203,13 @@ sub EditOneWorld(w as Integer)
      case asc("o"), asc("O")
       wv_overlay = (wv_overlay + 3) mod 4
      case asc("t"), asc("T")
-      if wv_map_active then WorldTriggerKey()
+      if wv_map_active then TriggerKeyAt(252 + wv_world, wv_cursor_x, wv_cursor_y, 1)
      case INSERT_KEY
-      if wv_map_active then WorldAddTrigger()
+      if wv_map_active then
+       if TriggerKeyAt(252 + wv_world, wv_cursor_x, wv_cursor_y, 2) then wv_overlay = wv_overlay or 1
+      end if
      case DELETE_KEY
-      if wv_map_active then WorldDeleteTrigger()
+      if wv_map_active then TriggerKeyAt(252 + wv_world, wv_cursor_x, wv_cursor_y, 3)
      case 3
       if wv_map_active then WorldCopySelection()
      case 22
