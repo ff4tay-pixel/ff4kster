@@ -6,7 +6,7 @@
 '  3 Stats     attack, defense, magic defense, speed index, spell power
 '  4 Drops     drop rate, drop index and the four drops
 '  5 Extras    attack adds, resistances, weaknesses, races, reaction (switched on and off here)
-'  6 AI        the attack AI and the reaction AI (opens the AI editor)
+'  6 AI        the attack AI, the bank (regular or lunar) and the reaction AI (opens the AI editor)
 '
 'Up and Down walk through all the rows, Tab or 1-6 jump to a box, Enter edits the row, Page Up and Page Down
 'move to the previous or next monster, Esc goes back to the list.
@@ -24,7 +24,7 @@ dim shared mon_resistances as FlagMenu
 dim shared mon_weaknesses as FlagMenu
 dim shared mon_races as FlagMenu
 dim shared mon_panel as Integer 'the box the cursor is in
-dim shared mon_ai_row as Integer 'which of the two AI rows
+dim shared mon_ai_row as Integer 'which of the three AI rows: attack AI, bank, reaction AI
 dim shared mon_script_keys(255) as UInteger 'keys to feed the editor instead of the keyboard (for testing)
 dim shared mon_script_count as Integer
 dim shared mon_script_pos as Integer
@@ -127,7 +127,7 @@ sub MonDrawAIBox(x as Integer, y as Integer, inner_h as Integer, title as String
  'A box that sums up an AI: its pairs, each with its first condition and its first action. The editor
  ' for it opens from the AI box of the cursor.
 
- dim row as Integer = y + 2
+ dim row as Integer = y + 3
  dim last_row as Integer = y + inner_h
  dim pair_count as Integer
  dim shown as Integer
@@ -135,7 +135,7 @@ sub MonDrawAIBox(x as Integer, y as Integer, inner_h as Integer, title as String
  BlueBox(x, y, 31, inner_h)
  LuText(title, x, y, 14)
  LuText("AI " + str(index), x + 1, y + 1, 15)
- LuText(iif(lunar_flag, "LUNAR bank", "Regular bank"), x + 8, y + 1, iif(lunar_flag, 12, 23))
+ LuText("Bank: " + iif(lunar_flag, "LUNAR", "Regular"), x + 1, y + 2, iif(lunar_flag, 12, 23))
 
  ai_index = index
  ai_lunar = lunar_flag
@@ -302,7 +302,7 @@ end function
 
 function MonPanelRows(panel as Integer) as Integer
 
- if panel = 6 then return 2
+ if panel = 6 then return 3
  return MonPanelMenu(panel)->options.Length()
 
 end function
@@ -334,7 +334,7 @@ sub MonDrawCursor()
  dim menu_ptr as BlueMenu ptr
 
  if mon_panel = 6 then
-  DrawLetter(20, 45, iif(mon_ai_row = 1, 0, 27))
+  DrawLetter(20, 45, iif(mon_ai_row = 1, 1, iif(mon_ai_row = 2, 2, 28)))
  else
   menu_ptr = MonPanelMenu(mon_panel)
   menu_ptr->ShowCursor()
@@ -359,14 +359,14 @@ function MonHint(m as Integer) as String
   case 2
    select case row
     case 1: return "Enter picks the graphics from a template or by number, with a live picture."
-    case 2: return "Enter picks the size (bosses also get their special size settings)."
+    case 2: return "Enter picks the size. Bosses also get their special size settings."
     case else: return "Enter types the palette number, the picture follows."
    end select
   case 3
    if row <= 3 then return "Enter picks a stat group, then edits its base, multiplier and percentage."
    if row = 4 then return "Enter picks a speed group, then edits its range."
    if monsters(m).has_spell_power then return "Enter types the spell power. Space or Delete switches it off."
-   return "Enter or Space gives this monster a spell power (it is off now)."
+   return "Enter or Space gives this monster a spell power. It is off now."
   case 4
    if row <= 2 then return "Enter types a number. The index decides which four drops are used."
    return "Enter picks the item. The drops belong to the drop index, shared by monsters."
@@ -375,6 +375,7 @@ function MonHint(m as Integer) as String
    return "Enter or Space switches it on and edits it. Yellow is on."
   case else
    if mon_ai_row = 1 then return "Enter opens the AI editor for the attack AI of this monster."
+   if mon_ai_row = 2 then return "Enter or Space switches the AI bank, regular or lunar. L does it from any box."
    if monsters(m).has_reaction then return "Enter opens the AI editor on the reaction AI of this monster."
    return "No reaction AI. Switch Reaction on in box 5 to give this monster one."
  end select
@@ -422,6 +423,10 @@ sub MonFields()
    case ESC_KEY
     done = true
 
+   case asc("l"), asc("L")
+    'the regular or the lunar AI bank, from any box
+    monsters(m).lunar = not monsters(m).lunar
+    message = "AI bank: " + iif(monsters(m).lunar, "LUNAR", "regular") + "."
    case TAB_KEY
     mon_panel = mon_panel mod mon_panels + 1
    case asc("1") to asc("6")
@@ -500,7 +505,9 @@ sub MonFields()
       end if
 
      case else
-      if k = ENTER_KEY then
+      if mon_ai_row = 2 then
+       if k = ENTER_KEY or k = SPACE_KEY then monsters(m).lunar = not monsters(m).lunar
+      elseif k = ENTER_KEY then
        if mon_ai_row = 1 then
         MonOpenAI(m, false)
        elseif monsters(m).has_reaction then

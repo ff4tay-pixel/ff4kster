@@ -4,21 +4,29 @@
 'first pair whose conditions are all true. Each pair is a condition set (all its conditions must hold) and
 'a script (the actions to do). The screen has three panels, one under the other, that each do one job:
 '
-'  1 WHICH AI    The AI this monster uses (Enter picks it from a list) and its pairs, one line each.
-'  2 CONDITIONS  The condition set of the selected pair: pick another set, or change, add and remove its
+'  1 AI SCRIPT   The AI the monster uses, and any other AI to look at: browsing does not change the monster
+'                until "use this AI" is chosen.
+'  2 CONDITIONS  The conditions of the pairs, one pair per line. The selected pair opens up to show all its
 '                conditions (WHEN, AND).
-'  3 ACTIONS     The script of the selected pair: pick another script, or change, add and remove its
-'                actions (THEN).
+'  3 ACTIONS     The actions under the selected pair's conditions (THEN): the part that matters most, so it
+'                has the most room. Left and Right in panels 2 and 3 switch to the previous or next pair.
 '
-'Tab or 1 2 3 switch panel. The selected pair of panel 1 decides what panels 2 and 3 show.
-'Sets, conditions and scripts are shared in the ROM: one script can serve many AIs. A change goes to every
-'place that uses it; the "used Nx" counts show how many, and key U makes a private copy in an unused slot
-'first. A new pair gets its own unused condition set, condition and script, so changing it touches nothing
-'else. The footer shows how full the AI areas of the ROM are, so a save that would not fit is seen early.
+'Tab or 1 2 3 switch panel. Sets, conditions and scripts are shared in the ROM: one script can serve many
+'AIs. A change goes to every place that uses it; the "used Nx" counts show how many, and key U makes a
+'private copy in an unused slot first. A new pair gets its own unused condition set, condition and script, so
+'changing it touches nothing else. The footer shows how full the AI areas of the ROM are.
 '
 'The font has no + = ( ) [ ] < > characters, so the help text is written around that.
 
 const ai_undo_depth = 120
+
+const ai_max_cond_lines = 600
+
+'the lines of the condition list (panel 2)
+const ai_cl_condition = 1 'a condition of the selected pair
+const ai_cl_addcond = 2 'the line that adds one
+const ai_cl_collapsed = 3 'another pair, on one line
+const ai_cl_addpair = 4 'the line that adds a pair
 
 const ai_dialog_x = 8 'where the first menu of a change dialog opens
 const ai_dialog_y = 9
@@ -32,14 +40,20 @@ type AIUndoEntry
  hp(1 to total_condition_hps) as UInteger
 end type
 
-dim shared ai_panel_y(1 to 3) as Integer = {4, 15, 27} 'top border of each panel
-dim shared ai_panel_inner(1 to 3) as Integer = {9, 10, 17} 'text rows inside: the chooser line and the list under it
-dim shared ai_cur(1 to 3) as Integer 'cursor row of each panel (0 is the chooser line, the last is the Add row)
+dim shared ai_panel_y(1 to 3) as Integer = {4, 9, 24} 'top border of each panel
+dim shared ai_panel_inner(1 to 3) as Integer = {3, 13, 21} 'text rows inside each panel
+dim shared ai_cur(1 to 3) as Integer 'cursor row of panels 1 and 3 (panel 3: 0 is the chooser line, the last is the Add row)
 dim shared ai_top(1 to 3) as Integer 'first list row shown
 dim shared ai_focus as Integer 'the panel the keys act on
 dim shared ai_pair as Integer 'the pair that panels 2 and 3 show
+dim shared ai_cp as Integer 'panel 2 cursor: the pair (0 for the Add a new pair line) and the condition in it
+dim shared ai_ci as Integer
+dim shared ai_cl_kind(1 to ai_max_cond_lines) as Integer 'the lines of panel 2
+dim shared ai_cl_pair(1 to ai_max_cond_lines) as Integer
+dim shared ai_cl_item(1 to ai_max_cond_lines) as Integer
+dim shared ai_cl_count as Integer
 dim shared ai_message as String
-dim shared ai_attack as Integer 'the monster's attack AI and reaction AI while editing
+dim shared ai_attack as Integer 'the AIs the monster uses (attack and reaction) while editing
 dim shared ai_reaction as Integer
 
 dim shared ai_index as Integer
@@ -317,7 +331,7 @@ function AIPickSet(current as Integer) as Integer
   label = FF4Text(Pad(str(i), 2, true) + "  ")
   text = conditionsets(i)
   if len(text) = 0 then
-   label += FF4Text("(empty)")
+   label += FF4Text("empty")
   else
    if AIByte(text, 1) < total_conditions then label += conditions(AIByte(text, 1) + 1).TextDescription()
    if len(text) > 1 then label += FF4Text("   and " + str(len(text) - 1) + " more")
@@ -350,7 +364,7 @@ function AIPickScript(current as Integer) as Integer
   n = AIScriptIndex(i)
   label = FF4Text(Pad(str(i + 1), 3, true) + "  ")
   if scripts(n).Length() = 0 then
-   label += FF4Text("(empty)")
+   label += FF4Text("empty")
   else
    entry = scripts(n).PointerAt(1)
    label += entry->TextDescription()
@@ -545,16 +559,27 @@ function AIUsedBy() as String
  dim names as Integer
  dim total as Integer
  dim text as String
+ dim attack as Integer
+ dim reaction as Integer
+ dim is_lunar as Boolean
+ dim who as String
 
  for m as Integer = 1 to total_monsters
-  text = ""
   if m = ai_monster then
-   text = FF4Text("this one")
-  elseif monsters(m).lunar = ai_lunar then
-   if monsters(m).attack_sequence_group + 1 = ai_index then text = AITrim(monsters(m).name)
-   if text = "" and monsters(m).has_reaction andalso monsters(m).reaction_index + 1 = ai_index then
-    text = AITrim(monsters(m).name) + FF4Text(" reaction")
-   end if
+   attack = ai_attack
+   reaction = ai_reaction
+   is_lunar = ai_lunar
+   who = FF4Text("this one")
+  else
+   attack = monsters(m).attack_sequence_group + 1
+   reaction = iif(monsters(m).has_reaction, monsters(m).reaction_index + 1, 0)
+   is_lunar = monsters(m).lunar
+   who = AITrim(monsters(m).name)
+  end if
+  text = ""
+  if is_lunar = ai_lunar then
+   if attack = ai_index then text = who
+   if text = "" and reaction = ai_index then text = who + FF4Text(" reaction")
   end if
   if text <> "" then
    total += 1
@@ -565,7 +590,7 @@ function AIUsedBy() as String
   end if
  next
 
- if total = 0 then return FF4Text("no monster (not used)")
+ if total = 0 then return FF4Text("no monster, not used")
  if total > names then result += FF4Text("  and " + str(total - names) + " more")
  return result
 
@@ -609,24 +634,33 @@ sub AIBand(y as Integer, c as UInteger)
 end sub
 
 
+function AIAssigned() as Integer
+
+ 'The AI the monster uses now (its attack AI, or its reaction AI while that one is the one being worked on)
+
+ return iif(ai_on_reaction, ai_reaction, ai_attack)
+
+end function
+
+
 function AIPanelCount(panel as Integer) as Integer
 
- 'The number of the last row of a panel's list, which is its "Add" row (row 0 is the chooser line above the list)
+ 'The number of the last row of a panel's list. Panel 1 has rows 0 and 1, panel 3 has the chooser line
+ ' (row 0), the actions and the Add row. (Panel 2 is a list of its own, see AIBuildCondLines.)
 
  dim n as Integer
 
  select case panel
   case 1
-   return len(aigroupconditions(ai_index)) + 1
-  case 2
-   if ai_pair < 1 then return 0
-   return len(AISetString(AISetId(ai_pair))) + 1
-  case else
+   return 1
+  case 3
    if ai_pair < 1 then return 0
    if not AIScriptExists(AIScriptId(ai_pair)) then return 0
    n = AIScriptIndex(AIScriptId(ai_pair))
    return scripts(n).Length() + 1
  end select
+
+ return 0
 
 end function
 
@@ -637,7 +671,7 @@ function AIFirstCondition(p as Integer) as String
 
  dim slot as Integer = AIByte(AISetString(AISetId(p)), 1)
 
- if len(AISetString(AISetId(p))) = 0 or slot >= total_conditions then return FF4Text("(no conditions)")
+ if len(AISetString(AISetId(p))) = 0 or slot >= total_conditions then return FF4Text("no conditions")
  return conditions(slot + 1).TextDescription()
 
 end function
@@ -648,9 +682,9 @@ function AIFirstAction(p as Integer) as String
  dim n as Integer
  dim entry as AIScriptEntry ptr
 
- if not AIScriptExists(AIScriptId(p)) then return FF4Text("(no such script)")
+ if not AIScriptExists(AIScriptId(p)) then return FF4Text("no such script")
  n = AIScriptIndex(AIScriptId(p))
- if scripts(n).Length() = 0 then return FF4Text("(no actions)")
+ if scripts(n).Length() = 0 then return FF4Text("no actions")
  entry = scripts(n).PointerAt(1)
 
  return entry->TextDescription()
@@ -658,59 +692,177 @@ function AIFirstAction(p as Integer) as String
 end function
 
 
-sub AIDrawRowA(idx as Integer, y as Integer)
+'-------- the list of conditions (panel 2) --------
 
- dim pair_count as Integer = len(aigroupconditions(ai_index))
+sub AIAddCondLine(kind as Integer, p as Integer, item as Integer)
 
- if idx = 0 then
-  LuText("AI " + str(ai_index) + " of " + str(total_ai_groups), 2, y, 14)
-  LuText(iif(ai_on_reaction, "reaction AI", "attack AI") + ", " + str(pair_count) + iif(pair_count = 1, " pair", " pairs"), 18, y, 23)
-  LuText("Enter picks the AI from a list", 46, y, 23)
- elseif idx <= pair_count then
-  LuText("Pair " + str(idx), 2, y, 15)
-  LuText("WHEN", 10, y, 21)
-  WriteText(left(AIFirstCondition(idx), 24), 16, y, 15)
-  LuText("THEN", 42, y, 22)
-  WriteText(left(AIFirstAction(idx), 24), 48, y, 15)
- else
-  LuText("Add a new pair of conditions and actions", 2, y, 10)
- end if
+ if ai_cl_count >= ai_max_cond_lines then exit sub
+ ai_cl_count += 1
+ ai_cl_kind(ai_cl_count) = kind
+ ai_cl_pair(ai_cl_count) = p
+ ai_cl_item(ai_cl_count) = item
 
 end sub
 
 
-sub AIDrawRowB(idx as Integer, y as Integer)
+sub AIBuildCondLines()
 
+ 'One line per pair, except the selected pair: it shows all its conditions and an Add line
+
+ dim n as Integer
+
+ ai_cl_count = 0
+ for p as Integer = 1 to len(aigroupconditions(ai_index))
+  if p = ai_pair then
+   n = len(AISetString(AISetId(p)))
+   for j as Integer = 1 to n
+    AIAddCondLine(ai_cl_condition, p, j)
+   next
+   AIAddCondLine(ai_cl_addcond, p, n + 1)
+  else
+   AIAddCondLine(ai_cl_collapsed, p, 1)
+  end if
+ next
+ AIAddCondLine(ai_cl_addpair, 0, 0)
+
+end sub
+
+
+function AICondIndex() as Integer
+
+ 'The line of the list that the cursor (ai_cp, ai_ci) is on
+
+ for i as Integer = 1 to ai_cl_count
+  if ai_cl_pair(i) = ai_cp and ai_cl_item(i) = ai_ci then return i
+ next
+ for i as Integer = 1 to ai_cl_count
+  if ai_cl_pair(i) = ai_cp then return i
+ next
+
+ return ai_cl_count
+
+end function
+
+
+sub AISetCondCursor(i as Integer)
+
+ 'Puts the cursor on line i of the list. Landing on another pair makes it the selected one.
+
+ if i < 1 then i = 1
+ if i > ai_cl_count then i = ai_cl_count
+ ai_cp = ai_cl_pair(i)
+ ai_ci = ai_cl_item(i)
+ if ai_cp > 0 then ai_pair = ai_cp
+
+end sub
+
+
+'-------- drawing --------
+
+sub AIDrawPanel1()
+
+ dim y0 as Integer = ai_panel_y(1)
+ dim focused as Boolean = (ai_focus = 1)
+ dim selected_color as UInteger = iif(focused, RGB(95, 115, 205), RGB(50, 65, 135))
+ dim assigned as Integer = AIAssigned()
+ dim pair_count as Integer = len(aigroupconditions(ai_index))
+
+ BlueBox(0, y0, 78, ai_panel_inner(1))
+ LuText(" 1  AI SCRIPT  ", 1, y0, iif(focused, 14, 23))
+
+ 'row 0: the AI that is shown, and whether the monster uses it
+ LuText("AI " + str(ai_index) + " of " + str(total_ai_groups), 2, y0 + 1, 14)
+ if ai_index = assigned then
+  LuText("used by this monster", 18, y0 + 1, 10)
+ else
+  LuText("monster uses AI " + str(assigned), 18, y0 + 1, 14)
+ end if
+ LuText("Enter: list. Left Right: step", 49, y0 + 1, 23)
+ AIBand(y0 + 1, iif(ai_cur(1) = 0, selected_color, RGB(30, 45, 120)))
+ if focused and ai_cur(1) = 0 then DrawLetter(20, 0, y0 + 1)
+
+ 'row 1: use the AI shown
+ if ai_index = assigned then
+  LuText("This is the AI of this monster. " + str(pair_count) + iif(pair_count = 1, " pair", " pairs") + ", " + iif(ai_lunar, "LUNAR bank", "regular bank"), 2, y0 + 2, 23)
+ else
+  LuText("Use AI " + str(ai_index) + " for this monster instead of AI " + str(assigned), 2, y0 + 2, 10)
+ end if
+ if ai_cur(1) = 1 then AIBand(y0 + 2, selected_color)
+ if focused and ai_cur(1) = 1 then DrawLetter(20, 0, y0 + 2)
+
+ 'row 2: where the AI is used
+ LuText("Used by: ", 2, y0 + 3, 23)
+ WriteText(left(AIUsedBy(), 66), 12, y0 + 3, 10)
+
+end sub
+
+
+sub AIDrawCondLine(i as Integer, y as Integer)
+
+ dim p as Integer = ai_cl_pair(i)
+ dim j as Integer = ai_cl_item(i)
  dim sid as Integer
  dim slot as Integer
  dim uses as Integer
  dim n as Integer
 
- if ai_pair < 1 then
-  if idx = 0 then LuText("Pick a pair in panel 1 first", 2, y, 12)
-  exit sub
- end if
+ select case ai_cl_kind(i)
 
- sid = AISetId(ai_pair)
- n = len(AISetString(sid))
- if idx = 0 then
-  uses = ai_set_uses(sid)
-  LuText("Condition set " + str(sid + 1) + " of pair " + str(ai_pair), 2, y, 21)
-  LuText("used " + str(uses) + "x", 36, y, iif(uses > 1, 14, 23))
-  LuText("Enter picks another set", 50, y, 23)
- elseif idx <= n then
-  slot = AIByte(AISetString(sid), idx)
-  LuText(iif(idx = 1, "WHEN", "AND "), 4, y, 21)
-  if slot < total_conditions then
-   WriteText(left(conditions(slot + 1).TextDescription(), 52), 10, y, 15)
-   uses = ai_condition_uses(slot)
-   LuText("used " + str(uses) + "x", 66, y, iif(uses > 1, 14, 23))
-  else
-   LuText("Unknown condition " + str(slot), 10, y, 12)
+  case ai_cl_condition
+   sid = AISetId(p)
+   slot = AIByte(AISetString(sid), j)
+   if j = 1 then LuText(str(p), 2, y, 14)
+   LuText(iif(j = 1, "WHEN", "AND "), 5, y, 21)
+   if slot < total_conditions then
+    WriteText(left(conditions(slot + 1).TextDescription(), 52), 11, y, 15)
+    uses = ai_condition_uses(slot)
+    LuText("used " + str(uses) + "x", 66, y, iif(uses > 1, 14, 23))
+   else
+    LuText("Unknown condition " + str(slot), 11, y, 12)
+   end if
+
+  case ai_cl_addcond
+   LuText("Add a condition", 11, y, 10)
+
+  case ai_cl_collapsed
+   n = len(AISetString(AISetId(p)))
+   LuText(str(p), 2, y, 23)
+   LuText("WHEN", 5, y, 23)
+   WriteText(left(AIFirstCondition(p), 46), 11, y, 23)
+   if n > 1 then LuText("and " + str(n - 1) + " more", 66, y, 23)
+
+  case ai_cl_addpair
+   LuText("Add a new pair of conditions and actions", 2, y, 10)
+
+ end select
+
+end sub
+
+
+sub AIDrawPanel2()
+
+ dim y0 as Integer = ai_panel_y(2)
+ dim inner as Integer = ai_panel_inner(2)
+ dim focused as Boolean = (ai_focus = 2)
+ dim selected_color as UInteger = iif(focused, RGB(95, 115, 205), RGB(50, 65, 135))
+ dim cur_line as Integer = AICondIndex()
+ dim y as Integer
+ dim pair_count as Integer = len(aigroupconditions(ai_index))
+
+ BlueBox(0, y0, 78, inner)
+ LuText(" 2  CONDITIONS, WHEN  ", 1, y0, iif(focused, 21, 23))
+ if pair_count > 0 and ai_pair > 0 then LuText("pair " + str(ai_pair) + " of " + str(pair_count) + ", Left Right switch", 44, y0, iif(focused, 21, 23))
+ if ai_top(2) > 1 then LuText("more above", 66, y0 + 1, 14)
+ if ai_top(2) + inner - 1 < ai_cl_count then LuText("more below", 66, y0 + inner, 14)
+
+ for i as Integer = ai_top(2) to Min(ai_top(2) + inner - 1, ai_cl_count)
+  y = y0 + 1 + i - ai_top(2)
+  AIDrawCondLine(i, y)
+  if i = cur_line then
+   AIBand(y, selected_color)
+   if focused then DrawLetter(20, 0, y)
   end if
- else
-  LuText("Add a condition", 10, y, 10)
- end if
+ next
 
 end sub
 
@@ -723,71 +875,60 @@ sub AIDrawRowC(idx as Integer, y as Integer)
  dim entry as AIScriptEntry ptr
 
  if ai_pair < 1 then
-  if idx = 0 then LuText("Pick a pair in panel 1 first", 2, y, 12)
+  if idx = 0 then LuText("This AI has no pairs. Add one in panel 2.", 2, y, 12)
   exit sub
  end if
 
  id = AIScriptId(ai_pair)
  if idx = 0 then
   uses = ai_script_uses(id)
-  LuText("Script " + str(id + 1) + " of pair " + str(ai_pair), 2, y, 22)
-  LuText("used " + str(uses) + "x", 36, y, iif(uses > 1, 14, 23))
+  LuText("Script " + str(id + 1), 2, y, 22)
+  LuText("used " + str(uses) + "x", 14, y, iif(uses > 1, 14, 23))
   LuText("Enter picks another script", 50, y, 23)
-  if not AIScriptExists(id) then LuText("does not exist in the lunar bank", 2, y + 1, 12)
+  if not AIScriptExists(id) then LuText("does not exist in the lunar bank", 24, y, 12)
  elseif AIScriptExists(id) then
   n = AIScriptIndex(id)
   if idx <= scripts(n).Length() then
    entry = scripts(n).PointerAt(idx)
-   LuText("THEN", 4, y, 22)
-   WriteText(left(entry->TextDescription(), 62), 10, y, 15)
+   LuText(str(idx), 3, y, 14)
+   LuText("THEN", 6, y, 22)
+   WriteText(left(entry->TextDescription(), 62), 12, y, 15)
   else
-   LuText("Add an action", 10, y, 10)
+   LuText("Add an action", 12, y, 10)
   end if
  end if
 
 end sub
 
 
-sub AIDrawPanel(panel as Integer)
+sub AIDrawPanel3()
 
- dim y0 as Integer = ai_panel_y(panel)
- dim scroll_rows as Integer = ai_panel_inner(panel) - 1
- dim count as Integer = AIPanelCount(panel)
- dim focused as Boolean = (ai_focus = panel)
- dim accent as UByte = iif(panel = 1, 14, iif(panel = 2, 21, 22))
- dim title as String
- dim y as Integer
+ dim y0 as Integer = ai_panel_y(3)
+ dim inner as Integer = ai_panel_inner(3)
+ dim scroll_rows as Integer = inner - 1
+ dim count as Integer = AIPanelCount(3)
+ dim focused as Boolean = (ai_focus = 3)
  dim selected_color as UInteger = iif(focused, RGB(95, 115, 205), RGB(50, 65, 135))
+ dim y as Integer
 
- BlueBox(0, y0, 78, ai_panel_inner(panel))
- select case panel
-  case 1: title = " 1  WHICH AI  "
-  case 2: title = " 2  CONDITIONS, WHEN  "
-  case else: title = " 3  SCRIPT ACTIONS, THEN  "
- end select
- LuText(title, 1, y0, iif(focused, accent, 23))
- if ai_top(panel) > 1 then LuText("more above", 64, y0, 14)
- if ai_top(panel) + scroll_rows - 1 < count then LuText("more below", 64, y0 + ai_panel_inner(panel) + 1, 14)
+ BlueBox(0, y0, 78, inner)
+ LuText(" 3  ACTIONS, THEN  ", 1, y0, iif(focused, 22, 23))
+ if ai_pair > 0 then
+  LuText("under the conditions of pair " + str(ai_pair), 40, y0, iif(focused, 22, 23))
+ end if
+ if ai_top(3) > 1 then LuText("more above", 66, y0 + 1, 14)
+ if ai_top(3) + scroll_rows - 1 < count then LuText("more below", 66, y0 + inner, 14)
 
  'the chooser line (row 0) stays on top
  y = y0 + 1
- select case panel
-  case 1: AIDrawRowA(0, y)
-  case 2: AIDrawRowB(0, y)
-  case else: AIDrawRowC(0, y)
- end select
- AIBand(y, iif(ai_cur(panel) = 0, selected_color, RGB(30, 45, 120)))
- if focused and ai_cur(panel) = 0 then DrawLetter(20, 0, y)
+ AIDrawRowC(0, y)
+ AIBand(y, iif(ai_cur(3) = 0, selected_color, RGB(30, 45, 120)))
+ if focused and ai_cur(3) = 0 then DrawLetter(20, 0, y)
 
- 'the list under it
- for k as Integer = ai_top(panel) to Min(ai_top(panel) + scroll_rows - 1, count)
-  y = y0 + 2 + k - ai_top(panel)
-  select case panel
-   case 1: AIDrawRowA(k, y)
-   case 2: AIDrawRowB(k, y)
-   case else: AIDrawRowC(k, y)
-  end select
-  if k = ai_cur(panel) then
+ for k as Integer = ai_top(3) to Min(ai_top(3) + scroll_rows - 1, count)
+  y = y0 + 2 + k - ai_top(3)
+  AIDrawRowC(k, y)
+  if k = ai_cur(3) then
    AIBand(y, selected_color)
    if focused then DrawLetter(20, 0, y)
   end if
@@ -800,23 +941,25 @@ function AIHint() as String
 
  'One line that says what the keys do on the line the cursor is on
 
- dim idx as Integer = ai_cur(ai_focus)
- dim count as Integer = AIPanelCount(ai_focus)
+ dim count as Integer
 
  select case ai_focus
   case 1
-   if idx = 0 then return "Enter picks which AI this monster uses. N P step to the next or last AI."
-   if idx < count then return "Enter goes to its conditions. Insert adds a pair after it. Delete removes it."
-   return "Enter adds a pair. The first pair whose conditions are all true runs."
+   if ai_cur(1) = 0 then return "Enter lists every AI to look at. Looking does not change this monster."
+   if ai_index = AIAssigned() then return "This is the AI this monster uses. Left Right or N P look at others."
+   return "Enter makes this monster use AI " + str(ai_index) + ". A does the same from anywhere."
   case 2
-   if ai_pair < 1 then return "This AI has no pairs. Add one in panel 1."
-   if idx = 0 then return "Enter picks a condition set for this pair from a list."
-   if idx < count then return "Enter changes this condition. S picks another one. Insert adds one."
-   return "Enter adds a condition. All the conditions of a set must be true."
+   select case ai_cl_kind(AICondIndex())
+    case ai_cl_condition: return "Enter changes it. Insert adds one. S other set. C other condition. D delete pair."
+    case ai_cl_addcond: return "Enter adds a condition. All the conditions of a pair must be true."
+    case ai_cl_addpair: return "Enter adds a pair. The first pair whose conditions are true runs."
+   end select
+   return ""
   case else
-   if ai_pair < 1 then return "This AI has no pairs. Add one in panel 1."
-   if idx = 0 then return "Enter picks a script for this pair from a list."
-   if idx < count then return "Enter changes this action. Insert adds one after it."
+   if ai_pair < 1 then return "This AI has no pairs. Add one in panel 2."
+   count = AIPanelCount(3)
+   if ai_cur(3) = 0 then return "Enter picks a script for this pair from a list."
+   if ai_cur(3) < count then return "Enter changes this action. Insert adds one after it. Delete removes it."
    return "Enter adds an action. The actions run in order, top to bottom."
  end select
 
@@ -829,34 +972,36 @@ sub AIDraw(message as String)
  dim space_text as String
  dim over as Boolean
  dim title as String
- dim footer_y as Integer = 46
+ dim footer_y as Integer = 47
  dim uses as Integer
+ dim slot as Integer
+ dim line_index as Integer
 
  screenlock
  line (0, 0)-(639, 479), RGB(0, 0, 0), bf
 
- 'Title: whose AI, and which monsters use it
+ 'Title: whose AI, and the bank
  BlueBox(0, 0, 78, 2)
  WriteText(FF4Text("Monster: ") + AITrim(monsters(ai_monster).name), 1, 1, 15)
- title = iif(ai_on_reaction, "Reaction AI ", "Attack AI ") + str(ai_index) + " of " + str(total_ai_groups) + "   " + iif(ai_lunar, "LUNAR bank", "Regular bank")
- LuText(title, 38, 1, iif(ai_lunar, 12, 14))
- LuText("Used by: ", 0, 2, 23)
- WriteText(left(AIUsedBy(), 66), 10, 2, 10)
+ title = iif(ai_on_reaction, "Reaction AI ", "Attack AI ") + str(AIAssigned()) + "   " + iif(ai_lunar, "LUNAR bank", "Regular bank") + ", L switches"
+ LuText(title, 30, 1, iif(ai_lunar, 12, 14))
+ LuText("Looking at AI " + str(ai_index), 1, 2, 23)
 
- for panel as Integer = 1 to 3
-  AIDrawPanel(panel)
- next
+ AIDrawPanel1()
+ AIDrawPanel2()
+ AIDrawPanel3()
 
  'Footer: what the line does, how shared it is, how much room is left, and the keys
- BlueBox(0, footer_y, 78, 9)
+ BlueBox(0, footer_y, 78, 8)
  info = AIHint()
  if ai_pair > 0 then
   if ai_focus = 2 then
-   uses = ai_set_uses(AISetId(ai_pair))
-   if uses > 1 and ai_cur(2) = 0 then info = "This set is used by " + str(uses) + " pairs, a change reaches all of them. U copies it."
-   if ai_cur(2) >= 1 and ai_cur(2) < AIPanelCount(2) then
-    uses = ai_condition_uses(AIByte(AISetString(AISetId(ai_pair)), ai_cur(2)))
-    if uses > 1 then info = "This condition is used by " + str(uses) + " places, a change reaches all. U copies it."
+   line_index = AICondIndex()
+   if ai_cl_kind(line_index) = ai_cl_condition then
+    uses = ai_set_uses(AISetId(ai_pair))
+    slot = AIByte(AISetString(AISetId(ai_pair)), ai_cl_item(line_index))
+    if uses > 1 then info = "These conditions are shared by " + str(uses) + " pairs, a change reaches all. U copies them."
+    if ai_condition_uses(slot) > 1 and uses <= 1 then info = "This condition is used by " + str(ai_condition_uses(slot)) + " places, a change reaches all. Ctrl-U copies it."
    end if
   elseif ai_focus = 3 then
    uses = ai_script_uses(AIScriptId(ai_pair))
@@ -874,10 +1019,10 @@ sub AIDraw(message as String)
  LuText(space_text, 0, footer_y + 2, iif(over, 12, 23))
  if over then LuText("Over the limit: Save ROM will refuse to save until there is less AI data.", 0, footer_y + 3, 12)
 
- LuText("Tab or 1 2 3: switch panel.  Arrows PgUp PgDn Home End: move.", 0, footer_y + 5, 23)
- LuText("Enter: choose or change.  Insert: add.  Delete: remove.  U: own copy.", 0, footer_y + 6, 23)
- LuText("N P: other AI.  G: go to AI.  L: bank.  R: reaction AI.  S: other condition.", 0, footer_y + 7, 23)
- LuText("Ctrl-C Ctrl-V: copy, paste.  Ctrl-Z: undo.  Esc: back to the monsters.", 0, footer_y + 8, 23)
+ LuText("Tab or 1 2 3: panel.  Arrows PgUp PgDn: move.  Left Right: other AI or pair.", 0, footer_y + 5, 23)
+ LuText("Enter: change or add.  Insert: add.  Delete: remove.  Ctrl-Z: undo.", 0, footer_y + 6, 23)
+ LuText("U: own copy of shared parts.  Ctrl-C Ctrl-V: copy, paste.  Esc: back.", 0, footer_y + 7, 23)
+ LuText("N P G: look at other AI.  A: use it.  L: bank.  R: reaction AI.", 0, footer_y + 8, 23)
  screenunlock
 
 end sub
@@ -1054,7 +1199,7 @@ function AIPickAI() as Integer
 
  m = BlueMenu(2, 6)
  m.max_rows = 28
- m.title = iif(ai_on_reaction, "Pick the reaction AI. Yellow ones are not used", "Pick the AI of this monster. Yellow ones are not used")
+ m.title = iif(ai_on_reaction, "Look at which reaction AI. Yellow ones are not used", "Look at which AI. Yellow ones are not used")
  for i as Integer = 1 to total_ai_groups
   pair_count = len(aigroupconditions(i))
   label = FF4Text(Pad(str(i), 3, true) + "  ")
@@ -1077,27 +1222,70 @@ end function
 
 sub AIChangeAI(new_index as Integer)
 
- 'Shows another AI (and makes it the one the monster uses). A new undo history starts.
+ 'Looks at another AI. The AI of the monster stays as it is until it is told to use this one.
 
  ai_index = new_index
- if ai_on_reaction then ai_reaction = new_index else ai_attack = new_index
- ai_cur(1) = iif(len(aigroupconditions(new_index)) > 0, 1, 0)
- ai_cur(2) = 0
+ ai_cp = iif(len(aigroupconditions(new_index)) > 0, 1, 0)
+ ai_ci = 1
+ ai_pair = ai_cp
+ ai_cur(1) = 0
  ai_cur(3) = 0
  for panel as Integer = 1 to 3
   ai_top(panel) = 1
  next
- ai_pair = 0
  ai_undo_count = 0
+
+end sub
+
+
+sub AIAssign()
+
+ 'The monster uses the AI that is shown
+
+ if ai_on_reaction then ai_reaction = ai_index else ai_attack = ai_index
+ ai_message = "This monster now uses AI " + str(ai_index) + " as its " + iif(ai_on_reaction, "reaction", "attack") + " AI."
+
+end sub
+
+
+sub AIChangePair(delta as Integer)
+
+ dim pair_count as Integer = len(aigroupconditions(ai_index))
+ dim target as Integer = ai_pair + delta
+
+ if pair_count < 1 then exit sub
+ if target < 1 then target = 1
+ if target > pair_count then target = pair_count
+ ai_pair = target
+ ai_cp = target
+ ai_ci = 1
 
 end sub
 
 
 sub AIMoveCursor(k as UInteger)
 
- dim count as Integer = AIPanelCount(ai_focus)
- dim scroll_rows as Integer = ai_panel_inner(ai_focus) - 1
- dim v as Integer = ai_cur(ai_focus)
+ dim count as Integer
+ dim scroll_rows as Integer
+ dim v as Integer
+
+ if ai_focus = 2 then
+  v = AICondIndex()
+  select case k
+   case UP_KEY: v -= 1
+   case DOWN_KEY: v += 1
+   case PAGEUP_KEY: v -= ai_panel_inner(2) - 1
+   case PAGEDOWN_KEY: v += ai_panel_inner(2) - 1
+   case HOME_KEY: v = 1
+   case END_KEY: v = ai_cl_count
+  end select
+  AISetCondCursor(v)
+  exit sub
+ end if
+
+ count = AIPanelCount(ai_focus)
+ scroll_rows = ai_panel_inner(ai_focus) - 1
+ v = ai_cur(ai_focus)
 
  select case k
   case UP_KEY: v -= 1
@@ -1115,63 +1303,20 @@ sub AIMoveCursor(k as UInteger)
 end sub
 
 
-sub AIKeyPairs(k as UInteger)
+sub AIKeyAI(k as UInteger)
 
- 'Keys in panel 1: the pairs of the AI
+ 'Keys in panel 1: which AI is shown, and whether the monster uses it
 
- dim pair_count as Integer = len(aigroupconditions(ai_index))
- dim idx as Integer = ai_cur(1)
  dim v as Integer
 
  select case k
 
   case ENTER_KEY
-   if idx = 0 then
+   if ai_cur(1) = 0 then
     v = AIPickAI()
     if v > 0 and v <> ai_index then AIChangeAI(v)
-   elseif idx <= pair_count then
-    ai_focus = 2
-   elseif AINewPair(pair_count) then
-    ai_cur(1) = pair_count + 1
-    ai_message = "Pair added. Its conditions are in panel 2 and its actions in panel 3."
-   end if
-
-  case INSERT_KEY
-   v = iif(idx >= 1 and idx <= pair_count, idx, iif(idx = 0, 0, pair_count))
-   if AINewPair(v) then ai_cur(1) = v + 1
-
-  case DELETE_KEY
-   if idx >= 1 and idx <= pair_count then
-    if pair_count = 1 then
-     ai_message = "An AI needs at least one pair."
-    elseif ConfirmBox("Delete this pair of conditions and actions?") then
-     AIPushGroup()
-     aigroupconditions(ai_index) = left(aigroupconditions(ai_index), idx - 1) + mid(aigroupconditions(ai_index), idx + 1)
-     aigroupscripts(ai_index) = left(aigroupscripts(ai_index), idx - 1) + mid(aigroupscripts(ai_index), idx + 1)
-     ai_cur(1) = Max(idx - 1, 1)
-    end if
-   end if
-
-  case asc("u"), asc("U")
-   if idx >= 1 and idx <= pair_count then
-    if AIMakeSetPrivate(idx) and AIMakeScriptPrivate(idx) then ai_message = "This pair now has its own condition set and script."
-   end if
-
-  case 3 'Ctrl-C
-   if idx >= 1 and idx <= pair_count then
-    ai_clip_kind = 1
-    ai_clip_a = AISetId(idx)
-    ai_clip_b = AIScriptId(idx)
-    ai_message = "Copied the pair."
-   end if
-
-  case 22 'Ctrl-V
-   if ai_clip_kind = 1 then
-    v = iif(idx >= 1 and idx <= pair_count, idx, iif(idx = 0, 0, pair_count))
-    AIInsertPair(v, ai_clip_a, ai_clip_b)
-    ai_cur(1) = v + 1
-   else
-    ai_message = "Copy a pair first (Ctrl-C on a pair in this panel)."
+   elseif ai_index <> AIAssigned() then
+    AIAssign()
    end if
 
  end select
@@ -1181,88 +1326,114 @@ end sub
 
 sub AIKeyConditions(k as UInteger)
 
- 'Keys in panel 2: the conditions of the selected pair
+ 'Keys in panel 2: the conditions of the pairs. The selected pair shows all of its conditions.
 
- dim p as Integer = ai_pair
- dim idx as Integer = ai_cur(2)
+ dim pair_count as Integer = len(aigroupconditions(ai_index))
+ dim p as Integer = ai_cp
+ dim j as Integer = ai_ci
  dim n as Integer
  dim slot as Integer
  dim v as Integer
 
- if p < 1 then
-  ai_message = "This AI has no pairs. Add one in panel 1."
+ 'the Add a new pair line
+ if p = 0 then
+  if k = ENTER_KEY or k = INSERT_KEY then
+   if AINewPair(pair_count) then
+    ai_cp = pair_count + 1
+    ai_ci = 1
+    ai_pair = ai_cp
+    ai_message = "Pair added. Change its condition here, its actions in panel 3."
+   end if
+  elseif k = 22 and ai_clip_kind = 1 then
+   AIInsertPair(pair_count, ai_clip_a, ai_clip_b)
+  end if
   exit sub
  end if
+
  n = len(AISetString(AISetId(p)))
 
  select case k
 
-  case ENTER_KEY, asc("s"), asc("S")
-   if idx = 0 then
-    if k = ENTER_KEY then
-     v = AIPickSet(AISetId(p))
-     if v >= 0 and v <> AISetId(p) then
-      AIPushGroup()
-      mid(aigroupconditions(ai_index), p, 1) = chr(v)
-      ai_cur(2) = 0
-     end if
+  case ENTER_KEY
+   if j <= n then
+    slot = AIByte(AISetString(AISetId(p)), j)
+    if AIReadyCondition(p, j) then
+     AIPushCondition(slot)
+     if not AIEditCondition(slot + 1, ai_dialog_x, ai_dialog_y) then ai_undo_count -= 1
     end if
-   elseif idx <= n then
-    slot = AIByte(AISetString(AISetId(p)), idx)
-    if k = ENTER_KEY then
-     if AIReadyCondition(p, idx) then
-      AIPushCondition(slot)
-      if not AIEditCondition(slot + 1, ai_dialog_x, ai_dialog_y) then ai_undo_count -= 1
-     end if
-    else
-     v = AIPickCondition(slot)
-     if v >= 0 and v <> slot then
-      AIPushSet(AISetId(p))
-      mid(conditionsets(AISetId(p) + 1), idx, 1) = chr(v)
-     end if
-    end if
-   elseif k = ENTER_KEY then
-    if AIAddNewCondition(p, n + 1) then
-     ai_cur(2) = n + 1
-     ai_message = "Condition added."
-    end if
+   elseif AIAddNewCondition(p, n + 1) then
+    ai_ci = n + 1
+    ai_message = "Condition added."
    end if
 
   case INSERT_KEY
-   v = iif(idx = 0, 1, iif(idx <= n, idx + 1, n + 1))
-   if AIAddNewCondition(p, v) then ai_cur(2) = v
+   v = iif(j <= n, j + 1, n + 1)
+   if AIAddNewCondition(p, v) then ai_ci = v
 
   case DELETE_KEY
-   if idx >= 1 and idx <= n then
+   if j <= n then
     if n = 1 then
-     ai_message = "A pair needs at least one condition (use No condition for always)."
+     ai_message = "A pair needs at least one condition. D deletes the whole pair."
     else
      AIPushSet(AISetId(p))
-     conditionsets(AISetId(p) + 1) = left(conditionsets(AISetId(p) + 1), idx - 1) + mid(conditionsets(AISetId(p) + 1), idx + 1)
-     ai_cur(2) = Max(Min(idx, n - 1), 1)
+     conditionsets(AISetId(p) + 1) = left(conditionsets(AISetId(p) + 1), j - 1) + mid(conditionsets(AISetId(p) + 1), j + 1)
+     ai_ci = Max(Min(j, n - 1), 1)
+    end if
+   end if
+
+  case asc("d"), asc("D")
+   if pair_count = 1 then
+    ai_message = "An AI needs at least one pair."
+   elseif ConfirmBox("Delete this pair of conditions and actions?") then
+    AIPushGroup()
+    aigroupconditions(ai_index) = left(aigroupconditions(ai_index), p - 1) + mid(aigroupconditions(ai_index), p + 1)
+    aigroupscripts(ai_index) = left(aigroupscripts(ai_index), p - 1) + mid(aigroupscripts(ai_index), p + 1)
+    ai_pair = Max(p - 1, 1)
+    ai_cp = ai_pair
+    ai_ci = 1
+   end if
+
+  case asc("s"), asc("S")
+   'another condition set for this pair, from a list
+   v = AIPickSet(AISetId(p))
+   if v >= 0 and v <> AISetId(p) then
+    AIPushGroup()
+    mid(aigroupconditions(ai_index), p, 1) = chr(v)
+    ai_ci = 1
+   end if
+
+  case asc("c"), asc("C")
+   'another existing condition in place of this one
+   if j <= n then
+    slot = AIByte(AISetString(AISetId(p)), j)
+    v = AIPickCondition(slot)
+    if v >= 0 and v <> slot then
+     AIPushSet(AISetId(p))
+     mid(conditionsets(AISetId(p) + 1), j, 1) = chr(v)
     end if
    end if
 
   case asc("u"), asc("U")
-   if idx = 0 then
-    if AIMakeSetPrivate(p) then ai_message = "This pair now has its own condition set."
-   elseif idx <= n then
-    if AIMakeConditionPrivate(p, idx) then ai_message = "This condition is now its own copy."
+   if AIMakeSetPrivate(p) then ai_message = "This pair now has its own conditions."
+
+  case 21 'Ctrl-U
+   if j <= n then
+    if AIMakeConditionPrivate(p, j) then ai_message = "This condition is now its own copy."
    end if
 
   case 3 'Ctrl-C
-   if idx >= 1 and idx <= n then
+   if j <= n then
     ai_clip_kind = 2
-    ai_clip_a = AIByte(AISetString(AISetId(p)), idx)
+    ai_clip_a = AIByte(AISetString(AISetId(p)), j)
     ai_message = "Copied the condition."
    end if
 
   case 22 'Ctrl-V
    if ai_clip_kind = 2 then
-    v = iif(idx = 0, 1, iif(idx <= n, idx + 1, n + 1))
-    if AIInsertCondition(p, v, ai_clip_a) then ai_cur(2) = v
+    v = iif(j <= n, j + 1, n + 1)
+    if AIInsertCondition(p, v, ai_clip_a) then ai_ci = v
    else
-    ai_message = "Copy a condition first (Ctrl-C on a condition in this panel)."
+    ai_message = "Copy a condition first (Ctrl-C on a condition)."
    end if
 
  end select
@@ -1369,48 +1540,55 @@ sub EditMonsterAI(byref attack_index as Integer, byref reaction_index as Integer
  dim last_ai as Integer
  dim count as Integer
  dim scroll_rows as Integer
+ dim line_index as Integer
 
  ai_monster = monster_number
  ai_lunar = lunar_flag
  ai_attack = attack_index
  ai_reaction = reaction_index
  ai_on_reaction = start_on_reaction and reaction_index > 0
- ai_index = iif(ai_on_reaction, reaction_index, attack_index)
  ai_undo_count = 0
  ai_clip_kind = 0
- ai_focus = 1
+ ai_focus = 3
  ai_pair = 0
  ai_message = ""
- AIChangeAI(ai_index)
+ AIChangeAI(AIAssigned())
+ ai_cur(3) = iif(AIPanelCount(3) >= 1, 1, 0)
 
  do
   AICountUses()
 
-  'the pair the other two panels show follows the cursor of panel 1
+  'the pair that panels 2 and 3 are about
   pair_count = len(aigroupconditions(ai_index))
-  if ai_cur(1) >= 1 and ai_cur(1) <= pair_count then ai_pair = ai_cur(1)
   if ai_pair > pair_count then ai_pair = pair_count
   if ai_pair < 1 and pair_count >= 1 then ai_pair = 1
+  if ai_cp > pair_count then ai_cp = pair_count
+  if ai_cp > 0 then ai_pair = ai_cp
   if last_pair <> ai_pair or last_ai <> ai_index then
-   ai_cur(2) = 0
+   'another pair: its actions start at the first one
    ai_cur(3) = 0
-   ai_top(2) = 1
    ai_top(3) = 1
+   if AIPanelCount(3) >= 1 then ai_cur(3) = 1
    last_pair = ai_pair
    last_ai = ai_index
   end if
 
-  for panel as Integer = 1 to 3
-   count = AIPanelCount(panel)
-   scroll_rows = ai_panel_inner(panel) - 1
-   if ai_cur(panel) > count then ai_cur(panel) = count
-   if ai_cur(panel) < 0 then ai_cur(panel) = 0
-   if ai_cur(panel) >= 1 then
-    if ai_cur(panel) < ai_top(panel) then ai_top(panel) = ai_cur(panel)
-    if ai_cur(panel) > ai_top(panel) + scroll_rows - 1 then ai_top(panel) = ai_cur(panel) - scroll_rows + 1
-   end if
-   if ai_top(panel) < 1 then ai_top(panel) = 1
-  next
+  AIBuildCondLines()
+  line_index = AICondIndex()
+  if line_index < ai_top(2) then ai_top(2) = line_index
+  if line_index > ai_top(2) + ai_panel_inner(2) - 1 then ai_top(2) = line_index - ai_panel_inner(2) + 1
+  if ai_top(2) < 1 then ai_top(2) = 1
+
+  count = AIPanelCount(3)
+  scroll_rows = ai_panel_inner(3) - 1
+  if ai_cur(3) > count then ai_cur(3) = count
+  if ai_cur(3) < 0 then ai_cur(3) = 0
+  if ai_cur(3) >= 1 then
+   if ai_cur(3) < ai_top(3) then ai_top(3) = ai_cur(3)
+   if ai_cur(3) > ai_top(3) + scroll_rows - 1 then ai_top(3) = ai_cur(3) - scroll_rows + 1
+  end if
+  if ai_top(3) < 1 then ai_top(3) = 1
+  if ai_cur(1) > 1 then ai_cur(1) = 1
 
   AIDraw(ai_message)
   ai_message = ""
@@ -1430,21 +1608,37 @@ sub EditMonsterAI(byref attack_index as Integer, byref reaction_index as Integer
    case UP_KEY, DOWN_KEY, PAGEUP_KEY, PAGEDOWN_KEY, HOME_KEY, END_KEY
     AIMoveCursor(k)
 
+   case LEFT_KEY, RIGHT_KEY
+    'panel 1: look at the previous or next AI; the others: the previous or next pair
+    if ai_focus = 1 then
+     if k = RIGHT_KEY and ai_index < total_ai_groups then AIChangeAI(ai_index + 1)
+     if k = LEFT_KEY and ai_index > 1 then AIChangeAI(ai_index - 1)
+    else
+     AIChangePair(iif(k = RIGHT_KEY, 1, -1))
+    end if
+
    case asc("n"), asc("N")
     if ai_index < total_ai_groups then AIChangeAI(ai_index + 1)
    case asc("p"), asc("P")
     if ai_index > 1 then AIChangeAI(ai_index - 1)
    case asc("g"), asc("G")
-    go_text = PromptLine("Go to AI number, 1 to " + str(total_ai_groups) + ":", 3)
+    go_text = PromptLine("Look at AI number, 1 to " + str(total_ai_groups) + ":", 3)
     v = val(go_text)
     if go_text <> "" and v >= 1 and v <= total_ai_groups then AIChangeAI(v)
+   case asc("a"), asc("A")
+    if ai_index <> AIAssigned() then
+     AIAssign()
+    else
+     ai_message = "This monster already uses AI " + str(ai_index) + "."
+    end if
    case asc("l"), asc("L")
     ai_lunar = not ai_lunar
     AIChangeAI(ai_index)
+    ai_message = "Now working on the " + iif(ai_lunar, "LUNAR", "regular") + " bank of this monster."
    case asc("r"), asc("R")
     if ai_reaction > 0 then
      ai_on_reaction = not ai_on_reaction
-     AIChangeAI(iif(ai_on_reaction, ai_reaction, ai_attack))
+     AIChangeAI(AIAssigned())
     else
      ai_message = "This monster has no reaction AI (turn it on in the monster's extras)."
     end if
@@ -1454,7 +1648,7 @@ sub EditMonsterAI(byref attack_index as Integer, byref reaction_index as Integer
 
    case else
     select case ai_focus
-     case 1: AIKeyPairs(k)
+     case 1: AIKeyAI(k)
      case 2: AIKeyConditions(k)
      case else: AIKeyActions(k)
     end select
