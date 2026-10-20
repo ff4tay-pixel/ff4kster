@@ -1,0 +1,623 @@
+'Monster sprite and palette editor. See monsterspriteio.bas for how a monster's picture is laid out
+'(ordinary monsters, bosses with a tile map, 16 color art). The monster's picture is copied into
+'ms_px, edited there, and stored straight into the ROM image when the editor is left or another
+'monster is chosen, like the BMP import does. Every monster that shares the graphics or the palette
+'changes too; the screen says how many do. Sizes are not changed here.
+
+const ms_undo_depth = 24
+const ms_max_cells = 1024
+
+dim shared ms_px(191, 191) as UByte 'row, column: the color number of each pixel
+dim shared ms_cells(ms_max_cells - 1) as Integer 'tile number of each cell, -1 empty
+dim shared ms_tiles_wide as Integer
+dim shared ms_tiles_high as Integer
+dim shared ms_cell_count as Integer
+dim shared ms_palette_id as Integer
+dim shared ms_start as Integer
+dim shared ms_deep as Boolean
+dim shared ms_color_count as Integer
+dim shared ms_pal(15) as UInteger 'SNES colors
+dim shared ms_undo_px(ms_undo_depth - 1, 191, 191) as UByte
+dim shared ms_undo_count as Integer
+dim shared ms_pal_undo_slot(ms_undo_depth - 1) as Integer
+dim shared ms_pal_undo_value(ms_undo_depth - 1) as UInteger
+dim shared ms_pal_undo_count as Integer
+dim shared ms_fill_x(191 * 191) as Integer
+dim shared ms_fill_y(191 * 191) as Integer
+
+
+function MsRomByte(rom as String, offset as Integer) as Integer
+
+ return asc(mid(rom, offset + 1, 1))
+
+end function
+
+
+function MsTileColor(rom as String, tile_number as Integer, row as Integer, col as Integer) as Integer
+
+ 'Same as MonsterTileColor, from any ROM image (the loaded one for reverting)
+
+ dim tile_start as Integer = ms_start + tile_number * MonsterTileBytes(ms_deep)
+ dim c as Integer = ((MsRomByte(rom, tile_start + row * 2) shr (7 - col)) and 1) or (((MsRomByte(rom, tile_start + row * 2 + 1) shr (7 - col)) and 1) shl 1)
+
+ if ms_deep then
+  c or= (((MsRomByte(rom, tile_start + 16 + row * 2) shr (7 - col)) and 1) shl 2) or (((MsRomByte(rom, tile_start + 16 + row * 2 + 1) shr (7 - col)) and 1) shl 3)
+ else
+  c or= ((MsRomByte(rom, tile_start + 16 + row) shr (7 - col)) and 1) shl 2
+ end if
+
+ return c
+
+end function
+
+
+function MsColor(c as Integer) as UInteger
+
+ 'Screen color of color number c
+
+ dim v as UInteger = ms_pal(c)
+
+ return RGB((v mod 32) * 8, ((v \ 32) mod 32) * 8, ((v \ 1024) mod 32) * 8)
+
+end function
+
+
+sub MsLoadPalette(rom as String)
+
+ for i as Integer = 0 to ms_color_count - 1
+  ms_pal(i) = MsRomByte(rom, monster_palette_table + ms_palette_id * 16 + i * 2) + MsRomByte(rom, monster_palette_table + ms_palette_id * 16 + i * 2 + 1) * &h100
+ next
+
+end sub
+
+
+sub MsLoadPixels(rom as String)
+
+ dim tile_number as Integer
+
+ for y as Integer = 0 to 191
+  for x as Integer = 0 to 191
+   ms_px(y, x) = 0
+  next
+ next
+ for n as Integer = 0 to ms_cell_count - 1
+  tile_number = ms_cells(n)
+  if tile_number >= 0 then
+   for row as Integer = 0 to 7
+    for col as Integer = 0 to 7
+     ms_px((n \ ms_tiles_wide) * 8 + row, (n mod ms_tiles_wide) * 8 + col) = MsTileColor(rom, tile_number, row, col)
+    next
+   next
+  end if
+ next
+
+end sub
+
+
+function MsLoad(index as Integer, byref problem as String) as Boolean
+
+ 'Reads the monster's picture and palette. False, with the reason, if it can't be edited here.
+
+ dim gfx_ptr as Integer = monsters(index).gfx_ptr1 + monsters(index).gfx_ptr2 * &h100
+ dim size as Integer = monsters(index).size
+
+ ms_deep = MonsterIsDeep(gfx_ptr)
+ if size >= &h40 and size < &h80 then ms_deep = false
+ if ms_deep then ms_color_count = 16 else ms_color_count = 8
+ ms_start = MonsterSpriteOffset(gfx_ptr)
+
+ if not MonsterLayout(size, monsters(index).pal, ms_tiles_wide, ms_tiles_high, ms_palette_id, ms_cell_count, problem) then return false
+ if ms_tiles_wide > 24 or ms_tiles_high > 24 then
+  problem = "this picture is too big for the editor"
+  return false
+ end if
+ if ms_deep and ms_palette_id + 1 >= total_monster_palettes then
+  problem = "16 color art needs a following palette"
+  return false
+ end if
+ for n as Integer = 0 to ms_cell_count - 1
+  ms_cells(n) = boss_cells(n)
+  if ms_cells(n) > ms_max_cells - 1 or (ms_cells(n) >= 0 and ms_start + ms_cells(n) * MonsterTileBytes(ms_deep) + MonsterTileBytes(ms_deep) > len(ff4rom)) then ms_cells(n) = -1
+ next
+
+ MsLoadPixels(ff4rom)
+ MsLoadPalette(ff4rom)
+ ms_undo_count = 0
+ ms_pal_undo_count = 0
+
+ return true
+
+end function
+
+
+sub MsCommit()
+
+ 'Stores the picture and palette in the ROM image
+
+ dim tile_px(63) as UByte
+ dim done_tile(ms_max_cells - 1) as Boolean
+
+ for n as Integer = 0 to ms_cell_count - 1
+  if ms_cells(n) >= 0 then
+   if not done_tile(ms_cells(n)) then
+    done_tile(ms_cells(n)) = true
+    for row as Integer = 0 to 7
+     for col as Integer = 0 to 7
+      tile_px(row * 8 + col) = ms_px((n \ ms_tiles_wide) * 8 + row, (n mod ms_tiles_wide) * 8 + col)
+     next
+    next
+    MonsterWriteTile(ms_start, ms_cells(n), tile_px(), ms_deep)
+   end if
+  end if
+ next
+
+ for i as Integer = 0 to ms_color_count - 1
+  WriteByte(monster_palette_table + ms_palette_id * 16 + i * 2, ms_pal(i) mod &h100)
+  WriteByte(monster_palette_table + ms_palette_id * 16 + i * 2 + 1, ms_pal(i) \ &h100)
+  monster_palettes(ms_palette_id + 1 + i \ 8, i mod 8) = MsColor(i)
+ next
+
+end sub
+
+
+sub MsSaveUndo()
+
+ if ms_undo_count = ms_undo_depth then
+  for i as Integer = 1 to ms_undo_depth - 1
+   for r as Integer = 0 to ms_tiles_high * 8 - 1
+    for c as Integer = 0 to ms_tiles_wide * 8 - 1
+     ms_undo_px(i - 1, r, c) = ms_undo_px(i, r, c)
+    next
+   next
+  next
+  ms_undo_count -= 1
+ end if
+
+ for r as Integer = 0 to ms_tiles_high * 8 - 1
+  for c as Integer = 0 to ms_tiles_wide * 8 - 1
+   ms_undo_px(ms_undo_count, r, c) = ms_px(r, c)
+  next
+ next
+ ms_undo_count += 1
+
+end sub
+
+
+sub MsUndo()
+
+ if ms_undo_count = 0 then exit sub
+
+ ms_undo_count -= 1
+ for r as Integer = 0 to ms_tiles_high * 8 - 1
+  for c as Integer = 0 to ms_tiles_wide * 8 - 1
+   ms_px(r, c) = ms_undo_px(ms_undo_count, r, c)
+  next
+ next
+
+end sub
+
+
+function MsEditable(x as Integer, y as Integer) as Boolean
+
+ 'True for a pixel inside the picture on a cell that has a tile
+
+ if x < 0 or y < 0 or x >= ms_tiles_wide * 8 or y >= ms_tiles_high * 8 then return false
+
+ return ms_cells((y \ 8) * ms_tiles_wide + x \ 8) >= 0
+
+end function
+
+
+sub MsSetPixel(x as Integer, y as Integer, c as Integer)
+
+ 'Sets a pixel, and the same pixel of every other cell that shows the same tile
+
+ dim tile_number as Integer = ms_cells((y \ 8) * ms_tiles_wide + x \ 8)
+
+ for n as Integer = 0 to ms_cell_count - 1
+  if ms_cells(n) = tile_number then
+   ms_px((n \ ms_tiles_wide) * 8 + (y mod 8), (n mod ms_tiles_wide) * 8 + (x mod 8)) = c
+  end if
+ next
+
+end sub
+
+
+sub MsFill(x as Integer, y as Integer, brush as Integer)
+
+ dim old as Integer = ms_px(y, x)
+ dim count as Integer
+ dim cx as Integer
+ dim cy as Integer
+ dim nx as Integer
+ dim ny as Integer
+
+ if old = brush then exit sub
+
+ MsSaveUndo()
+ MsSetPixel(x, y, brush)
+ ms_fill_x(0) = x
+ ms_fill_y(0) = y
+ count = 1
+ do while count > 0
+  count -= 1
+  cx = ms_fill_x(count)
+  cy = ms_fill_y(count)
+  for d as Integer = 0 to 3
+   nx = cx
+   ny = cy
+   select case d
+    case 0: nx -= 1
+    case 1: nx += 1
+    case 2: ny -= 1
+    case else: ny += 1
+   end select
+   if MsEditable(nx, ny) then
+    if ms_px(ny, nx) = old then
+     MsSetPixel(nx, ny, brush)
+     ms_fill_x(count) = nx
+     ms_fill_y(count) = ny
+     count += 1
+    end if
+   end if
+  next
+ loop
+
+end sub
+
+
+sub MsDrawPicture(x0 as Integer, y0 as Integer, zoom as Integer)
+
+ dim shade as UInteger
+
+ for y as Integer = 0 to ms_tiles_high * 8 - 1
+  for x as Integer = 0 to ms_tiles_wide * 8 - 1
+   if not MsEditable(x, y) then
+    shade = RGB(70, 20, 20)
+   elseif ms_px(y, x) = 0 then
+    if ((x + y) and 1) = 0 then shade = RGB(40, 40, 40) else shade = RGB(60, 60, 60)
+   else
+    shade = MsColor(ms_px(y, x))
+   end if
+   if zoom = 1 then
+    pset (x0 + x, y0 + y), shade
+   else
+    line (x0 + x * zoom, y0 + y * zoom)-step(zoom - 1, zoom - 1), shade, bf
+   end if
+  next
+ next
+
+end sub
+
+
+sub MsDrawScreen(index as Integer, mode as Integer, zoom as Integer, cx as Integer, cy as Integer, brush as Integer, picture_x as Integer, picture_y as Integer, message as String)
+
+ 'mode 0 = pixels, 1 = palette colors
+
+ dim sx as Integer
+ dim sy as Integer
+ dim v as UInteger
+ dim shared_count as Integer = MonsterSharedCount(index, monsters(index).gfx_ptr1 + monsters(index).gfx_ptr2 * &h100, ms_palette_id, monsters(index).size)
+
+ screenlock
+ line (0, 0)-(639, 463), RGB(0, 0, 0), bf
+
+ WriteText(FF4Text(FF4Name(monsters(index).name) + "   monster " + str(index) + "   " + str(ms_tiles_wide * 8) + "x" + str(ms_tiles_high * 8) + "   palette " + str(ms_palette_id) + iif(ms_deep, " and the next", "") + "   pixel " + str(cx) + "," + str(cy)), 2, 1, 15)
+ if shared_count > 0 then
+  WriteText(FF4Text("Shared with " + str(shared_count) + " other monsters, they change too"), 2, 3, 14)
+ end if
+
+ MsDrawPicture(picture_x, picture_y, zoom)
+ if mode = 0 then
+  sx = picture_x + cx * zoom
+  sy = picture_y + cy * zoom
+  line (sx - 1, sy - 1)-(sx + zoom, sy + zoom), RGB(255, 255, 0), b
+ end if
+
+ 'Preview at actual size and double
+ WriteText(FF4Text("Preview"), 56, 1, 14)
+ line (440, 40)-(631, 195), RGB(16, 16, 32), bf
+ for y as Integer = 0 to ms_tiles_high * 8 - 1
+  for x as Integer = 0 to ms_tiles_wide * 8 - 1
+   if MsEditable(x, y) and ms_px(y, x) <> 0 then pset (440 + x, 44 + y), MsColor(ms_px(y, x))
+  next
+ next
+
+ 'Palette
+ WriteText(FF4Text("Palette"), 56, 26, 14)
+ for i as Integer = 0 to ms_color_count - 1
+  sx = 440 + (i mod 8) * 24
+  sy = 224 + (i \ 8) * 40
+  line (sx, sy)-(sx + 20, sy + 20), iif(i = 0, RGB(40, 40, 40), MsColor(i)), bf
+  line (sx - 1, sy - 1)-(sx + 21, sy + 21), RGB(100, 100, 100), b
+  if i = brush then line (sx - 2, sy - 2)-(sx + 22, sy + 22), RGB(255, 255, 0), b
+  WriteText(FF4Text(str(i)), (sx + 6) \ 8, (sy + 24) \ 8, 15)
+ next
+
+ if mode = 1 then
+  v = ms_pal(brush)
+  WriteText(FF4Text("Editing color " + str(brush) + iif(brush = 0, ", transparent, not editable", "   R " + str(v mod 32) + "  G " + str((v \ 32) mod 32) + "  B " + str((v \ 1024) mod 32))), 2, 47, 14)
+  WriteText(FF4Text("Left Right pick a color. Q A red, W S green, E D blue: up and down"), 2, 50, 15)
+  WriteText(FF4Text("Ctrl-Z undo   Ctrl-R revert this palette   Esc back to the picture"), 2, 52, 15)
+ else
+  WriteText(FF4Text("Arrows move   0-9 paint a color   Space paints with the brush   F fill"), 2, 48, 15)
+  WriteText(FF4Text("Minus Plus pick the brush   P edit the palette colors   Ctrl-Z undo"), 2, 50, 15)
+  WriteText(FF4Text("X Y flip a plain monster   Ctrl-R revert   PgUp PgDn other monster"), 2, 52, 15)
+  WriteText(FF4Text("Mouse: click and drag paint, right click picks a color, click a swatch"), 2, 54, 15)
+ end if
+ if len(message) > 0 then WriteText(FF4Text(message), 2, 56, 12)
+ WriteText(FF4Text("Esc stores the changes and leaves"), 2, 57, 15)
+ screenunlock
+
+end sub
+
+
+sub EditMonsterSprite(index_start as Integer)
+
+ dim index as Integer = index_start
+ dim problem as String
+ dim message as String
+ dim key as String
+ dim keycode as UInteger
+ dim zoom as Integer
+ dim picture_x as Integer = 16
+ dim picture_y as Integer = 40
+ dim cx as Integer
+ dim cy as Integer
+ dim brush as Integer = 1
+ dim mode as Integer
+ dim done as Boolean
+ dim shift as Integer
+ dim channel as Integer
+ dim raw as Integer
+ dim direction as Integer
+ dim loaded as Boolean
+ dim mx as Integer
+ dim my as Integer
+ dim lc as Boolean
+ dim rc as Boolean
+ dim wheel as Integer
+ dim px as Integer
+ dim py as Integer
+ dim moved as Boolean
+ dim size_ok as Boolean
+
+ loaded = MsLoad(index, problem)
+
+ do
+  if not loaded then
+   message = problem
+   ms_tiles_wide = 2
+   ms_tiles_high = 2
+   ms_cell_count = 0
+  else
+   message = ""
+  end if
+
+  if loaded then
+   zoom = 400 \ (ms_tiles_wide * 8)
+   if 320 \ (ms_tiles_high * 8) < zoom then zoom = 320 \ (ms_tiles_high * 8)
+   if zoom > 12 then zoom = 12
+   if zoom < 1 then zoom = 1
+   cx = 0
+   cy = 0
+   mode = 0
+   if brush >= ms_color_count then brush = 1
+  end if
+
+  do
+
+   if loaded then
+    MsDrawScreen(index, mode, zoom, cx, cy, brush, picture_x, picture_y, message)
+   else
+    screenlock
+    line (0, 0)-(639, 463), RGB(0, 0, 0), bf
+    WriteText(FF4Text(FF4Name(monsters(index).name) + "   monster " + str(index)), 2, 1, 15)
+    WriteText(FF4Text("Cannot edit here: " + problem), 2, 3, 12)
+    WriteText(FF4Text("PgUp PgDn other monster   Esc leaves"), 2, 5, 15)
+    screenunlock
+   end if
+
+   direction = 0
+   do
+    key = inkey
+    PollMouse(mx, my, lc, rc, wheel)
+    moved = false
+    if loaded and mx >= 0 then
+     if mode = 0 and (lc or rc or mouse_left_held) then
+      px = (mouse_pixel_x - picture_x) \ zoom
+      py = (mouse_pixel_y - picture_y) \ zoom
+      if mouse_pixel_x >= picture_x and mouse_pixel_y >= picture_y and MsEditable(px, py) then
+       cx = px
+       cy = py
+       if rc then
+        brush = ms_px(py, px)
+       elseif ms_px(py, px) <> brush then
+        if lc then MsSaveUndo()
+        MsSetPixel(px, py, brush)
+       end if
+       moved = true
+      end if
+     end if
+     if lc then
+      for i as Integer = 0 to ms_color_count - 1
+       if mouse_pixel_x >= 440 + (i mod 8) * 24 and mouse_pixel_x <= 460 + (i mod 8) * 24 and mouse_pixel_y >= 224 + (i \ 8) * 40 and mouse_pixel_y <= 244 + (i \ 8) * 40 then
+        brush = i
+        moved = true
+       end if
+      next
+     end if
+    end if
+    if key = "" then sleep 10
+   loop while key = "" and not moved
+
+   if key <> "" then
+    keycode = asc(right(key, 1))
+    if len(key) > 1 then keycode = keycode * &h100 + 255
+   else
+    keycode = 0
+   end if
+
+   if keycode = PAGEUP_KEY then
+    direction = -1
+   elseif keycode = PAGEDOWN_KEY then
+    direction = 1
+   elseif keycode = ESC_KEY and (mode = 0 or not loaded) then
+    done = true
+   elseif not loaded then
+    'nothing else to do
+   elseif mode = 0 then
+    message = ""
+    select case keycode
+     case LEFT_KEY
+      if cx > 0 then cx -= 1
+     case RIGHT_KEY
+      if cx < ms_tiles_wide * 8 - 1 then cx += 1
+     case UP_KEY
+      if cy > 0 then cy -= 1
+     case DOWN_KEY
+      if cy < ms_tiles_high * 8 - 1 then cy += 1
+     case HOME_KEY
+      cy = 0
+     case END_KEY
+      cy = ms_tiles_high * 8 - 1
+     case asc("0") to asc("9")
+      if keycode - asc("0") < ms_color_count then
+       brush = keycode - asc("0")
+       if MsEditable(cx, cy) and ms_px(cy, cx) <> brush then
+        MsSaveUndo()
+        MsSetPixel(cx, cy, brush)
+       end if
+      end if
+     case SPACE_KEY, ENTER_KEY
+      if MsEditable(cx, cy) and ms_px(cy, cx) <> brush then
+       MsSaveUndo()
+       MsSetPixel(cx, cy, brush)
+      end if
+     case asc("f"), asc("F")
+      if MsEditable(cx, cy) then MsFill(cx, cy, brush)
+     case asc("-"), asc("[")
+      brush = (brush + ms_color_count - 1) mod ms_color_count
+     case asc("="), asc("]"), asc("+")
+      brush = (brush + 1) mod ms_color_count
+     case asc("x"), asc("X"), asc("y"), asc("Y")
+      size_ok = (monsters(index).size < &h40)
+      if not size_ok then
+       message = "Flipping is only for plain monsters, not bosses"
+      else
+       MsSaveUndo()
+       if keycode = asc("x") or keycode = asc("X") then
+        for r as Integer = 0 to ms_tiles_high * 8 - 1
+         for c as Integer = 0 to ms_tiles_wide * 4 - 1
+          swap ms_px(r, c), ms_px(r, ms_tiles_wide * 8 - 1 - c)
+         next
+        next
+       else
+        for r as Integer = 0 to ms_tiles_high * 4 - 1
+         for c as Integer = 0 to ms_tiles_wide * 8 - 1
+          swap ms_px(r, c), ms_px(ms_tiles_high * 8 - 1 - r, c)
+         next
+        next
+       end if
+      end if
+     case 26 'Ctrl-Z
+      MsUndo()
+     case 18 'Ctrl-R
+      if ConfirmBox("Revert this picture to the loaded ROM?") then
+       MsSaveUndo()
+       MsLoadPixels(original_rom)
+      end if
+     case asc("p"), asc("P")
+      mode = 1
+      if brush = 0 then brush = 1
+    end select
+   else
+    select case keycode
+     case ESC_KEY
+      mode = 0
+     case LEFT_KEY
+      if brush > 1 then brush -= 1
+     case RIGHT_KEY
+      if brush < ms_color_count - 1 then brush += 1
+     case asc("q"), asc("Q"), asc("a"), asc("A"), asc("w"), asc("W"), asc("s"), asc("S"), asc("e"), asc("E"), asc("d"), asc("D")
+      select case keycode and &hDF
+       case asc("Q"), asc("A"): shift = 0
+       case asc("W"), asc("S"): shift = 5
+       case else: shift = 10
+      end select
+      channel = (ms_pal(brush) \ (2 ^ shift)) mod 32
+      select case keycode and &hDF
+       case asc("Q"), asc("W"), asc("E"): channel += 1
+       case else: channel -= 1
+      end select
+      if channel >= 0 and channel <= 31 then
+       if ms_pal_undo_count = ms_undo_depth then
+        for i as Integer = 1 to ms_undo_depth - 1
+         ms_pal_undo_slot(i - 1) = ms_pal_undo_slot(i)
+         ms_pal_undo_value(i - 1) = ms_pal_undo_value(i)
+        next
+        ms_pal_undo_count -= 1
+       end if
+       ms_pal_undo_slot(ms_pal_undo_count) = brush
+       ms_pal_undo_value(ms_pal_undo_count) = ms_pal(brush)
+       ms_pal_undo_count += 1
+       raw = ms_pal(brush) and not (31 shl shift)
+       ms_pal(brush) = raw or (channel shl shift)
+      end if
+     case 26 'Ctrl-Z
+      if ms_pal_undo_count > 0 then
+       ms_pal_undo_count -= 1
+       ms_pal(ms_pal_undo_slot(ms_pal_undo_count)) = ms_pal_undo_value(ms_pal_undo_count)
+      end if
+     case 18 'Ctrl-R
+      if ConfirmBox("Revert this palette to the loaded ROM?") then
+       MsLoadPalette(original_rom)
+       ms_pal_undo_count = 0
+      end if
+    end select
+   end if
+
+  loop until done or direction <> 0
+
+  if loaded then MsCommit()
+  if direction <> 0 then
+   index += direction
+   if index < 1 then index = total_monsters
+   if index > total_monsters then index = 1
+   loaded = MsLoad(index, problem)
+   if not loaded and len(problem) = 0 then problem = "unknown"
+  end if
+
+ loop until done
+
+ 'a draw on the screen itself, so no stale drawing target is left
+ pset (0, 0), point(0, 0)
+
+end sub
+
+
+sub EditMonsterSprites()
+
+ dim select_monster as BlueMenu
+
+ select_monster.max_rows = screen_height - 3
+ for i as Integer = 1 to total_monsters
+  select_monster.AddOption(monsters(i).name)
+ next
+
+ do
+
+  do
+   screenlock
+   line (0, 0)-(639, 463), RGB(0, 0, 0), bf
+   WriteText(FF4Text("Pick a monster, Enter to edit its sprite and palette"), 0, 0, 15)
+   select_monster.y = 2
+   select_monster.Display()
+   screenunlock
+  loop until select_monster.UserInput()
+
+  if not select_monster.cancelled then EditMonsterSprite(select_monster.selected)
+
+ loop until select_monster.cancelled
+
+end sub

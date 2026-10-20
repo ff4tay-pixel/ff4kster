@@ -482,6 +482,35 @@ black, white and call spell set the job uses in battle and in the menu. "Edit
 spell set names" renames the spell sets themselves.
 
 
+MONSTER SPRITES
+---------------
+
+"Edit Monster Sprites" (in the Battles group, after Edit Monsters) edits a
+monster's picture and palette in the editor. Pick a monster and press Enter.
+The screen shows the picture large with a cursor, the picture at actual size
+and the palette (8 colors, 16 for Zeromus's last form and the Dummy; color 0 is
+transparent). The size of a monster is not changed here (Edit Graphics in the
+monster editor does that). Party members used as enemies are edited in the
+Battle Sprites editor. Bosses show their tile map cells; cells that are empty in
+the map are dark red and cannot be painted, and a tile used in several cells
+changes in all of them. Esc stores the picture and palette straight into the ROM
+image, like the BMP import, so every monster sharing the graphics or palette
+changes too (the screen says how many) and Ctrl-R revert in the monster list
+does not undo it, but Ctrl-R in the sprite editor does.
+
+    Arrows:         Move the cursor      Home / End: first / last row
+    0 - 9:          Paint with that color (and make it the brush)
+    SPACE / ENTER:  Paint with the brush
+    Minus / Plus:   Previous / next brush color
+    F:              Fill
+    X / Y:          Flip horizontally / vertically (plain monsters only)
+    Ctrl-Z:         Undo       Ctrl-R: Revert the picture to the loaded ROM
+    P:              Edit the palette colors (Left Right pick a color, Q A red,
+                    W S green, E D blue, Ctrl-Z undo, Ctrl-R revert, Esc back)
+    PgUp / PgDn:    Previous / next monster
+    Mouse:          Click and drag paint, right click picks the color under the
+                    pointer, click a palette swatch to choose the brush
+
 PORTRAITS
 ---------
 
@@ -1381,6 +1410,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * Since 0.8
+    - Edit Monster Sprites: pixel and palette editor for the monsters' pictures
     - Fixed the battle of a chest on the underground and moon maps: the game adds 32 to the
       chest's battle number on maps numbered 256 and up and uses only 5 bits, so the Battle
       list now shows those 32 formations and the used-by list of a formation agrees

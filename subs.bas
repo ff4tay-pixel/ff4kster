@@ -122,6 +122,7 @@ declare function ChestFormation(m as Integer, chest_byte as Integer) as Integer
 #include once "subs/edit/editsolobattles.bas"
 #include once "subs/edit/editbattlesprites.bas"
 #include once "subs/edit/editportraits.bas"
+#include once "subs/edit/editmonstersprites.bas"
 #include once "subs/edit/exportimport.bas"
 #include once "subs/general/globalsearch.bas"
 #include once "subs/general/spaceusage.bas"
