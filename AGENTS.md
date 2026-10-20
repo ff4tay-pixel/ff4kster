@@ -32,8 +32,16 @@ config/           30 `.dat` label/config files (elements.dat, spells.dat, shops.
   1.10.1. Install it with `winget install --id FreeBASIC.FreeBASIC`, or use
   the official installer, then make sure the directory containing `fbc.exe`
   is on `PATH`.
-- No build script is committed. Run these commands from the repository root,
-  where `main.bas` and `config/` are located:
+- Run `build.ps1` from the repository root to build the canonical test
+  executable:
+  `./build.ps1`
+  Use `./build.ps1 -Clean` to remove the previous executable before building.
+  If PowerShell blocks scripts, run
+  `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first.
+  The script resolves `fbc.exe`, builds `ff4kster-console.exe`, and returns the
+  compiler exit code.
+- The equivalent direct command, from the repository root where `main.bas` and
+  `config/` are located, is:
   `fbc -x ff4kster-console.exe main.bas`
   This is the recommended test build because it keeps a visible console and
   shows the ROM file selector and startup errors.
