@@ -372,3 +372,54 @@ sub MonsterSpritePanelHide(byref snapshot as Any ptr)
  end if
 
 end sub
+
+
+sub MonsterThumbnail(index as Integer, cell_x as Integer, cell_y as Integer, cell_w as Integer, cell_h as Integer)
+
+ 'The monster's picture in a box of cell_w x cell_h cells, as it is in the monster list: whole pixel
+ ' zoom if it fits, else every second (third...) pixel. Draws on the screen and returns.
+
+ dim sprite as Any ptr
+ dim raw_sheet as Boolean
+ dim sprite_w as Integer
+ dim sprite_h as Integer
+ dim area_w as Integer = cell_w * 8
+ dim area_h as Integer = cell_h * 8
+ dim zoom as Integer
+ dim shrink as Integer = 1
+ dim draw_x as Integer
+ dim draw_y as Integer
+ dim pixel_color as UInteger
+
+ BlueBox(cell_x, cell_y, cell_w, cell_h)
+ line (cell_x * 8 + 8, cell_y * 8 + 8)-((cell_x + cell_w + 1) * 8 - 1, (cell_y + cell_h + 1) * 8 - 1), RGB(16, 16, 32), bf
+
+ sprite = MonsterSpriteImage(monsters(index).gfx_ptr1 + monsters(index).gfx_ptr2 * &h100, monsters(index).size, monsters(index).pal, raw_sheet)
+ if sprite = 0 then
+  WriteText(FF4Text("No picture"), cell_x + 1, cell_y + 1, 12)
+ else
+  imageinfo sprite, sprite_w, sprite_h
+  zoom = area_w \ sprite_w
+  if area_h \ sprite_h < zoom then zoom = area_h \ sprite_h
+  if zoom > 6 then zoom = 6
+  if zoom < 1 then
+   zoom = 1
+   do while sprite_w \ shrink > area_w or sprite_h \ shrink > area_h
+    shrink += 1
+   loop
+  end if
+  draw_x = cell_x * 8 + 8 + (area_w - (sprite_w \ shrink) * zoom) \ 2
+  draw_y = cell_y * 8 + 8 + (area_h - (sprite_h \ shrink) * zoom) \ 2
+  for y as Integer = 0 to sprite_h \ shrink - 1
+   for x as Integer = 0 to sprite_w \ shrink - 1
+    pixel_color = point(x * shrink, y * shrink, sprite)
+    if pixel_color <> monster_transparent then line (draw_x + x * zoom, draw_y + y * zoom)-step(zoom - 1, zoom - 1), pixel_color, bf
+   next
+  next
+  ImageDestroy(sprite)
+ end if
+
+ 'see MonsterSpritePanelShow: a draw on the screen itself after the image is destroyed
+ pset (cell_x * 8, cell_y * 8), point(cell_x * 8, cell_y * 8)
+
+end sub

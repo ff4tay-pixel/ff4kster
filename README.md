@@ -506,10 +506,30 @@ does not undo it, but Ctrl-R in the sprite editor does.
     X / Y:          Flip horizontally / vertically (plain monsters only)
     Ctrl-Z:         Undo       Ctrl-R: Revert the picture to the loaded ROM
     P:              Edit the palette colors (Left Right pick a color, Q A red,
-                    W S green, E D blue, Ctrl-Z undo, Ctrl-R revert, Esc back)
+                    W S green, E D blue, Ctrl-Z undo, Ctrl-R revert, Esc back).
+                    Bracket keys move the color left or right in the palette
+                    and renumber the pixels of every monster that uses the
+                    palette, so they all look the same.
+    E / I:          Export / import the picture as a BMP, see below
     PgUp / PgDn:    Previous / next monster
     Mouse:          Click and drag paint, right click picks the color under the
                     pointer, click a palette swatch to choose the brush
+
+E writes exports/monster_sprites/monster_NNN_Name.bmp and I reads it back. The
+BMP is as wide and high as the monster's tiles and its own color table is the
+monster's palette: entry N is color N (color 0 is the transparent one) and a
+pixel's value is its color number. On import the color table becomes the palette
+and the pixels keep their values, so edit the picture in an image editor that
+keeps the BMP indexed (4 or 8 bits per pixel) and does not renumber the colors.
+A pixel above the last color (7, or 15 for the 16 color art) is rejected. Older
+images one pixel wider, with the palette as pixels in the top right corner, are
+still read. Bosses export their tile map cells (empty cells stay blank); if one
+tile appears in several cells and they were edited differently, the first cell
+wins and the import says so. Importing also changes every monster that shares
+the graphics or palette. Zeromus's last form and the Dummy have 16 color art
+(the game checks the graphics pointer: below 8000h means 4 bits per pixel, using
+the palette and the one after it): their images have 16 colors and importing
+also rewrites the following palette.
 
 PORTRAITS
 ---------
@@ -1145,28 +1165,9 @@ little explanation.
             changes that entry. Zeromus's last form and the Dummy are 16 color
             art and also use the palette after the chosen one.
 
-* Sprite Image: "Sprite Image" in the monster's edit menu exports the monster's
-            picture to exports/monster_sprites/monster_NNN_Name.bmp or imports
-            it back. The BMP is as wide and high as the monster's tiles and its
-            own color table is the monster's palette: entry N is color N (color
-            0 is the transparent one) and a pixel's value is its color number.
-            On import the color table becomes the palette and the pixels keep
-            their values, so edit the picture in any editor that keeps the BMP
-            indexed (4 or 8 bits per pixel) and does not renumber the colors. A
-            pixel above the last color (7, or 15 for the 16 color art) is
-            rejected. Older images one pixel wider, with the palette as pixels in
-            the top right corner, are still read. Bosses export
-            their tile map cells (empty cells stay blank); if one tile appears in
-            several cells and they were edited differently, the first cell wins
-            and the import says so. Party members used as enemies are edited in
-            the Battle Sprites editor instead. Importing writes the tiles and the
-            palette straight into the ROM image, so every monster sharing that
-            graphics pointer or palette changes too (the message tells you how
-            many), and Ctrl-R revert in the monster list does not undo it.
-            Zeromus's last form and the Dummy have 16 color art (the game checks
-            the graphics pointer: below 8000h means 4 bits per pixel, using the
-            palette and the one after it): their images have 16 colors
-            and importing also rewrites the following palette.
+* Sprite: the monster list shows the selected monster's picture above the
+            Stats box. Pictures are edited, exported and imported in "Edit
+            Monster Sprites" (see MONSTER SPRITES).
 
 * Flags: There are certain kinds of data which some monsters have and others do
          not. You can change which "extra bits" of information a given monster
@@ -1410,7 +1411,8 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * Since 0.8
-    - Edit Monster Sprites: pixel and palette editor for the monsters' pictures
+    - Edit Monster Sprites: pixel and palette editor for the monsters' pictures, colors can be moved with their pixels,
+      BMP export / import moved there from the monster editor, which shows the picture of the selected monster
     - Fixed the battle of a chest on the underground and moon maps: the game adds 32 to the
       chest's battle number on maps numbered 256 and up and uses only 5 bits, so the Battle
       list now shows those 32 formations and the used-by list of a formation agrees
@@ -1428,7 +1430,7 @@ VERSION HISTORY
     - Edit Graphics shows and edits the palette a boss really uses
     - Monster graphics pointers below 8000h are drawn as 4 bits per pixel (fixes the
       Zeromus and Dummy previews)
-    - Monster sprite export and import (Sprite Image in the monster edit menu)
+    - Monster sprite export and import (E and I in Edit Monster Sprites)
     - Mouse support in menus, message boxes and the map editor
     - Ctrl-Z undo in the entry lists; command and actor lists get the changed marks,
       revert and copy / paste; F1 shows the keys of the editor you are in

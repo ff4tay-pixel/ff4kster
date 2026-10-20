@@ -22,8 +22,12 @@ dim shared ms_undo_count as Integer
 dim shared ms_pal_undo_slot(ms_undo_depth - 1) as Integer
 dim shared ms_pal_undo_value(ms_undo_depth - 1) as UInteger
 dim shared ms_pal_undo_count as Integer
+dim shared ms_touched(&h30000) as UByte 'tiles already renumbered, by address \ 8
 dim shared ms_fill_x(191 * 191) as Integer
 dim shared ms_fill_y(191 * 191) as Integer
+
+
+declare sub MsCommitPalette()
 
 
 function MsRomByte(rom as String, offset as Integer) as Integer
@@ -151,11 +155,85 @@ sub MsCommit()
   end if
  next
 
+ MsCommitPalette()
+
+end sub
+
+
+sub MsCommitPalette()
+
  for i as Integer = 0 to ms_color_count - 1
   WriteByte(monster_palette_table + ms_palette_id * 16 + i * 2, ms_pal(i) mod &h100)
   WriteByte(monster_palette_table + ms_palette_id * 16 + i * 2 + 1, ms_pal(i) \ &h100)
   monster_palettes(ms_palette_id + 1 + i \ 8, i mod 8) = MsColor(i)
  next
+
+end sub
+
+
+sub MsMoveColor(slot as Integer, other as Integer)
+
+ 'Swaps two palette colors and renumbers the pixels of every monster that uses this palette, so they all
+ ' look the same. The picture being edited is stored first and read back afterwards.
+
+ dim gfx_ptr as Integer
+ dim size as Integer
+ dim user_deep as Boolean
+ dim tiles_wide as Integer
+ dim tiles_high as Integer
+ dim palette_id as Integer
+ dim cell_count as Integer
+ dim problem as String
+ dim start as Integer
+ dim bytes as Integer
+ dim tile_number as Integer
+ dim c as Integer
+ dim tile_px(63) as UByte
+
+ MsCommit()
+ for i as Integer = 0 to ubound(ms_touched)
+  ms_touched(i) = 0
+ next
+
+ for i as Integer = 1 to total_monsters
+  size = monsters(i).size
+  gfx_ptr = monsters(i).gfx_ptr1 + monsters(i).gfx_ptr2 * &h100
+  user_deep = MonsterIsDeep(gfx_ptr)
+  if (size < &h40 or size >= &h80) and user_deep = ms_deep then
+   if MonsterLayout(size, monsters(i).pal, tiles_wide, tiles_high, palette_id, cell_count, problem) then
+    if palette_id = ms_palette_id then
+     start = MonsterSpriteOffset(gfx_ptr)
+     bytes = MonsterTileBytes(user_deep)
+     for n as Integer = 0 to cell_count - 1
+      tile_number = boss_cells(n)
+      if tile_number >= 0 and tile_number < ms_max_cells and start + tile_number * bytes + bytes <= len(ff4rom) then
+       if ms_touched((start + tile_number * bytes) \ 8) = 0 then
+        ms_touched((start + tile_number * bytes) \ 8) = 1
+        for row as Integer = 0 to 7
+         for col as Integer = 0 to 7
+          c = MonsterTileColor(start, tile_number, row, col, user_deep)
+          if c = slot then
+           c = other
+          elseif c = other then
+           c = slot
+          end if
+          tile_px(row * 8 + col) = c
+         next
+        next
+        MonsterWriteTile(start, tile_number, tile_px(), user_deep)
+       end if
+      end if
+     next
+    end if
+   end if
+  end if
+ next
+
+ swap ms_pal(slot), ms_pal(other)
+ MsCommitPalette()
+ MsLoadPixels(ff4rom)
+ ms_undo_count = 0
+ ms_pal_undo_count = 0
 
 end sub
 
@@ -339,11 +417,14 @@ sub MsDrawScreen(index as Integer, mode as Integer, zoom as Integer, cx as Integ
   WriteText(FF4Text("Editing color " + str(brush) + iif(brush = 0, ", transparent, not editable", "   R " + str(v mod 32) + "  G " + str((v \ 32) mod 32) + "  B " + str((v \ 1024) mod 32))), 2, 47, 14)
   WriteText(FF4Text("Left Right pick a color. Q A red, W S green, E D blue: up and down"), 2, 50, 15)
   WriteText(FF4Text("Ctrl-Z undo   Ctrl-R revert this palette   Esc back to the picture"), 2, 52, 15)
+  WriteText(FF4Text("Bracket keys move this color left or right in the palette, the pixels of"), 2, 54, 15)
+  WriteText(FF4Text("every monster that uses the palette follow"), 2, 55, 15)
  else
   WriteText(FF4Text("Arrows move   0-9 paint a color   Space paints with the brush   F fill"), 2, 48, 15)
   WriteText(FF4Text("Minus Plus pick the brush   P edit the palette colors   Ctrl-Z undo"), 2, 50, 15)
   WriteText(FF4Text("X Y flip a plain monster   Ctrl-R revert   PgUp PgDn other monster"), 2, 52, 15)
-  WriteText(FF4Text("Mouse: click and drag paint, right click picks a color, click a swatch"), 2, 54, 15)
+  WriteText(FF4Text("E export a BMP   I import a BMP   exports\monster_sprites"), 2, 54, 15)
+  WriteText(FF4Text("Mouse: click and drag paint, right click picks a color, click a swatch"), 2, 55, 15)
  end if
  if len(message) > 0 then WriteText(FF4Text(message), 2, 56, 12)
  WriteText(FF4Text("Esc stores the changes and leaves"), 2, 57, 15)
@@ -381,6 +462,7 @@ sub EditMonsterSprite(index_start as Integer)
  dim py as Integer
  dim moved as Boolean
  dim size_ok as Boolean
+ dim direction_slot as Integer
 
  loaded = MsLoad(index, problem)
 
@@ -527,6 +609,14 @@ sub EditMonsterSprite(index_start as Integer)
        MsSaveUndo()
        MsLoadPixels(original_rom)
       end if
+     case asc("e"), asc("E")
+      MsCommit()
+      InfoBox(ExportMonsterImage(index) + "||Press any key", 4, 20)
+     case asc("i"), asc("I")
+      if ConfirmBox("Import replaces this monster's tiles and palette. Continue?") then
+       InfoBox(ImportMonsterImage(index) + "||Press any key", 4, 20)
+       loaded = MsLoad(index, problem)
+      end if
      case asc("p"), asc("P")
       mode = 1
       if brush = 0 then brush = 1
@@ -568,6 +658,12 @@ sub EditMonsterSprite(index_start as Integer)
       if ms_pal_undo_count > 0 then
        ms_pal_undo_count -= 1
        ms_pal(ms_pal_undo_slot(ms_pal_undo_count)) = ms_pal_undo_value(ms_pal_undo_count)
+      end if
+     case asc("["), asc("]")
+      direction_slot = brush + iif(keycode = asc("["), -1, 1)
+      if direction_slot >= 1 and direction_slot < ms_color_count then
+       MsMoveColor(brush, direction_slot)
+       brush = direction_slot
       end if
      case 18 'Ctrl-R
       if ConfirmBox("Revert this palette to the loaded ROM?") then
@@ -613,6 +709,7 @@ sub EditMonsterSprites()
    WriteText(FF4Text("Pick a monster, Enter to edit its sprite and palette"), 0, 0, 15)
    select_monster.y = 2
    select_monster.Display()
+   MonsterThumbnail(select_monster.selected, 20, 2, 20, 20)
    screenunlock
   loop until select_monster.UserInput()
 
