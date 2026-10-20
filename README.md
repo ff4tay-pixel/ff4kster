@@ -1118,12 +1118,15 @@ little explanation.
 
 * Sprite Image: "Sprite Image" in the monster's edit menu exports the monster's
             picture to exports/monster_sprites/monster_NNN_Name.bmp or imports
-            it back. The BMP is as wide as the monster's tiles plus one pixel
-            column on the right, whose top 8 pixels are the monster's 8 palette
-            colors (color 0 is the transparent one). On import those 8 pixels
-            define the palette and every other pixel must be one of those
-            colors. Edit the picture in any editor that keeps the BMP indexed
-            (4 or 8 bits per pixel) and uses exactly those colors. Bosses export
+            it back. The BMP is as wide and high as the monster's tiles and its
+            own color table is the monster's palette: entry N is color N (color
+            0 is the transparent one) and a pixel's value is its color number.
+            On import the color table becomes the palette and the pixels keep
+            their values, so edit the picture in any editor that keeps the BMP
+            indexed (4 or 8 bits per pixel) and does not renumber the colors. A
+            pixel above the last color (7, or 15 for the 16 color art) is
+            rejected. Older images one pixel wider, with the palette as pixels in
+            the top right corner, are still read. Bosses export
             their tile map cells (empty cells stay blank); if one tile appears in
             several cells and they were edited differently, the first cell wins
             and the import says so. Party members used as enemies are edited in
@@ -1133,7 +1136,7 @@ little explanation.
             many), and Ctrl-R revert in the monster list does not undo it.
             Zeromus's last form and the Dummy have 16 color art (the game checks
             the graphics pointer: below 8000h means 4 bits per pixel, using the
-            palette and the one after it): their images have 16 palette pixels
+            palette and the one after it): their images have 16 colors
             and importing also rewrites the following palette.
 
 * Flags: There are certain kinds of data which some monsters have and others do

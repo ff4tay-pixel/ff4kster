@@ -1,14 +1,14 @@
 'Export and import of monster sprites as images.
 '
 'One monster is one 4 bits per pixel BMP, exports\monster_sprites\monster_NNN_Name.bmp, as wide as the
-'monster's tiles plus one pixel column on the right and as high as its tiles. The monster's palette
-'(8 colors, color 0 is the transparent one) is stored in the image itself: the 8 pixels in the top
-'right corner, from top to bottom (x = width - 1, y = 0 to 7), are palette colors 0-7 (pixel N has
-'palette index N). On import the 8 palette pixels define the palette, and every other pixel takes the
-'palette index of the palette pixel with the same color; pixels of any other color are rejected.
+'monster's tiles and as high as its tiles. The monster's palette (8 colors, color 0 is the
+'transparent one) is the BMP's own color table: entry N is palette color N and a pixel's value is its
+'palette index. On import the color table becomes the palette and the pixels keep their values, so an
+'image editor must not renumber the colors; a pixel above the last color is rejected. (Older images one
+'pixel wider, with the palette as pixels in the top right corner, are still read.)
 '
 'Zeromus's last form and the Dummy are 4 bits per pixel art with 16 colors (the palette and the one
-'after it in the table): their images have 16 palette pixels instead.
+'after it in the table): their images have 16 colors instead.
 '
 '  ordinary monsters (size 00-3F)  the tiles in order, row by row
 '  bosses (size 80-BF)             the cells of the boss's tile map; empty cells are left blank on export
@@ -151,7 +151,7 @@ function ExportMonsterImage(index as Integer) as String
  if deep and (tiles_high * 8 < 16 or palette_id + 1 >= total_monster_palettes) then return "Cannot export: 16 color art needs an image at least 16 pixels high and a following palette"
 
  for y as Integer = 0 to tiles_high * 8 - 1
-  for x as Integer = 0 to tiles_wide * 8
+  for x as Integer = 0 to tiles_wide * 8 - 1
    bmp_px(y, x) = 0
   next
  next
@@ -168,11 +168,10 @@ function ExportMonsterImage(index as Integer) as String
  next
 
  for i as Integer = 0 to swatches - 1
-  bmp_px(i, tiles_wide * 8) = i
   colors(i) = ByteAt(monster_palette_table + palette_id * 16 + i * 2) + ByteAt(monster_palette_table + palette_id * 16 + i * 2 + 1) * &h100
  next
 
- if not WriteIndexedBMPColors(MonsterSpritePath(file_name), tiles_wide * 8 + 1, tiles_high * 8, colors()) then
+ if not WriteIndexedBMPColors(MonsterSpritePath(file_name), tiles_wide * 8, tiles_high * 8, colors()) then
   return "Cannot write exports\monster_sprites|Check that the folder can be written"
  end if
 
@@ -252,8 +251,10 @@ function ImportMonsterImage(index as Integer) as String
  if len(file_name) = 0 then file_name = dir(MonsterSpritePath("monster_" + Pad(str(index), 3, true, "0") + ".bmp"))
  if len(file_name) = 0 then return "No image for this monster|Looked for exports\monster_sprites\" + prefix + "*.bmp"
 
- if not ReadIndexedBMP(MonsterSpritePath(file_name), tiles_wide * 8 + 1, tiles_high * 8, problem) then return file_name + ": " + problem
- if not ResolveSwatchPalette(tiles_wide * 8 + 1, tiles_high * 8, new_palette(), problem, swatches) then return file_name + ": " + problem
+ for i as Integer = 0 to swatches - 1
+  new_palette(i) = ByteAt(monster_palette_table + palette_id * 16 + i * 2) + ByteAt(monster_palette_table + palette_id * 16 + i * 2 + 1) * &h100
+ next
+ if not ReadBMPWithPalette(MonsterSpritePath(file_name), tiles_wide * 8, tiles_high * 8, swatches, new_palette(), problem) then return file_name + ": " + problem
 
  for t as Integer = 0 to 1023
   chosen(t) = -1
