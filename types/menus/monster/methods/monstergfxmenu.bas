@@ -56,6 +56,7 @@ sub MonsterGfxMenu.UserSelect()
  dim enter_byte as BlueNumberInput
  dim template_menu as BlueMenu
  dim preview as Any ptr 
+ dim sprite_snapshot as Any ptr = 0
  
  enter_byte = BlueNumberInput(main_menu.x + 9)
  
@@ -65,6 +66,7 @@ sub MonsterGfxMenu.UserSelect()
 
  do
  
+  MonsterSpritePanelShow(gfx_ptr, size, pal, sprite_snapshot)
   main_menu.UserSelect()
   
   if not main_menu.cancelled then
@@ -199,6 +201,7 @@ sub MonsterGfxMenu.UserSelect()
        line preview, ((i + 1) * 8, 8)-((i + 2) * 8 - 1, 16 - 1), monster_palettes(enter_byte.number + 1, i), bf 
       next
       put ((x + main_menu.options.Width() + 2) * 8, (enter_byte.y) * 8), preview, pset
+      MonsterSpritePanelShow(gfx_ptr, size, enter_byte.number, sprite_snapshot)
      loop until enter_byte.UserInput()
      ImageDestroy(preview)
      preview = ImageCreate(10 * 8, 3 * 8, RGB(0, 0, 0))
@@ -214,6 +217,8 @@ sub MonsterGfxMenu.UserSelect()
   end if
   
  loop until main_menu.cancelled
+ 
+ MonsterSpritePanelHide(sprite_snapshot)
  
  monsters(index).gfx_ptr1 = gfx_ptr mod &h100
  monsters(index).gfx_ptr2 = gfx_ptr \ &h100
