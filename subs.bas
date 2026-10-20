@@ -91,6 +91,7 @@
 #include once "subs/edit/edittools.bas"
 #include once "subs/edit/editshops.bas"
 #include once "subs/edit/editjobs.bas"
+#include once "subs/edit/editlevelups.bas"
 #include once "subs/edit/editcharacters.bas"
 #include once "subs/edit/editcommands.bas"
 #include once "subs/edit/editactors.bas"

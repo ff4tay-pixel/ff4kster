@@ -39,8 +39,7 @@ sub EditCharacters()
       starting_menu.UserSelect()
       starting_menu.ApplyUpdates(select_character.selected)
      case 2
-      levelup_menu.UserSelect()
-      'levelup_menu.ApplyUpdates(select_character.selected)
+      EditLevelUps(select_character.selected)
      case 3
       after70_menu.UserSelect()
       after70_menu.ApplyUpdates(select_character.selected)

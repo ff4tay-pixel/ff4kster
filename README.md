@@ -140,10 +140,12 @@ CONTROLS
     Shift-Enter: Highlight the current entry; pressing Enter on another
                  entry will then swap the two instead of confirming (only
                  certain menus can do this)
-  The standard list menus display these controls in a keyboard sidebar at the
-  bottom right only while the `H` key is held. Releasing `H` hides it and
-  restores the underlying menu. Specialized editors may add their own
-  context-specific keys to the sidebar.
+  F1 shows key help in any menu. The main menu also lists the keys that matter
+  for whichever editor is highlighted, and the map editor, the battle sprite
+  editor and the level up editor print their own keys on screen.
+
+  Note that the editor's font cannot draw every symbol (it has no + = ( ) [ ] <
+  >), so on-screen help spells those keys out in words.
 
   In numeric inputs:
 
@@ -198,6 +200,15 @@ with a black screen that seems to be doing nothing for a long time. If this
 happens, the only solution to my knowledge is to halt the task using
 whatever means your operating system provides for doing so.
 
+The main menu lists the editors in this order: Features, Spells, Spell Sets,
+Weapons, Armors, Medicines, Tools, Shops, Jobs, Battle Sprites, Characters,
+Commands, Actors, Messages, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
+Monsters, Formations, Encounters, Autobattles and Solobattles, followed by
+Search Everywhere, Space Usage and Changed Entries. A panel beside the menu
+shows the keys for the highlighted entry. The CSV export/import and the two ROM
+comparison tools described under "Extras" below are still in the program but
+are currently hidden from the menu.
+
 FF4kster uses a wide array of config files to help you keep track of
 changes that the editor cannot detect directly from the rom itself. To
 modify these, simply navigate into the "config" folder and load up the
@@ -228,6 +239,13 @@ the game's own code (screen shakes, flashes, projectiles, the summons), so it
 is not shown: for spells whose animation is drawn by the effect the panel says
 so. Not all combinations will work together the way one might expect, so it
 can still be a case of trial and error.
+
+The preview plays the sequence on its own, centered on a plain dark background.
+The game also mirrors some animations depending on who is casting, and draws
+the effect on top, so what you see in battle can differ in position and
+orientation from the panel. The panel pauses while a pick list is open. Large
+(screen-wide) animations are shown at actual size and may be cropped; small
+ones are enlarged.
 
 In addition, there are certain spells which have hard-coded components
 (particularly the summons). Thus, if you change one of these with the editor,
@@ -355,6 +373,74 @@ all characters, and will not change the name of the corresponding menu
 command in battle.
 
 
+BATTLE SPRITES
+--------------
+
+This editor (in the main menu right after Edit Jobs) edits the sprites the
+characters use in battle: Cecil, Kain, Rydia and the others, plus the frog. Pick
+a character and press Enter. The screen shows the character's 64 tiles on the
+left, the selected pose large in the middle and all twelve poses small below it,
+so you can see every pose change as you edit. A tile can be shared by several
+poses (the head and body tiles are used by up to five), so changing one tile
+changes each pose that uses it.
+
+On the tile sheet:
+
+    ARROWS:        Move among the tiles.
+    ENTER:         Edit the selected tile pixel by pixel.
+    PAGE UP/DOWN:  Change the pose shown in the middle.
+    , and .:       Change which palette is used to display the sprite.
+    P:             Edit the palette's colors.
+    CTRL+C / V:    Copy and paste a whole tile.
+    CTRL+Z:        Undo.
+    R:             Revert the whole sheet to the loaded ROM.
+
+Editing a tile:
+
+    ARROWS:        Move.
+    0-9, A-F:      Paint with that palette color.
+    SPACE / ENTER: Paint with the current brush.
+    [ and ]:       Change the brush color.
+    X / Y:         Flip the tile horizontally / vertically.
+    CTRL+C / V / Z: Copy, paste, undo.
+
+Editing the palette: LEFT/RIGHT pick a color, Q/A raise/lower red, W/S green and
+E/D blue (each channel has 32 levels, as on the SNES), CTRL+Z undoes and CTRL+R
+reverts the palette. Color 0 is transparent in the game and cannot be edited.
+The battle sprite graphics are stored uncompressed in fixed-size blocks, so
+there is no risk of running out of room. The characters' palettes may be used
+by other parts of the game as well, so recoloring one can change it elsewhere.
+Golbez and Anna, whose sprites use a different layout, and the tiny Mini and
+Toad forms are not included.
+
+Export and import. The last two entries of the character list write and read
+one BMP per character in the `exports/battle_sprites` folder next to the editor,
+named `poses_NN_pal_PP.bmp` (NN is the character sheet, PP the palette). Each is
+a 113x48 image with 4 bits per pixel, so it opens in any editor that supports
+indexed color (Aseprite, GIMP, GraphicsGale, ...). The poses are packed together
+in the order the game uses them:
+
+    Row 1:  Standing, Ready, Running, Kneeling, Right arm up, Left arm down,
+            Left arm up (16x24 pixels each)
+    Row 2:  Hit, Victory, Dead (24 wide), Chant 1, Chant 2, Special (24 wide)
+
+The one tile that no pose uses sits in the empty corner under the Special pose.
+The palette is stored in the image itself: the 16 pixels in the top right
+corner, from top to bottom (x = 112, y = 0 to 15), are the palette's colors 0 to
+15, and a sprite pixel's value is its palette color number. On import those 16
+pixels become the palette, and every other pixel takes the number of the palette
+pixel with the same color, so the numbers stay right even if your image editor
+reorders its own color table. A pixel of a color that is not one of the 16 is
+rejected. Colors are rounded to the SNES's 32 levels per channel. Images may
+be 4 or 8 bits per pixel and uncompressed. Each bad file is skipped with a
+message and the others still import; import only changes the in-memory data, so
+use Save ROM to keep it.
+
+Because poses share tiles, importing can find a tile that was drawn differently
+in two poses. The pose you changed wins; if two poses changed it differently,
+the first one in the list above wins and you are told which tile it was.
+
+
 CHARACTERS
 ----------
 
@@ -369,6 +455,38 @@ a set of stats which will increase, the amount by which they will each
 increase, a Max HP bonus, a Max MP bonus, and an increase in the amount of
 experience the character needs to advance to the next level (henceforth
 referred to as TNL).
+
+"Edit level up data" opens a full screen table with one row per level, from the
+character's starting level to 69. Instead of stepping through the values in a
+fixed order, the cursor moves from cell to cell, so any value can be reached
+directly. The columns are the five stat flags, the amount (-1 to 6), the HP
+bonus, the MP bonus and the TNL.
+
+    ARROWS, TAB:       Move between cells (Tab wraps to the next row).
+    PAGE UP/DOWN:      Move a page. HOME / END: first / last level.
+    G:                 Go to a level number.
+    N / P:             Switch to the next / previous character.
+    ENTER:             Toggle a stat flag, cycle the amount, or edit a number.
+    0-9:               Type a number (stat: 1 on, 0 off; amount: 0-6). ENTER or
+                       any movement key accepts it, ESC cancels it.
+    MINUS / PLUS:      Change by 1 (stat: off / on).
+    COMMA / PERIOD:    Change by 10, or by 100 for the TNL.
+    SPACE:             Toggle a stat flag.
+    D:                 Copy this cell from the row above.
+    F:                 Fill this cell's value down the rest of the table.
+    CTRL+C / CTRL+V:   Copy and paste a whole row.
+    CTRL+Z:            Undo the last action (a fill or a paste counts as one).
+    ESC:               Back to the character list.
+
+Beside each level's gains the table shows the character's total stats, HP, MP
+and experience after that level up, worked out the way the game does it. A row
+is used when the character goes from that level to the next. Each flagged stat
+gets the amount added (a stored amount of "-1" subtracts 1), never above 99 or
+below 1. HP and MP get the listed bonus plus a random 0 to 1/8 of that bonus,
+never above 9999 HP or 999 MP, so the HP and MP columns show the smallest
+possible total and the footer for the selected row shows the full range. The
+experience total starts from the "TNL" in the character's starting data (the
+experience already needed for their starting level) and adds each level's TNL.
 
 After level 70, the character's HP, MP, and TNL bonuses will be identical to
 those of their final levelup. Their stat bonuses, instead of being fixed,
@@ -645,12 +763,20 @@ selector:
     BACKSPACE: Change the selected tile to the highlighted one (much like
                the "dropper" feature of many image editors).
     CTRL+C: Copy the selected rectangle.
-    CTRL+V: Paste the copied rectangle at the cursor.
+    CTRL+V: Paste the copied rectangle. A translucent preview of it follows
+            the cursor; move it with the arrows, press ENTER to place it or
+            ESC to cancel.
+    CTRL+Z: Undo, up to ten paint, fill or paste operations.
+    CTRL+Y: Redo.
+    R:      Replace every tile that matches the one under the cursor with the
+            tile selected in the tile selector. With a rectangle selected it
+            only replaces inside the rectangle; otherwise it covers the whole
+            map. Can be undone.
+    O:      Show or hide an overlay of the map's triggers (yellow squares) and
+            NPC placements (cyan squares) on the map.
 
-The bottom-right keyboard sidebar appears only while `H` is held in the map
-editor. Releasing `H` hides it and redraws the underlying map UI.
-`CTRL+Z` steps backward through up to ten paint or flood-fill operations in
-the current map editing session.
+The two lines at the bottom of the screen show the current panel, tile and
+selection size, whether the overlay is on, and a reminder of the main keys.
 The map selector shows the selected grid index and how many map entries share
 it. Press `I` to open the shared map-index list when needed.
 
@@ -702,6 +828,14 @@ little explanation.
               that changing the table for an index will affect all monsters
               that have that item drop table index.
               
+* Graphics: "Edit Graphics" shows a live preview of the monster's sprite in
+            the monster's palette that updates as you change the pointer, size
+            or palette. The sprite data is 3 bits per pixel; sizes 0 to 16 are
+            drawn as a block of tiles in the usual size, and the larger "special"
+            sizes (bosses and a few others) are shown as a raw sheet of their
+            tiles because their tile arrangements are not decoded yet. Pointers
+            below 8000h have no preview.
+
 * Flags: There are certain kinds of data which some monsters have and others do
          not. You can change which "extra bits" of information a given monster
          has by setting or unsetting the flags in the "flags menu". If you wish
@@ -744,6 +878,16 @@ little explanation.
                  with ENTER, add additional lines with INSERT, and delete lines
                  with DELETE.
                  
+The monsters screen is organized in three groups. The monster list is on the
+left. Next to it is a column of titled boxes of equal width: the monster's
+name and basic data and the Edit menu, its graphics (with Spell Power
+beside them when the monster has it), combat stats, drops and the list of
+extra flags, and below those the status and element grids for the flags that
+are set (Adds, Resist, Weak, Races). The AI is in the column on the right, with
+a header line above it that shows which bank is in use ("Regular" or "LUNAR";
+press L in the AI editor to switch banks), and the reaction AI below it when
+the monster has one.
+
 Monsters that appear in certain lunar maps use a different set of scripts
 than monsters in the other areas. For the most part, the monster editor
 displays this correctly, however there is a known bug where some lunar
@@ -853,6 +997,26 @@ Zyrthofar
 
 VERSION HISTORY
 ---------------
+* Since 0.8
+    - Added Battle Sprites editor (after Edit Jobs)
+       - Tile editor with live pose previews, copy/paste, undo
+       - Palette editor
+       - Export and import of each character's poses as one indexed BMP
+         with the palette stored in the image
+    - Spell editor plays the spell's animation sequence in a preview panel
+    - Monster editor shows a live sprite preview while editing graphics
+    - Monsters screen reorganized: aligned, titled boxes and a clearer AI
+      column with a bank header
+    - Level up editor rewritten as a full screen table with free cell
+      navigation, direct number entry, copy/fill/paste, undo, character
+      switching and per-level total stats, HP, MP and EXP
+    - Map editor: paste preview, redo, replace-all-tile, NPC and trigger
+      overlay, fixed a swapped selection limit, removed the H key sidebar
+    - Main menu: key help panel no longer leaves part of a taller box behind
+    - CSV export/import and the two ROM comparisons are hidden from the menu
+    - Removed the breadcrumb line
+    - Help text no longer uses symbols the font cannot draw
+
 * 0.8
     - Added safeguard to prevent overflow in:
        - triggers
@@ -971,8 +1135,8 @@ VERSION HISTORY
 
 ## CSV export/import, ROM diff, and menu search
 
-- **Export CSV / Import CSV** (main menu): spells, weapons, armors, medicines, tools and monsters go to/from `exports/<table>.csv` (next to the editor). Edit them in a spreadsheet and import them back; only the columns present are applied, so a file with just `id,attack` works. Names use `{HH}` for characters with no ASCII equivalent. Imports change the in-memory data only; use Save ROM to keep them.
-- **Compare to Original ROM** (main menu): shows which tables your edits changed and writes `exports/rom_diff.txt` with offsets and old/new bytes. Edits are measured against what Save ROM would write for the unedited data (Save also re-lays-out some data, which is reported as a separate count).
+- **Export CSV / Import CSV** (currently hidden from the main menu; the code is still in the program): spells, weapons, armors, medicines, tools and monsters go to/from `exports/<table>.csv` (next to the editor). Edit them in a spreadsheet and import them back; only the columns present are applied, so a file with just `id,attack` works. Names use `{HH}` for characters with no ASCII equivalent. Imports change the in-memory data only; use Save ROM to keep them.
+- **Compare to Original ROM** (currently hidden from the main menu): shows which tables your edits changed and writes `exports/rom_diff.txt` with offsets and old/new bytes. Edits are measured against what Save ROM would write for the unedited data (Save also re-lays-out some data, which is reported as a separate count).
 - **In any menu:** Ctrl+F finds an entry by name, Ctrl+N jumps to the next match, Ctrl+G goes to an entry by number.
 
 ## Safety and navigation extras
@@ -982,7 +1146,7 @@ VERSION HISTORY
 - **Window title** shows the ROM name and a `*` when there are unsaved edits.
 - **Spell, weapon, armor, medicine, tool and monster lists:** names that differ from the loaded ROM are yellow. Ctrl-R reverts an entry, Ctrl-C / Ctrl-V copy and paste an entry (the target keeps its name), Ctrl-U shows where it is used (formations and encounter areas, shops and chests, weapons that cast a spell). The editor reopens on the entry you were last on.
 - **Search Everywhere** (main menu) finds a spell, item or monster by name and opens its editor on it.
-- **Compare with ROM File** (main menu) diffs your current work against another ROM file.
+- **Compare with ROM File** (currently hidden from the main menu) diffs your current work against another ROM file.
 - **F1** shows key help in any menu. Deleting triggers, NPCs and messages asks for confirmation.
 - **Space Usage** (main menu) shows how full each fixed ROM area is (events, triggers, text banks, item descriptions); over 100% means Save ROM will refuse.
 - **Changed Entries** (main menu) lists every spell, item and monster changed since loading and opens the one you pick.

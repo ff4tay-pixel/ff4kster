@@ -55,9 +55,15 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "Enter opens the entry's editor.")
   case 9
    HelpLine(lines(), n, "Edit what each shop sells.")
-  case 10, 12 to 14
+  case 10, 13 to 14
    HelpLine(lines(), n, "Enter opens the entry's editor.")
    HelpLine(lines(), n, "In sub-menus: Tab switches between boxes.")
+  case 12
+   HelpLine(lines(), n, "Enter opens the entry's editor.")
+   HelpLine(lines(), n, "Edit level up data opens a full screen table")
+   HelpLine(lines(), n, "with a cursor you can move to any value, and")
+   HelpLine(lines(), n, "the total stats, HP, MP and EXP after each")
+   HelpLine(lines(), n, "level up. The keys are listed at its bottom.")
   case 11
    HelpLine(lines(), n, "Edit the in-battle sprite of each character.")
    HelpLine(lines(), n, "Enter edits a tile, PgUp / PgDn changes the")
@@ -98,14 +104,14 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "Enter        Place tile    Space  Fill")
    HelpLine(lines(), n, "Backspace    Pick tile under cursor")
    HelpLine(lines(), n, "Shift-Arrow  Select an area")
-   HelpLine(lines(), n, "Ctrl-C / V   Copy / paste preview (Enter places)")
+   HelpLine(lines(), n, "Ctrl-C / V   Copy / paste preview, Enter places")
    HelpLine(lines(), n, "Ctrl-Z / Y   Undo / redo")
    HelpLine(lines(), n, "R            Replace all of the tile under the")
    HelpLine(lines(), n, "             cursor with the palette tile")
    HelpLine(lines(), n, "O            Show NPCs and triggers on the map")
   case 22
    HelpLine(lines(), n, "Enter opens the monster's editor.")
-   HelpLine(lines(), n, "Yellow = changed.  Ctrl-R revert, Ctrl-U")
+   HelpLine(lines(), n, "Yellow means changed.  Ctrl-R revert, Ctrl-U")
    HelpLine(lines(), n, "where used, Ctrl-C / V copy / paste.")
    HelpLine(lines(), n, "Tab switches between the flag lists and")
    HelpLine(lines(), n, "their details.")
@@ -124,7 +130,7 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "Over 100% means Save ROM will refuse.")
   case 29
    HelpLine(lines(), n, "Lists every spell, item and monster you")
-   HelpLine(lines(), n, "changed since loading; pick one to open it.")
+   HelpLine(lines(), n, "changed since loading, pick one to open it.")
   case else
    HelpLine(lines(), n, "Leave the editor. You are asked to save")
    HelpLine(lines(), n, "if there are unsaved edits.")

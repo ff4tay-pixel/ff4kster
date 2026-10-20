@@ -227,13 +227,13 @@ sub DrawBattleSpriteScreen(sheet as Integer, tile_id as Integer, pose as Integer
  next
 
  if mode = 2 then
-  WriteText(FF4Text("Editing palette " + str(pal) + ", color " + hex(brush) + IIf(brush = 0, " (transparent, not editable)", "   R " + str((battle_palette_raw(pal, brush) mod 32)) + "  G " + str((battle_palette_raw(pal, brush) \ 32) mod 32) + "  B " + str((battle_palette_raw(pal, brush) \ 1024) mod 32))), 2, 49, 14)
-  WriteText(FF4Text("Left / Right pick a color   Q / A red + -   W / S green + -   E / D blue + -"), 2, 51, 15)
+  WriteText(FF4Text("Editing palette " + str(pal) + ", color " + hex(brush) + IIf(brush = 0, ", transparent, not editable", "   R " + str((battle_palette_raw(pal, brush) mod 32)) + "  G " + str((battle_palette_raw(pal, brush) \ 32) mod 32) + "  B " + str((battle_palette_raw(pal, brush) \ 1024) mod 32))), 2, 49, 14)
+  WriteText(FF4Text("Left Right pick a color. Q A red, W S green, E D blue: up and down"), 2, 51, 15)
   WriteText(FF4Text("Ctrl-Z undo   Ctrl-R revert this palette to the loaded ROM"), 2, 53, 15)
   WriteText(FF4Text("Esc back to the tile sheet"), 2, 55, 15)
  elseif mode = 1 then
   WriteText(FF4Text("Arrows move   0-9 A-F paint a color   Space paint with brush"), 2, 51, 15)
-  WriteText(FF4Text("[ ] change brush   X / Y flip   Ctrl-Z undo   Ctrl-C / V copy tile"), 2, 53, 15)
+  WriteText(FF4Text("Brackets change the brush. X Y flip. Ctrl-Z undo. Ctrl-C Ctrl-V copy tile"), 2, 53, 15)
   WriteText(FF4Text("Esc back to the tile sheet"), 2, 55, 15)
  else
   WriteText(FF4Text("Arrows move   Enter edit tile   PgUp / PgDn change pose"), 2, 51, 15)
@@ -444,8 +444,8 @@ sub EditBattleSprites()
  for i as Integer = 0 to total_battle_char_sheets - 1
   select_sheet.AddOption(BattleSheetName(i))
  next
- select_sheet.AddOption(FF4Text("Export poses + palettes"))
- select_sheet.AddOption(FF4Text("Import poses + palettes"))
+ select_sheet.AddOption(FF4Text("Export poses and palettes"))
+ select_sheet.AddOption(FF4Text("Import poses and palettes"))
 
  do
 
@@ -461,12 +461,12 @@ sub EditBattleSprites()
     select case select_sheet.selected - total_battle_char_sheets
      case 1
       WriteText(FF4Text("Writes one BMP per character with all the poses packed"), 37, 8, 15)
-      WriteText(FF4Text("together (poses_NN_pal_PP.bmp, 113x48). The 16 palette"), 37, 9, 15)
+      WriteText(FF4Text("together, poses_NN_pal_PP.bmp, 113x48. The 16 palette"), 37, 9, 15)
       WriteText(FF4Text("colors are the top right pixels, top to bottom."), 37, 10, 15)
      case else
       WriteText(FF4Text("Reads every poses_NN_pal_PP.bmp and splits the poses"), 37, 8, 15)
       WriteText(FF4Text("back into tiles. Tiles shared by several poses take"), 37, 9, 15)
-      WriteText(FF4Text("the pose you changed; if two differ, the first pose"), 37, 10, 15)
+      WriteText(FF4Text("the pose you changed. If two differ, the first pose"), 37, 10, 15)
       WriteText(FF4Text("wins and you are told. The top right pixels set the palette."), 37, 11, 15)
     end select
    end if
