@@ -1,4 +1,4 @@
-# FF4kster v0.8
+# FF4kster v0.9
 
 IMPORTANT NOTES
 ---------------
@@ -1520,7 +1520,7 @@ Zyrthofar
 
 VERSION HISTORY
 ---------------
-* Since 0.8
+* 0.9
     - Edit Monster Sprites: pixel and palette editor for the monsters' pictures, colors can be moved with their pixels,
       BMP export / import moved there from the monster editor, which shows the picture of the selected monster
     - Fixed the battle of a chest on the underground and moon maps: the game adds 32 to the

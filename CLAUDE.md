@@ -9,7 +9,7 @@ the pitfalls that already cost time.
 A FreeBASIC ROM editor for **Final Fantasy IV (FF2US v1.1)**, with a text-mode UI (80x58 cells, `screen 18, 32`)
 that draws its font, windows and most graphics from the ROM being edited. Everything is edited in
 memory and written only by "Save ROM". `README.md` documents every editor, key and config file for users;
-keep it in sync when behavior changes (it has a "Since 0.8" version-history entry to extend).
+keep it in sync when behavior changes (its version-history entry for 0.9 is the one to extend until the next release).
 
 Editors on the main menu: Features, Spells (with animation preview), Spell Sets, Weapons (with sprite
 preview), Armors, Medicines, Tools, Shops, Jobs, **Battle Sprites** (tile/palette editor, BMP export/import), **Portraits** (menu faces, 32x32 3bpp, entry 32),
