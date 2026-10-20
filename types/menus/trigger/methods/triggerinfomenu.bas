@@ -161,7 +161,7 @@ sub TriggerInfoMenu.UserSelect()
        xy.UserSelect()
        t->x = xy.number
       else
-       xy.max_value = 127
+       if m >= 252 and m <= 254 then xy.max_value = 255 else xy.max_value = 127
        xy.x = x + 3
        xy.y = location_menu.y + 1
        xy.starting_number = t->y

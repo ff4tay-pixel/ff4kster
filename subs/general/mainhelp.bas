@@ -173,6 +173,8 @@ sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
    HelpLine(lines(), n, "Ctrl-Z / Y   Undo / redo")
    HelpLine(lines(), n, "R          Replace all of the tile")
    HelpLine(lines(), n, "O          Overlay: triggers, encounter zones")
+   HelpLine(lines(), n, "T          Edit the trigger under the cursor")
+   HelpLine(lines(), n, "Insert / Delete  Add / remove a trigger")
    HelpLine(lines(), n, "Ctrl-Arrow  Jump 16 tiles    Esc  Back")
   case else
    HelpLine(lines(), n, "Leave the editor. You are asked to save")

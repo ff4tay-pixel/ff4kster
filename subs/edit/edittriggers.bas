@@ -2,6 +2,24 @@ declare sub UpdateTriggerMinimap(map_index as UInteger, tg as List, selected_tri
 declare sub DrawTriggerMinimapCursor(cx as Integer, cy as Integer)
 declare function FindTriggerAt(cx as Integer, cy as Integer, tg as List) as Integer
 
+sub RecomputeTreasureIndexes()
+
+ 'Every map numbers its chests from where the maps before it stop; call after triggers change
+
+ dim treasures as UByte = 0
+ dim t as Trigger ptr
+
+ for i as Integer = 1 to total_maps - 1
+  if i = 257 then treasures = 0
+  maps(i).treasure_index = treasures
+  for j as Integer = 1 to maps(i).triggers.Length()
+   t = maps(i).triggers.PointerAt(j)
+   if t->treasure then treasures += 1
+  next
+ next
+
+end sub
+
 sub EditTriggers()
 
  dim select_map as BlueMenu
@@ -195,7 +213,6 @@ do
          if maps(252).triggers.Length() + maps(253).triggers.Length() + maps(254).triggers.Length() < max_overworld_triggers then
           t = callocate(SizeOf(Trigger))
           maps(select_map.selected).triggers.Insert(select_trigger.selected, t)
-          total_triggers += 1
           select_trigger.ClearAll()
           for i as Integer = 1 to maps(select_map.selected).triggers.Length()
            select_trigger.AddOption(FF4Text("Trigger " + Pad(str(i), 2)))
@@ -235,18 +252,7 @@ do
  ImageDestroy(minimap_img)
  ImageDestroy(minimap_canvas)
 
- dim treasures as UByte = 0
- dim ot as UByte = 0
-
- for i as Integer = 1 to total_maps - 1
-  if i = 257 then treasures = 0
-  maps(i).treasure_index = treasures
-  ot = treasures
-  for j as Integer = 1 to maps(i).triggers.Length()
-   t = maps(i).triggers.PointerAt(j)
-   if t->treasure then treasures += 1
-  next
- next
+ RecomputeTreasureIndexes()
 
 end sub
 
