@@ -70,6 +70,41 @@ INSTALLATION INSTRUCTIONS
 * Unzip it into a folder of your choice
 
 
+BUILDING FROM SOURCE
+--------------------
+
+FF4kster is a FreeBASIC program. Install the FreeBASIC compiler and make
+sure `fbc.exe` is available on PATH. On Windows, FreeBASIC can be installed
+with:
+
+  winget install --id FreeBASIC.FreeBASIC
+
+FreeBASIC 1.10.1 was used to build this checkout. From the repository root,
+compile the single translation unit with the visible console build:
+
+  fbc -x ff4kster-console.exe main.bas
+
+This creates `ff4kster-console.exe` in the repository root. Run it from that same
+folder so the program can find the `config` directory:
+
+  .\ff4kster-console.exe
+
+For a windowed build without a visible console, use:
+
+  fbc -s gui -x main.exe main.bas
+
+The console build is recommended for testing because it shows the ROM file
+selector and any startup errors.
+
+The program opens a file selector for a compatible FF2US v1.1 ROM. The
+current code supports a 1 MiB unheadered ROM or a 1,049,088-byte headered ROM;
+the local `ff2.smc` test ROM is 1 MiB. Keep a backup before saving changes.
+Successful builds may show non-fatal warnings about mixed Boolean and
+non-Boolean operands in menu code. The files under `common/old`, `common/new`, and
+the `*-test.bas`/`*-old.bas` editor variants are historical experiments and
+are not included by the active `main.bas` include graph.
+
+
 CONTROLS
 --------
 
