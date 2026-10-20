@@ -18,6 +18,7 @@
 'Declare local variables.
 dim filename as String
 dim editor_menu as BlueMenu
+dim save_prompt as BlueMenu
 
 'Get a filename from the command line.
 'filename = command
@@ -96,6 +97,12 @@ editor_menu.AddOption(FF4Text("Edit Autobattles"))
 editor_menu.AddOption(FF4Text("Edit Solobattles"))
 editor_menu.AddOption(FF4Text("Quit"))
 
+save_prompt.x = 24
+save_prompt.y = 25
+save_prompt.AddOption(FF4Text("Save ROM"))
+save_prompt.AddOption(FF4Text("Quit without saving"))
+save_prompt.AddOption(FF4Text("Cancel"))
+
 'Main menu loop
 do
 
@@ -103,6 +110,11 @@ do
  editor_menu.UserSelect()
 
  if not editor_menu.cancelled then
+
+  if editor_menu.selected >= 2 and editor_menu.selected <= 25 then
+   modified = true
+   editor_menu.ChangeOption(1, FF4Text("Save ROM *"))
+  end if
 
   select case editor_menu.selected
 
@@ -114,6 +126,8 @@ do
      BlueBox(20, 1, 11, 1)
      WriteText(FF4Text("Save failed"), 21, 2)
     else
+      modified = false
+      editor_menu.ChangeOption(1, FF4Text("Save ROM"))
      BlueBox(20, 1, 10, 1)
      WriteText(FF4Text("Data saved"), 21, 2)
     end if
@@ -145,7 +159,28 @@ do
    case 25: EditSoloBattles()
 
    case else
-    exit do
+    if not modified then
+     exit do
+    end if
+    save_prompt.ChangeSelected(3)
+    save_prompt.UserSelect()
+    if not save_prompt.cancelled then
+     select case save_prompt.selected
+      case 1
+       SaveData(filename)
+       if warning then
+        warning = false
+        BlueBox(20, 1, 11, 1)
+        WriteText(FF4Text("Save failed"), 21, 2)
+        getkey
+       else
+        modified = false
+        exit do
+       end if
+      case 2
+       exit do
+     end select
+    end if
 
   end select
 
