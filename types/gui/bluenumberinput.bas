@@ -6,6 +6,7 @@ type BlueNumberInput
  starting_number as UInteger
  min_value as UInteger = 0
  max_value as UInteger = 255
+ input_started as Boolean
  
  declare constructor(starting_x as UInteger = 0, starting_y as UInteger = 0)
  

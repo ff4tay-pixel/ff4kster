@@ -36,9 +36,10 @@ function BlueNumberInput.UserInput() as Boolean
    number = number \ 10
    if number < min_value then number = min_value
   case asc("0") to asc("9")
-   number *= 10
+    if input_started then number *= 10 else number = 0
    number += a - 48
    if number > max_value then number = max_value
+    input_started = true
  end select
  
  return result
@@ -74,6 +75,7 @@ sub BlueNumberInput.UserSelect()
  snapshot = ImageCreate(640, 480)
  get (x * 8, y * 8)-((x + len(str(max_value)) + 2) * 8, (y + 1 + 2) * 8 - 1), snapshot
  number = starting_number
+ input_started = false
 
  do until UserInput()
  loop
