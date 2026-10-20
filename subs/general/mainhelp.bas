@@ -163,6 +163,12 @@ sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
    HelpLine(lines(), n, "Lists every spell, item, monster, shop,")
    HelpLine(lines(), n, "formation and job you changed since loading,")
    HelpLine(lines(), n, "pick one to open it.")
+  case 31
+   HelpLine(lines(), n, "Look around the overworld, the underground")
+   HelpLine(lines(), n, "and the moon. Nothing here changes the ROM yet.")
+   HelpLine(lines(), n, "Arrows move, PgUp / PgDn and Home / End jump,")
+   HelpLine(lines(), n, "Tab changes world, click the small map to")
+   HelpLine(lines(), n, "jump there, Esc leaves.")
   case else
    HelpLine(lines(), n, "Leave the editor. You are asked to save")
    HelpLine(lines(), n, "if there are unsaved edits.")

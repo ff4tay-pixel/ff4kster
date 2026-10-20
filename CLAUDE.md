@@ -66,6 +66,7 @@ the rip JSON and in `.asm` comments are SNES `bank/address` or file offsets: use
 | Weapon visuals (palette, sprite, slash, swing) | `&h7A010` | 4 bytes per weapon |
 | Battle character graphics | `&hD0200` | 15 sheets x 0x800, 4bpp; poses: tile table `&h6FB61`, positions `&h6FA61`, pose to position `&h6FA3C` |
 | Level up data | pointers `&h7B700`, data from `&h7B728` | 5 bytes per level; rules in `battle/win.asm` |
+| World maps | see header of `subs/general/worldmap.bas` | one RLE row per pointer: overworld/underground 256x256, moon 64x64; the disassembly writes addresses as bank*10000h+address, so convert with `(a shr 16)*&h8000 + (a and &h7FFF)` (+&h200) |
 
 ## Features that have non-obvious rules
 

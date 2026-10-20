@@ -17,16 +17,23 @@
 
 'The main menu has header rows between groups of entries. menu_id maps a row
 ' to its entry number (1 = Save ROM ... 30 = Quit), 0 for a header row.
+const menu_world_map = 31 'View World Maps (numbered last so the other entries keep their numbers)
 dim shared menu_id(1 to 60) as Integer
 dim shared menu_rows as Integer
 dim shared entry_number as Integer
 
-sub AddMainEntry(m as BlueMenu, label as String)
+sub AddMainEntry(m as BlueMenu, label as String, explicit_id as Integer = 0)
+
+ 'explicit_id puts an entry in the menu where it belongs without renumbering the ones after it
 
  m.AddOption(FF4Text(label))
  menu_rows += 1
- entry_number += 1
- menu_id(menu_rows) = entry_number
+ if explicit_id > 0 then
+  menu_id(menu_rows) = explicit_id
+ else
+  entry_number += 1
+  menu_id(menu_rows) = entry_number
+ end if
 
 end sub
 
@@ -155,6 +162,7 @@ AddMainHeader(editor_menu, "World")
 AddMainEntry(editor_menu, "Edit Tilesets")
 AddMainEntry(editor_menu, "Edit Map Info")
 AddMainEntry(editor_menu, "Edit Maps")
+AddMainEntry(editor_menu, "View World Maps", menu_world_map)
 AddMainHeader(editor_menu, "Battles")
 AddMainEntry(editor_menu, "Edit Monsters")
 AddMainEntry(editor_menu, "Edit Formations")
@@ -192,7 +200,7 @@ do
  if not editor_menu.cancelled then
 
   'Start every editor on a black screen so nothing from the main menu is left behind.
-  if choice >= menu_first_editor and choice <= menu_last_editor then cls
+  if (choice >= menu_first_editor and choice <= menu_last_editor) or choice = menu_world_map then cls
 
   help_entry = choice
 
@@ -230,6 +238,7 @@ do
    case 27: SearchEverywhere()
    case 28: ShowSpaceUsage()
    case 29: ChangedEntries()
+   case menu_world_map: ViewWorldMaps()
 
    case else
     if not modified then

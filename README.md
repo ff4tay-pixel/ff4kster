@@ -249,7 +249,14 @@ headings. The editors are in this order: Features, Spells, Spell Sets,
 Weapons, Armors, Medicines, Tools, Shops, Jobs, Battle Sprites, Characters,
 Commands, Actors, Messages, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
 Monsters, Formations, Encounters, Autobattles and Solobattles, followed by
-Search Everywhere, Space Usage and Changed Entries. A panel beside the menu
+Search Everywhere, Space Usage and Changed Entries. "View World Maps" (under World) is a
+read-only viewer for the overworld, the underground and the moon: arrows move a
+cursor over the 16x16 pixel tiles, PgUp / PgDn and Home / End jump 16 tiles, Tab
+changes world, a click on the small map jumps there and a click on the view moves
+the cursor. The side panel shows the tile number and what can cross it (walking,
+chocobos, hovercraft, airship, whale) and whether it has random battles. The map
+is shown as stored in the ROM; the game changes a few overworld tiles while it
+runs. A panel beside the menu
 shows the keys for the highlighted entry. The CSV export/import and the two ROM
 comparison tools described under "Extras" below are still in the program but
 are currently hidden from the menu.
@@ -1245,6 +1252,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * Since 0.8
+    - View World Maps: read-only viewer for the overworld, underground and moon
     - Revert, copy / paste, undo and changed marks for solobattles, autobattles, spell
       sets and encounter areas; Changed Entries lists commands, actors and those too
     - Edit Graphics shows and edits the palette a boss really uses
