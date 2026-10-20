@@ -169,8 +169,10 @@ Assuming that nothing goes wrong and the rom loads correctly, you will then
 be presented with a menu of different editors for different types of game
 objects. You can use those to view and/or change the various game components,
 then when you are satisfied with the changes, navigate back to the main menu
-and select "Save ROM". When you are done using the program, select "Quit"
-from the main menu.
+and select "Save ROM". The menu changes this entry to "Save ROM *" after an
+editor is opened, indicating that unsaved changes may exist. If you choose
+"Quit" while the editor is marked as modified, you can save, quit without
+saving, or cancel and return to the editor.
 
 If something did go wrong, the usual result is that you will be presented
 with a black screen that seems to be doing nothing for a long time. If this
@@ -598,6 +600,8 @@ the map itself in the middle. Pressing Enter will switch to map editing
 mode, where the following controls apply:
 
     J: Jump directly to a map index from 1 to 384.
+    F: Search map names and jump to the next matching map.
+    I: Show the indices of other maps sharing the selected grid.
 
     TAB: Switch between the map editor and the tile selector.
     ARROWS: Move the cursor.
@@ -617,13 +621,16 @@ selector:
            highlighted tile.
     BACKSPACE: Change the selected tile to the highlighted one (much like
                the "dropper" feature of many image editors).
+    CTRL+C: Copy the selected rectangle.
+    CTRL+V: Paste the copied rectangle at the cursor.
 
-While editing, the status panel at the bottom of the screen shows the active
-panel, selected tile, and current rectangle size, along with common controls.
+The bottom-right keyboard sidebar lists one shortcut per line. Press `H` to
+hide or show the sidebar while browsing map indices or editing a map; the map
+status remains on the lower left.
 `CTRL+Z` steps backward through up to ten paint or flood-fill operations in
 the current map editing session.
-The map selector also shows the selected grid index and how many map entries
-share it before you begin editing.
+The map selector shows the selected grid index and how many map entries share
+it. Press `I` to open the shared map-index list when needed.
 
 Note that certain maps share the same tile arrangements. This can be viewed
 and modified in the "Map Info" editor, under the label "Grid Index". If two
