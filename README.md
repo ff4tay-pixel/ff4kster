@@ -1158,7 +1158,12 @@ MONSTERS
 --------
 
 The monster list is on the left (the usual list keys work: yellow names are
-changed, Ctrl-R, Ctrl-C / V, Ctrl-U, Ctrl-Z). Select a monster and press Enter
+changed, Ctrl-R, Ctrl-C / V, Ctrl-U, Ctrl-Z). A monster counts as changed when
+its AI was changed too, and Ctrl-R puts the AIs it uses (attack and reaction)
+back as in the loaded ROM, with the condition sets, conditions and scripts
+they use. Ctrl-Z undoes the last editing session of a monster, AI included.
+Pasting a monster (Ctrl-V) copies its values but not its AI. Select a monster
+and press Enter
 to edit it: the cursor moves into the boxes on the right and every value is
 edited in place, with no menu in between. A line at the bottom of the screen
 says what Enter does on the row the cursor is on.
@@ -1174,8 +1179,9 @@ says what Enter does on the row the cursor is on.
                  extra data that only some monsters have. A yellow row is on,
                  a grey row is off.
     6 AI         The attack AI, the bank it is read from (Regular or LUNAR,
-                 for the monster) and the reaction AI, summed up pair by pair
-                 (see ENEMY AI). Enter on an AI opens the AI editor; Enter or
+                 for the monster) and the reaction AI. Each pair shows its
+                 first condition and all of its actions, as many as fit
+                 ("more in the AI editor" says when something did not). Enter on an AI opens the AI editor; Enter or
                  Space on the Bank row switches the bank.
 
     UP, DOWN:        Move through all the rows; at the end of a box the cursor
@@ -1312,6 +1318,8 @@ the keys do on the line the cursor is on.
                      cursor line, in the panel of its kind. Copying works
                      across AIs.
     CTRL+Z:          Undo the last action (kept until you change AI or bank).
+    CTRL+R:          Put the AI shown, and the condition sets, conditions and
+                     scripts it uses, back as in the loaded ROM.
     L:               Switch between the regular and the lunar script bank.
     R:               Switch between the attack AI and the reaction AI of the
                      monster (when it has a reaction).

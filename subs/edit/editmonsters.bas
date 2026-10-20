@@ -124,13 +124,16 @@ end sub
 
 sub MonDrawAIBox(x as Integer, y as Integer, inner_h as Integer, title as String, index as Integer, lunar_flag as Boolean)
 
- 'A box that sums up an AI: its pairs, each with its first condition and its first action. The editor
- ' for it opens from the AI box of the cursor.
+ 'A box that sums up an AI: each pair with its first condition and all of its actions, as many as fit.
+ ' The editor for it opens from the AI box of the cursor.
 
  dim row as Integer = y + 3
  dim last_row as Integer = y + inner_h
  dim pair_count as Integer
- dim shown as Integer
+ dim script_n as Integer
+ dim actions as Integer
+ dim entry as AIScriptEntry ptr
+ dim cut as Boolean
 
  BlueBox(x, y, 31, inner_h)
  LuText(title, x, y, 14)
@@ -141,16 +144,44 @@ sub MonDrawAIBox(x as Integer, y as Integer, inner_h as Integer, title as String
  ai_lunar = lunar_flag
  pair_count = len(aigroupconditions(index))
  for p as Integer = 1 to pair_count
-  if row + 1 > last_row then exit for
+  if row > last_row then
+   cut = true
+   exit for
+  end if
   LuText(str(p), x + 1, row, 14)
   LuText("WHEN", x + 3, row, 21)
   WriteText(left(AIFirstCondition(p), 20), x + 9, row, 15)
-  LuText("THEN", x + 3, row + 1, 22)
-  WriteText(left(AIFirstAction(p), 20), x + 9, row + 1, 15)
-  row += 2
-  shown += 1
+  row += 1
+
+  actions = 0
+  if AIScriptExists(AIScriptId(p)) then
+   script_n = AIScriptIndex(AIScriptId(p))
+   actions = scripts(script_n).Length()
+  end if
+  if actions = 0 then
+   if row <= last_row then LuText("THEN", x + 3, row, 22)
+   if row <= last_row then LuText("no actions", x + 9, row, 23)
+   row += 1
+  else
+   for j as Integer = 1 to actions
+    if row > last_row then
+     cut = true
+     exit for
+    end if
+    entry = scripts(script_n).PointerAt(j)
+    LuText("THEN", x + 3, row, 22)
+    WriteText(left(entry->TextDescription(), 20), x + 9, row, 15)
+    row += 1
+   next
+  end if
  next
- if shown < pair_count then LuText("and " + str(pair_count - shown) + " more pairs", x + 3, last_row, 23)
+ if row > last_row + 1 then cut = true
+
+ 'what did not fit is in the AI editor
+ if cut then
+  LuText(string(29, " "), x + 1, last_row, 15)
+  LuText("more in the AI editor", x + 3, last_row, 23)
+ end if
 
 end sub
 

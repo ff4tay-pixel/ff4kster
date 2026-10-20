@@ -205,39 +205,6 @@ sub AIPushUndo(kind as Integer, id as Integer, text as String = "")
 end sub
 
 
-function AIScriptToText(n as Integer) as String
-
- dim result as String
- dim entry as AIScriptEntry ptr
-
- for j as Integer = 1 to scripts(n).Length()
-  entry = scripts(n).PointerAt(j)
-  result += chr(entry->function_call) + chr(entry->parameter)
- next
-
- return result
-
-end function
-
-
-sub AIScriptFromText(n as Integer, text as String)
-
- dim entry as AIScriptEntry ptr
-
- do while scripts(n).Length() > 0
-  scripts(n).Remove(1)
- loop
-
- for j as Integer = 1 to len(text) step 2
-  entry = callocate(SizeOf(AIScriptEntry))
-  entry->function_call = asc(mid(text, j, 1))
-  entry->parameter = asc(mid(text, j + 1, 1))
-  scripts(n).Append(entry)
- next
-
-end sub
-
-
 sub AIPushGroup()
 
  'Remembers the pairs of the AI being edited (the two strings are kept as one)
@@ -1022,7 +989,7 @@ sub AIDraw(message as String)
  LuText("Tab or 1 2 3: panel.  Arrows PgUp PgDn: move.  Left Right: other AI or pair.", 0, footer_y + 5, 23)
  LuText("Enter: change or add.  Insert: add.  Delete: remove.  Ctrl-Z: undo.", 0, footer_y + 6, 23)
  LuText("U: own copy of shared parts.  Ctrl-C Ctrl-V: copy, paste.  Esc: back.", 0, footer_y + 7, 23)
- LuText("N P G: look at other AI.  A: use it.  L: bank.  R: reaction AI.", 0, footer_y + 8, 23)
+ LuText("N P G: other AI.  A: use it.  L: bank.  R: reaction.  Ctrl-R: revert AI.", 0, footer_y + 8, 23)
  screenunlock
 
 end sub
@@ -1645,6 +1612,15 @@ sub EditMonsterAI(byref attack_index as Integer, byref reaction_index as Integer
 
    case 26 'Ctrl-Z
     if not AIUndo() then ai_message = "Nothing to undo."
+
+   case 18 'Ctrl-R
+    if ConfirmBox("Put AI " + str(ai_index) + " and its parts back as in the loaded ROM?") then
+     AIRestoreGroup(ai_original, ai_index, ai_lunar)
+     AIRestoreOrphans(ai_original)
+     ai_undo_count = 0
+     AIChangeAI(ai_index)
+     ai_message = "AI " + str(ai_index) + " is back as in the loaded ROM."
+    end if
 
    case else
     select case ai_focus

@@ -210,6 +210,9 @@ function EntryRow(kind as String, i as Integer) as String
 
  end select
 
+ 'a monster also holds the AIs it uses (they live in tables of their own)
+ if kind = "monsters" then return CsvRow(kind, i) + "|" + MonsterAIFingerprint(i)
+
  return CsvRow(kind, i)
 
 end function
@@ -306,6 +309,7 @@ sub SnapshotOriginalRows()
    orig_rows(k, i) = EntryRow(kinds(k), i)
   next
  next
+ AITakeSnap(ai_original)
 
 end sub
 
@@ -430,8 +434,17 @@ sub RevertEntry(kind as String, i as Integer)
    tools(i).ReadFromROM(i)
   case "monsters"
    dim blank_monster as Monster
+   dim now_attack as Integer = monsters(i).attack_sequence_group + 1
+   dim now_reaction as Integer = iif(monsters(i).has_reaction, monsters(i).reaction_index + 1, 0)
+   dim now_lunar as Boolean = monsters(i).lunar
    monsters(i) = blank_monster
    monsters(i).ReadFromROM(i)
+   'the AIs it uses go back too: the ones it has now and the ones it had when the ROM was loaded
+   AIRestoreGroup(ai_original, now_attack, now_lunar)
+   AIRestoreGroup(ai_original, now_reaction, now_lunar)
+   AIRestoreGroup(ai_original, monsters(i).attack_sequence_group + 1, monsters(i).lunar)
+   if monsters(i).has_reaction then AIRestoreGroup(ai_original, monsters(i).reaction_index + 1, monsters(i).lunar)
+   AIRestoreOrphans(ai_original)
   case "shops"
    dim blank_shop as Shop
    shops(i) = blank_shop
@@ -710,6 +723,7 @@ dim shared undo_armor(1 to undo_max) as Armor
 dim shared undo_medicine(1 to undo_max) as Medicine
 dim shared undo_tool(1 to undo_max) as Tool
 dim shared undo_monster(1 to undo_max) as Monster
+dim shared undo_ai(1 to undo_max) as AISnap 'the AI tables as they were when a monster was put on the stack
 dim shared undo_shop(1 to undo_max) as Shop
 dim shared undo_formation(1 to undo_max) as Formation
 dim shared undo_job(1 to undo_max) as Job
@@ -729,7 +743,9 @@ sub UndoStore(slot as Integer, kind as String, i as Integer)
   case "armors": undo_armor(slot) = armors(i)
   case "medicines": undo_medicine(slot) = medicines(i)
   case "tools": undo_tool(slot) = tools(i)
-  case "monsters": undo_monster(slot) = monsters(i)
+  case "monsters"
+   undo_monster(slot) = monsters(i)
+   AITakeSnap(undo_ai(slot))
   case "shops": undo_shop(slot) = shops(i)
   case "formations": undo_formation(slot) = formations(i)
   case "jobs": undo_job(slot) = jobs(i)
@@ -749,7 +765,9 @@ sub UndoLoad(slot as Integer, kind as String, i as Integer)
   case "armors": armors(i) = undo_armor(slot)
   case "medicines": medicines(i) = undo_medicine(slot)
   case "tools": tools(i) = undo_tool(slot)
-  case "monsters": monsters(i) = undo_monster(slot)
+  case "monsters"
+   monsters(i) = undo_monster(slot)
+   AIPutSnap(undo_ai(slot))
   case "shops": shops(i) = undo_shop(slot)
   case "formations": formations(i) = undo_formation(slot)
   case "jobs": jobs(i) = undo_job(slot)
@@ -773,7 +791,9 @@ sub UndoMove(to_slot as Integer, from_slot as Integer)
   case "armors": undo_armor(to_slot) = undo_armor(from_slot)
   case "medicines": undo_medicine(to_slot) = undo_medicine(from_slot)
   case "tools": undo_tool(to_slot) = undo_tool(from_slot)
-  case "monsters": undo_monster(to_slot) = undo_monster(from_slot)
+  case "monsters"
+   undo_monster(to_slot) = undo_monster(from_slot)
+   undo_ai(to_slot) = undo_ai(from_slot)
   case "shops": undo_shop(to_slot) = undo_shop(from_slot)
   case "formations": undo_formation(to_slot) = undo_formation(from_slot)
   case "jobs": undo_job(to_slot) = undo_job(from_slot)
