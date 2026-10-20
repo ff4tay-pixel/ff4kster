@@ -40,6 +40,14 @@ sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
    HelpLine(lines(), n, "Writes your edits to the ROM file.")
    HelpLine(lines(), n, "A * means there are unsaved edits.")
    HelpLine(lines(), n, "Keep a backup of your ROM.")
+  case 34
+   HelpLine(lines(), n, "Replaces the ROM file with one of the backups")
+   HelpLine(lines(), n, "that Save ROM makes (newest first). The ROM as")
+   HelpLine(lines(), n, "it is now is backed up first. FF4kster then")
+   HelpLine(lines(), n, "starts again. Unsaved edits are lost.")
+  case 35
+   HelpLine(lines(), n, "Deletes one backup, or all of them, of this")
+   HelpLine(lines(), n, "ROM. The list shows date, time and size.")
   case 2
    HelpLine(lines(), n, "Item ranges: which items are two-handed,")
    HelpLine(lines(), n, "bows, arrows, shields, helmets, etc.")

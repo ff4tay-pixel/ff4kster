@@ -74,6 +74,7 @@
 #include once "subs/write/saveportraits.bas"
 #include once "subs/write/savemapgrids.bas"
 #include once "subs/write/savedata.bas"
+#include once "subs/general/backups.bas"
 
 'CSV export/import and ROM comparison
 #include once "subs/csv/exportcsv.bas"

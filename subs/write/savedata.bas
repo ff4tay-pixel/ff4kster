@@ -45,6 +45,15 @@ function CopyFile(source as String, destination as String) as Boolean
 end function
 
 
+function BackupName(filename as String) as String
+
+ 'The name of a new backup of the ROM file: <rom>.<date>-<time>.bak
+
+ return filename + "." + mid(date, 7, 4) + left(date, 2) + mid(date, 4, 2) + "-" + left(time, 2) + mid(time, 4, 2) + mid(time, 7, 2) + ".bak"
+
+end function
+
+
 sub ApplyDataToROM()
 
  dim start as UInteger
@@ -231,7 +240,7 @@ sub SaveData(filename as String)
   'Keep a copy of the file as it was before the first save of this session.
   if not backup_done then
    if dir(filename) <> "" then
-    last_backup_name = filename + "." + mid(date, 7, 4) + left(date, 2) + mid(date, 4, 2) + "-" + left(time, 2) + mid(time, 4, 2) + mid(time, 7, 2) + ".bak"
+    last_backup_name = BackupName(filename)
     if CopyFile(filename, last_backup_name) then
      backup_done = true
     else

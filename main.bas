@@ -20,6 +20,8 @@
 const menu_world_map = 31 'Edit World Maps (numbered last so the other entries keep their numbers)
 const menu_portraits = 32 'Edit Portraits
 const menu_monster_sprites = 33 'Edit Monster Sprites
+const menu_restore = 34 'Restore from Backup
+const menu_delete_backups = 35 'Delete Backups
 dim shared menu_id(1 to 60) as Integer
 dim shared menu_rows as Integer
 dim shared entry_number as Integer
@@ -140,6 +142,8 @@ line warp_overlay, (2, 12)-(4, 10), RGB(255, 0, 0)
 
 'Set up main menu. Yellow header rows group the entries and the cursor skips them.
 AddMainEntry(editor_menu, "Save ROM")
+AddMainEntry(editor_menu, "Restore from Backup", menu_restore)
+AddMainEntry(editor_menu, "Delete Backups", menu_delete_backups)
 AddMainHeader(editor_menu, "Items and magic")
 AddMainEntry(editor_menu, "Edit Features")
 AddMainEntry(editor_menu, "Edit Spells")
@@ -245,6 +249,18 @@ do
    case menu_world_map: EditWorldMaps()
    case menu_portraits: EditPortraits()
    case menu_monster_sprites: EditMonsterSprites()
+
+   case menu_restore
+    if RestoreFromBackup(filename, modified) then
+     InfoBox("The ROM was restored from the backup.|FF4kster starts again to load it.||Press any key", 4, 20)
+     run command(0), chr(34) + filename + chr(34)
+     'run only comes back if it failed. The data in memory is the old ROM, so do not stay.
+     InfoBox("FF4kster could not start again.|Close it and open it again to load the restored ROM.||Press any key", 4, 20)
+     exit do
+    end if
+
+   case menu_delete_backups
+    DeleteBackups(filename)
 
    case else
     if not modified then

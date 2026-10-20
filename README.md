@@ -1659,6 +1659,8 @@ VERSION HISTORY
 ## Safety and navigation extras
 
 - **Automatic backup:** the first Save ROM of a session copies the ROM file to `<rom>.<date>-<time>.bak` before writing.
+- **Restore from Backup** (main menu, under Save ROM) lists the backups of the open ROM, newest first, with date, time and size. Pick one and confirm: the ROM file is replaced with it and FF4kster starts again to load it. The ROM as it is now is copied to a new backup first, so a restore can itself be undone by restoring that backup. Edits you have not saved are lost.
+- **Delete Backups** (main menu) deletes one backup, or all of them (the first entry shows how many and how much space they take). Deleted backups cannot be brought back.
 - **Command line / last ROM:** `ff4kster-console.exe path	oom.smc` (or drag a ROM onto the exe) skips the file selector. Without an argument the editor offers the ROM used last time (`lastrom.cfg`).
 - **Window title** shows the ROM name and a `*` when there are unsaved edits.
 - **Entry lists (spells, items, monsters, shops, formations, jobs, commands, actors, spell sets, encounter areas, autobattles, solobattles):** names that differ from the loaded ROM are yellow. Ctrl-R reverts an entry, Ctrl-C / Ctrl-V copy and paste an entry (the target keeps its name), Ctrl-Z undoes the last change to an entry, Ctrl-U shows where it is used (formations and encounter areas, shops and chests, weapons that cast a spell; for a formation, the areas that use it and trapped chests). Shops and jobs have no usage list. The editor reopens on the entry you were last on.
