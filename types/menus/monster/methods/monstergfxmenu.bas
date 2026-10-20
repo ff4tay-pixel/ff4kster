@@ -63,6 +63,10 @@ sub MonsterGfxMenu.UserSelect()
  dim preview as Any ptr 
  dim sprite_snapshot as Any ptr = 0
  dim is_boss as Boolean
+ dim old_ptr as UInteger
+ dim old_size as UByte
+ dim shown_entry as Integer
+ dim number_snapshot as Any ptr
  
  enter_byte = BlueNumberInput(main_menu.x + 9)
  
@@ -86,17 +90,41 @@ sub MonsterGfxMenu.UserSelect()
       select case template_menu.selected
        
        case 1
-        gfx_menu.UserSelect()
-        if not gfx_menu.cancelled then
-         gfx_ptr = val(left(monstergfxnames.Lookup(gfx_menu.options.ItemAt(gfx_menu.selected)), 5))
-         size = val(mid(monstergfxnames.Lookup(gfx_menu.options.ItemAt(gfx_menu.selected)), 7))
+        'The preview follows the highlighted template; Esc puts the old pointer and size back
+        old_ptr = gfx_ptr
+        old_size = size
+        shown_entry = gfx_menu.selected
+        gfx_menu.cancelled = false
+        gfx_menu.TakeSnapshot()
+        do
+         if gfx_menu.selected <> shown_entry then
+          shown_entry = gfx_menu.selected
+          gfx_ptr = val(left(monstergfxnames.Lookup(gfx_menu.options.ItemAt(shown_entry)), 5))
+          size = val(mid(monstergfxnames.Lookup(gfx_menu.options.ItemAt(shown_entry)), 7))
+         end if
+         MonsterSpritePanelShow(gfx_ptr, size, pal, sprite_snapshot)
+        loop until gfx_menu.UserInput()
+        gfx_menu.Hide()
+        if gfx_menu.cancelled then
+         gfx_ptr = old_ptr
+         size = old_size
         end if
        
        case 2
+        'The preview follows the number as it is typed
         enter_byte.y = main_menu.y
         enter_byte.max_value = &hFFFF
         enter_byte.starting_number = gfx_ptr
-        enter_byte.UserSelect()
+        enter_byte.number = gfx_ptr
+        enter_byte.input_started = false
+        number_snapshot = ImageCreate(640, 480)
+        get (enter_byte.x * 8, enter_byte.y * 8)-((enter_byte.x + len(str(enter_byte.max_value)) + 2) * 8, (enter_byte.y + 1 + 2) * 8 - 1), number_snapshot
+        do
+         gfx_ptr = enter_byte.number
+         MonsterSpritePanelShow(gfx_ptr, size, pal, sprite_snapshot)
+        loop until enter_byte.UserInput()
+        put (enter_byte.x * 8, enter_byte.y * 8), number_snapshot, pset
+        ImageDestroy(number_snapshot)
         enter_byte.max_value = &hFF
         gfx_ptr = enter_byte.number
       

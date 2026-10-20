@@ -971,7 +971,8 @@ little explanation.
               
 * Graphics: "Edit Graphics" shows a live preview of the monster's sprite in
             the monster's palette that updates as you change the pointer, size
-            or palette. It draws all three kinds of monster: ordinary monsters
+            or palette (also while you move through the pointer templates or type
+            a pointer number; Esc puts the old pointer back). It draws all three kinds of monster: ordinary monsters
             (a block of tiles, sized from the size list), bosses (the "special
             sizes", which have their own tile layout, palette and position, so
             the preview follows the special size menu as you edit it) and party
