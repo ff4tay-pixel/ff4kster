@@ -71,6 +71,25 @@ constructor AIMenu(starting_x as UByte = 0, starting_y as UByte = 0)
 end constructor
 
 
+function AIMenu.ReadKey() as UInteger
+
+ 'Reads a key for the AI editor. L switches between viewing/editing the
+ ' regular and the lunar AI script bank for this monster.
+
+ dim k as UInteger
+
+ do
+  k = getkey
+  if k <> asc("l") and k <> asc("L") then exit do
+  lunar = not lunar
+  Display()
+ loop
+
+ return k
+
+end function
+
+
 function AIMenu.CurrentCondition() as UByte
 
  dim result as UByte
@@ -95,6 +114,13 @@ sub AIMenu.Display()
  set_menu.Display()
  RefreshConditions()
  RefreshScripts()
+ if y < 20 then 'only the main AI view, not the reaction view
+  if lunar then
+   WriteText(FF4Text("AI bank: LUNAR    (L = switch)"), x, y + 28, 14)
+  else
+   WriteText(FF4Text("AI bank: Regular  (L = switch)"), x, y + 28, 15)
+  end if
+ end if
  
 end sub
 
@@ -201,7 +227,7 @@ sub AIMenu.UserSelect()
    case "index"
     index_menu.Display()
     index_menu.ShowCursor()
-    k = getkey
+    k = ReadKey()
     if k = TAB_KEY then
      mode = "set"
      index_menu.Display()
@@ -219,7 +245,7 @@ sub AIMenu.UserSelect()
    case "set"
     set_menu.Display()
     set_menu.ShowCursor()
-    k = getkey
+    k = ReadKey()
     if k = TAB_KEY then
      mode = "condition"
      set_menu.Display()
@@ -260,7 +286,7 @@ sub AIMenu.UserSelect()
    case "condition"
     condition_menu.Display()
     condition_menu.ShowCursor()
-    k = getkey
+    k = ReadKey()
     if k = TAB_KEY then
      mode = "script index"
      condition_menu.Display()
@@ -512,7 +538,7 @@ sub AIMenu.UserSelect()
    case "script index"
     script_index.Display()
     script_index.ShowCursor()
-    k = getkey
+    k = ReadKey()
     if k = TAB_KEY then
      if not lunar or script_index.selected + &h100 <= ubound(scripts) then
       mode = "script"
@@ -538,7 +564,7 @@ sub AIMenu.UserSelect()
     if lunar then n += &h100
     script_menu.Display()
     script_menu.ShowCursor()
-    k = getkey
+    k = ReadKey()
     if k = TAB_KEY then
      mode = "index"
      script_menu.Display()

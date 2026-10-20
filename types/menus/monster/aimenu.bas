@@ -16,6 +16,7 @@ type AIMenu
  declare constructor(starting_x as UByte = 0, starting_y as UByte = 0)
  
  declare function CurrentCondition() as UByte
+ declare function ReadKey() as UInteger
  
  declare sub Display()
  declare sub Hide()

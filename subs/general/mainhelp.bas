@@ -86,6 +86,8 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "Enter opens the monster's editor.")
    HelpLine(lines(), n, "Tab switches between the flag lists and")
    HelpLine(lines(), n, "their details.")
+   HelpLine(lines(), n, "In Edit AI: L switches between the regular")
+   HelpLine(lines(), n, "and the lunar AI script bank.")
   case 22 to 25
    HelpLine(lines(), n, "Enter opens the entry's editor.")
    HelpLine(lines(), n, "Autobattle scripts: Insert / Delete edit")

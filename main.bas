@@ -123,6 +123,9 @@ do
    editor_menu.ChangeOption(1, FF4Text("Save ROM *"))
   end if
 
+  'Start every editor on a black screen so nothing from the main menu is left behind.
+  if editor_menu.selected >= 2 and editor_menu.selected <= 28 then cls
+
   select case editor_menu.selected
 
    case 1 'Save

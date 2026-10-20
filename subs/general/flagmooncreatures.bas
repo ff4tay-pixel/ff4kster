@@ -8,6 +8,32 @@ sub SetMoonFlags(index as UInteger)
 
 end sub
 
+sub ReadLunarOverrides()
+
+ 'Monsters listed in config/lunar.dat ("<monster number> <label>" per line,
+ ' # for comments) are always treated as lunar, for monsters the encounter
+ ' tables above don't catch (bosses, etc.).
+
+ dim f as Integer = freefile
+ dim temp as String
+ dim n as Integer
+
+ if open(system_path + "\config\lunar.dat" for input as #f) <> 0 then exit sub
+
+ do until eof(f)
+  line input #f, temp
+  temp = trim(temp)
+  if temp <> "" and left(temp, 1) <> "#" then
+   n = val(temp)
+   if n >= 1 and n <= total_monsters then monsters(n).lunar = true
+  end if
+ loop
+
+ close #f
+
+end sub
+
+
 sub FlagMoonCreatures()
 
  dim t as Trigger ptr
@@ -26,6 +52,8 @@ sub FlagMoonCreatures()
  for i as Integer = 444 to 468
   if encounter_tables(i) > 0 then SetMoonFlags(i)
  next
+
+ ReadLunarOverrides()
  
  'for i as Integer = 347 to 349
   'for j as Integer = 1 to maps(i).triggers.Length()

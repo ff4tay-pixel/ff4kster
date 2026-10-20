@@ -1,0 +1,9 @@
+# Monsters always treated as lunar (they use the lunar AI script bank in the editor).
+# Format: <monster number> <label>. Lines starting with # are ignored.
+64 MoonCell
+89 Wyvern
+91 Ogopogo
+136 Zemus
+137 Zeromus
+138 Zeromus
+153 Zeromus

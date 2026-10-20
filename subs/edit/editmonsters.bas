@@ -145,6 +145,7 @@ sub EditMonsters()
      
      case 3 'Edit AI
       ai_menu.UserSelect()
+      monsters(select_monster.selected).lunar = ai_menu.lunar
       monsters(select_monster.selected).attack_sequence_group = ai_menu.index - 1
      
      case 4 'Edit Stats
