@@ -79,6 +79,7 @@
 #include once "subs/csv/exportcsv.bas"
 #include once "subs/csv/importcsv.bas"
 #include once "subs/general/romdiff.bas"
+declare function ChestFormation(m as Integer, chest_byte as Integer) as Integer
 #include once "subs/general/listtools.bas"
 #include once "subs/general/mainhelp.bas"
 

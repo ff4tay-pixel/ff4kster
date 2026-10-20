@@ -18,6 +18,18 @@ function TriggerGoesToWorld(t as Trigger ptr) as Boolean
 end function
 
 
+function ChestFormation(m as Integer, chest_byte as Integer) as Integer
+
+ 'Formation number (1 based, as formations() and formation_names) fought from a chest on map m (1 based).
+ 'The game takes 5 bits of the trigger and adds 32 when the map number is 256 or more (field/trigger.asm).
+
+ dim result as Integer = 449 + (chest_byte and 31)
+ if m > &h100 then result += 32
+ return result
+
+end function
+
+
 function TriggerUnderworld(m as Integer) as Boolean
 
  'Maps whose teleports name maps of the underground set (as Edit Triggers decides it)

@@ -652,7 +652,7 @@ function UsageText(kind as String, id as Integer) as String
    for m as Integer = 1 to total_maps
     for j as Integer = 1 to maps(m).triggers.Length()
      t = maps(m).triggers.PointerAt(j)
-     if t->treasure and t->trapped and t->formation + 449 = id then
+     if t->treasure and t->trapped and ChestFormation(m, t->formation) = id then
       count += 1
       if shown < 12 then
        lines += "|  " + FF4Name(map_names.ItemAt(m)) + " at " + str(t->x) + "," + str(t->y)

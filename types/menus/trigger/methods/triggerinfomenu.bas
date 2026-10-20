@@ -70,7 +70,8 @@ sub TriggerInfoMenu.Display()
   parameters_menu.AddOption(FF4Text("Contents: ") + temp)
   if t->trapped then temp = "YES" else temp = "NO "
   parameters_menu.AddOption(FF4Text("Trapped:  " + temp))
-  parameters_menu.AddOption(FF4Text("Battle:   ") + formation_names.ItemAt(t->formation + 449) + FF4Text(" - ") + formations(t->formation + 449).Preview())
+  'the game uses 5 bits and adds 32 on the maps numbered 256 or more (underground and moon)
+  parameters_menu.AddOption(FF4Text("Battle:   ") + formation_names.ItemAt(ChestFormation(m, t->formation)) + FF4Text(" - ") + formations(ChestFormation(m, t->formation)).Preview())
   parameters_menu.ChangeSelected(1)
  else
   type_menu.ChangeSelected(3)
@@ -142,8 +143,8 @@ sub TriggerInfoMenu.UserSelect()
  formation_menu.x = contents_menu.x
  formation_menu.y = contents_menu.y + 2
  formation_menu.max_rows = 1
- for i as Integer = 449 to 512
-  formation_menu.AddOption(formation_names.ItemAt(i) + FF4Text(" - ") + formations(i).Preview())
+ for i as Integer = 0 to 31
+  formation_menu.AddOption(formation_names.ItemAt(ChestFormation(m, i)) + FF4Text(" - ") + formations(ChestFormation(m, i)).Preview())
  next
  
  gil_menu.x = contents_menu.x
@@ -281,7 +282,7 @@ sub TriggerInfoMenu.UserSelect()
         case 3 'Trapped
          t->trapped = not t->trapped
         case 4 'Battle
-         formation_menu.ChangeSelected(t->formation + 1)
+         formation_menu.ChangeSelected((t->formation and 31) + 1)
          formation_menu.UserSelect()
          if not formation_menu.cancelled then t->formation = formation_menu.selected - 1
        end select

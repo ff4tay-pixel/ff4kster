@@ -1381,6 +1381,9 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * Since 0.8
+    - Fixed the battle of a chest on the underground and moon maps: the game adds 32 to the
+      chest's battle number on maps numbered 256 and up and uses only 5 bits, so the Battle
+      list now shows those 32 formations and the used-by list of a formation agrees
     - Fixed the cursor in the message list of event calls (NPC speech, event triggers): it
       jumped back to the first message, so the other messages could not be reached
     - Edit World Maps: edit the overworld, underground and moon (paint, fill, replace,
