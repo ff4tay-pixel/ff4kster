@@ -27,7 +27,7 @@ const max_pose_uses = 12
 const special_pose_id = &h24 'the Golbez-style special pose, which no normal pose shares tiles with
 const image_pose_count = 13 'poses 0-11 and the special pose
 
-dim shared bmp_px(63, 151) as UByte 'scratch image, row then column
+dim shared bmp_px(191, 191) as UByte 'scratch image, row then column (big enough for the largest monster)
 dim shared bmp_table(255) as UInteger 'color table of the BMP last read, as RGB
 dim shared bmp_table_count as Integer
 
@@ -107,10 +107,10 @@ sub PutPaletteSwatches(width_px as Integer)
 end sub
 
 
-function WriteIndexedBMP(path as String, width_px as Integer, height_px as Integer, pal as Integer) as Boolean
+function WriteIndexedBMPColors(path as String, width_px as Integer, height_px as Integer, colors() as UInteger) as Boolean
 
  'Writes the top left width_px x height_px part of bmp_px as a 4 bits per pixel BMP
- ' using palette pal as the color table. 
+ ' whose color table is colors(0 to 15), each a 15 bit SNES color.
 
  dim bmp_data as String
  dim v as UInteger
@@ -124,7 +124,7 @@ function WriteIndexedBMP(path as String, width_px as Integer, height_px as Integ
  bmp_data += BmpU32Text(0) + BmpU32Text(data_size) + BmpU32Text(2835) + BmpU32Text(2835) + BmpU32Text(16) + BmpU32Text(16)
 
  for i as Integer = 0 to 15
-  v = battle_palette_raw(pal, i)
+  v = colors(i)
   bmp_data += chr(((v \ 1024) mod 32) * 8) + chr(((v \ 32) mod 32) * 8) + chr((v mod 32) * 8) + chr(0)
  next
 
@@ -142,6 +142,21 @@ function WriteIndexedBMP(path as String, width_px as Integer, height_px as Integ
  close #f
 
  return true
+
+end function
+
+
+function WriteIndexedBMP(path as String, width_px as Integer, height_px as Integer, pal as Integer) as Boolean
+
+ 'Same, with battle palette pal as the color table.
+
+ dim colors(15) as UInteger
+
+ for i as Integer = 0 to 15
+  colors(i) = battle_palette_raw(pal, i)
+ next
+
+ return WriteIndexedBMPColors(path, width_px, height_px, colors())
 
 end function
 
@@ -241,7 +256,7 @@ function ReadIndexedBMP(path as String, width_px as Integer, height_px as Intege
 end function
 
 
-function ResolveSwatchPalette(width_px as Integer, height_px as Integer, new_palette() as UInteger, byref problem as String) as Boolean
+function ResolveSwatchPalette(width_px as Integer, height_px as Integer, new_palette() as UInteger, byref problem as String, swatch_count as Integer = 16) as Boolean
 
  'Turns the raw indices in bmp_px into palette indices using the 16 swatch pixels in the top right
  ' corner (top to bottom), and builds the palette from those pixels' colors.
@@ -259,7 +274,7 @@ function ResolveSwatchPalette(width_px as Integer, height_px as Integer, new_pal
   index_map(i) = -1
  next
  
- for y as Integer = 0 to 15
+ for y as Integer = 0 to swatch_count - 1
   index = bmp_px(y, width_px - 1)
   swatch(y) = bmp_table(index) and &hFFFFFF
   if index_map(index) = -1 then index_map(index) = y
@@ -280,14 +295,14 @@ function ResolveSwatchPalette(width_px as Integer, height_px as Integer, new_pal
    else
     c = bmp_table(index) and &hFFFFFF
     found = -1
-    for i as Integer = 0 to 15
+    for i as Integer = 0 to swatch_count - 1
      if swatch(i) = c then
       found = i
       exit for
      end if
     next
     if found < 0 then
-     problem = "pixel " + str(x) + "," + str(y) + " is a color that is not one of the 16 palette pixels"
+     problem = "pixel " + str(x) + "," + str(y) + " is a color that is not one of the " + str(swatch_count) + " palette pixels"
      return false
     end if
     bmp_px(y, x) = found

@@ -135,6 +135,7 @@ sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
    HelpLine(lines(), n, "their details.")
    HelpLine(lines(), n, "In Edit AI: L switches between the regular")
    HelpLine(lines(), n, "and the lunar AI script bank.")
+   HelpLine(lines(), n, "Sprite Image exports / imports a BMP of the monster.")
   case 23
    HelpLine(lines(), n, "Enter opens the entry's editor.")
    HelpLine(lines(), n, "Yellow names are changed since load.")

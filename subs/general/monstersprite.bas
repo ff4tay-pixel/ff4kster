@@ -117,18 +117,11 @@ function MonsterRegularImage(gfx_ptr as UInteger, size_id as Integer, pal as Int
 end function
 
 
-function MonsterBossImage(gfx_ptr as UInteger, special_index as Integer) as Any ptr
+function MonsterBossCells(special_index as Integer, byref tiles_wide as Integer, byref tiles_high as Integer, byref palette_id as Integer) as Integer
 
- 'A boss: the special size entry says which tile goes where, and which palette to use
+ 'Reads a boss's tile map into boss_cells (tile number per cell, -1 for an empty cell). Returns the
+ ' number of cells read, or 0 if the entry can't be used.
 
- dim tiles_wide as Integer
- dim tiles_high as Integer
- dim start as Integer
- dim result as Any ptr
- dim color_index as Integer
- dim pixel_value as UInteger
- dim cell_tile as Integer
- dim palette_id as Integer
  dim tilemap_id as Integer
  dim ptr_value as Integer
  dim position as Integer
@@ -137,7 +130,6 @@ function MonsterBossImage(gfx_ptr as UInteger, special_index as Integer) as Any 
  dim pixels as Any ptr
  dim pitch as Integer
 
- start = MonsterSpriteOffset(gfx_ptr)
  palette_id = special_sizes(special_index).palette_index
  tilemap_id = special_sizes(special_index).arrangement_pointer
  MonsterSizeTiles(special_sizes(special_index).size_table_pointer, tiles_wide, tiles_high)
@@ -168,6 +160,31 @@ function MonsterBossImage(gfx_ptr as UInteger, special_index as Integer) as Any 
    position += 1
   end if
  loop
+
+ return cell_count
+
+end function
+
+
+function MonsterBossImage(gfx_ptr as UInteger, special_index as Integer) as Any ptr
+
+ 'A boss: the special size entry says which tile goes where, and which palette to use
+
+ dim tiles_wide as Integer
+ dim tiles_high as Integer
+ dim start as Integer
+ dim result as Any ptr
+ dim color_index as Integer
+ dim pixel_value as UInteger
+ dim cell_tile as Integer
+ dim palette_id as Integer
+ dim cell_count as Integer
+ dim pixels as Any ptr
+ dim pitch as Integer
+
+ start = MonsterSpriteOffset(gfx_ptr)
+ cell_count = MonsterBossCells(special_index, tiles_wide, tiles_high, palette_id)
+ if cell_count = 0 then return 0
 
  result = MonsterNewImage(tiles_wide, tiles_high, pixels, pitch)
  if result = 0 then return 0

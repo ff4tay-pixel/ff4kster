@@ -74,6 +74,7 @@ sub EditMonsters()
  edit_monster.AddOption(FF4Text("Edit Stats"))
  edit_monster.AddOption(FF4Text("Edit Drops"))
  edit_monster.AddOption(FF4Text("Edit Extras"))
+ edit_monster.AddOption(FF4Text("Sprite Image"))
  
  do
  
@@ -177,6 +178,21 @@ sub EditMonsters()
      case 5 'Edit Drops
       monster_drops.UserSelect()
      
+     case 7 'Sprite Image: export / import a picture of the monster
+      dim image_menu as BlueMenu
+      image_menu = BlueMenu(edit_monster.x, edit_monster.y + 10)
+      image_menu.AddOption(FF4Text("Export image"))
+      image_menu.AddOption(FF4Text("Import image"))
+      image_menu.UserSelect()
+      if not image_menu.cancelled then
+       if image_menu.selected = 1 then
+        InfoBox(ExportMonsterImage(select_monster.selected) + "||Press any key", 4, 20)
+       elseif ConfirmBox("Import replaces this monster's tiles and palette. Continue?") then
+        InfoBox(ImportMonsterImage(select_monster.selected) + "||Press any key", 4, 20)
+        monster_gfx.SetTo(select_monster.selected)
+       end if
+      end if
+
      case 6 'Edit Extras
       dim k as UInteger
       do

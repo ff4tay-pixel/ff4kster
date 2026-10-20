@@ -975,6 +975,22 @@ little explanation.
             the preview follows the special size menu as you edit it) and party
             members used as enemies (drawn from their battle sprite).
 
+* Sprite Image: "Sprite Image" in the monster's edit menu exports the monster's
+            picture to exports/monster_sprites/monster_NNN_Name.bmp or imports
+            it back. The BMP is as wide as the monster's tiles plus one pixel
+            column on the right, whose top 8 pixels are the monster's 8 palette
+            colors (color 0 is the transparent one). On import those 8 pixels
+            define the palette and every other pixel must be one of those
+            colors. Edit the picture in any editor that keeps the BMP indexed
+            (4 or 8 bits per pixel) and uses exactly those colors. Bosses export
+            their tile map cells (empty cells stay blank); if one tile appears in
+            several cells and they were edited differently, the first cell wins
+            and the import says so. Party members used as enemies are edited in
+            the Battle Sprites editor instead. Importing writes the tiles and the
+            palette straight into the ROM image, so every monster sharing that
+            graphics pointer or palette changes too (the message tells you how
+            many), and Ctrl-R revert in the monster list does not undo it.
+
 * Flags: There are certain kinds of data which some monsters have and others do
          not. You can change which "extra bits" of information a given monster
          has by setting or unsetting the flags in the "flags menu". If you wish
@@ -1217,6 +1233,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * Since 0.8
+    - Monster sprite export and import (Sprite Image in the monster edit menu)
     - Mouse support in menus, message boxes and the map editor
     - Ctrl-Z undo in the entry lists; command and actor lists get the changed marks,
       revert and copy / paste; F1 shows the keys of the editor you are in
