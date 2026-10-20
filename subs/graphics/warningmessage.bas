@@ -11,7 +11,7 @@ sub WarningMessage(s as String)
  blank = ImageCreate((len(s) + 3) * 8, 3 * 8, RGB(0, 0, 0))
  BlueBox(20, 1, len(s), 1)
  WriteText(s, 21, 2)
- getkey
+ WaitForKeyOrClick()
  put (20 * 8, 1 * 8), blank, pset
  ImageDestroy(blank)
 

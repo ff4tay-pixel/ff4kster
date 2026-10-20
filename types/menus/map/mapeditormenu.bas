@@ -18,11 +18,15 @@ type MapEditorMenu
  copy_height as UByte
  copy_available as Boolean
  editing as Boolean 'true while the map itself is being edited
+ drag_paint as Boolean 'the mouse is painting by dragging (one undo step per stroke)
+ dragging as Boolean
  
  declare constructor(starting_x as UByte = 0, starting_y as UByte = 0)
  
  'declare function BytesUsed()
  
+ declare function MouseCode(byref active_menu as GridMenu ptr) as UInteger
+
  declare sub Display()
  declare sub CopySelection()
  declare sub PasteSelection()

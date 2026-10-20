@@ -1,4 +1,5 @@
 #include once "functions/loadrom.bas"
+#include once "functions/mouse.bas"
 #include once "functions/byteat.bas"
 #include once "functions/asciitext.bas"
 #include once "functions/ff4text.bas"

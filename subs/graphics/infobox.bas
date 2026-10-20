@@ -27,7 +27,7 @@ sub InfoBox(message as String, x as Integer = 4, y as Integer = 10)
  for i as Integer = 1 to n
   WriteText(FF4Text(lines(i)), x + 1, y + i)
  next
- getkey
+ WaitForKeyOrClick()
  put (x * 8, y * 8), backdrop, pset
  ImageDestroy(backdrop)
 

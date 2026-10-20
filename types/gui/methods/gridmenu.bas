@@ -17,6 +17,24 @@ function GridMenu.Height() as UByte
 end function
 
 
+function GridMenu.HitTile(pixel_x as Integer, pixel_y as Integer, byref tile_x as Integer, byref tile_y as Integer) as Boolean
+
+ 'The tile under a screen pixel (tiles are 16x16 inside an 8 pixel frame).
+
+ dim rel_x as Integer = pixel_x - x * 8 - 8
+ dim rel_y as Integer = pixel_y - y * 8 - 8
+
+ if pixel_x < 0 or pixel_y < 0 or rel_x < 0 or rel_y < 0 then return false
+ if rel_x \ 16 >= Width() or rel_y \ 16 >= Height() then return false
+ tile_x = rel_x \ 16 + window_x
+ tile_y = rel_y \ 16 + window_y
+ if tile_x >= Columns() or tile_y >= Rows() then return false
+
+ return true
+
+end function
+
+
 function GridMenu.ProcessKey(k as UInteger) as Boolean
 
  dim result as Boolean

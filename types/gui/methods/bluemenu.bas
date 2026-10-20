@@ -128,23 +128,86 @@ function BlueMenu.ProcessKey(key_code as UInteger) as Boolean
 end function
 
 
+function BlueMenu.HitItem(cell_x as Integer, cell_y as Integer) as Integer
+
+ 'The entry under a screen cell, or 0 if the cell is not on an entry.
+
+ dim item_width as Integer = ItemWidth()
+ dim rel_x as Integer = cell_x - x - 1
+ dim rel_y as Integer = cell_y - y - 1
+ dim column as Integer
+ dim item as Integer
+
+ if indexed_mode then item_width += len(str(options.Length())) + 2
+ if rel_x < 0 or rel_y < 0 or rel_y >= WindowHeight() then return 0
+ if rel_x mod (item_width + 2) >= item_width then return 0
+ column = rel_x \ (item_width + 2)
+ if column >= columns then return 0
+ item = (top_row - 1 + rel_y) * columns + column + 1
+ if item > options.Length() then return 0
+
+ return item
+
+end function
+
+
+function BlueMenu.MouseCode() as UInteger
+
+ 'Turns mouse activity into the key it stands for (0 = nothing happened):
+ ' right button = Esc, wheel = Up / Down, clicking an entry selects it and
+ ' clicking the selected entry again = Enter. A plain selection returns 1,
+ ' which no menu treats as a key, so the caller just redraws.
+
+ dim cell_x as Integer
+ dim cell_y as Integer
+ dim left_click as Boolean
+ dim right_click as Boolean
+ dim steps as Integer
+ dim item as Integer
+
+ PollMouse(cell_x, cell_y, left_click, right_click, steps)
+
+ if right_click then return ESC_KEY
+ if steps > 0 then return UP_KEY
+ if steps < 0 then return DOWN_KEY
+ if left_click then
+  item = HitItem(cell_x, cell_y)
+  if item > 0 then
+   if item = selected then return ENTER_KEY
+   ChangeSelected(item)
+   return 1
+  end if
+ end if
+
+ return 0
+
+end function
+
+
 function BlueMenu.UserInput() as Boolean
  
  dim result as Boolean
  dim key_code as UInteger
  dim key as String
+ dim mouse_code as UInteger
  
  Display()
  ShowCursor()
  do
   key = inkey
+  mouse_code = 0
   if key = "" then
    if cast(Any ptr, idle_hook) <> 0 then idle_hook()
-   sleep 10
+   mouse_code = MouseCode()
+   if mouse_code = 0 then sleep 10
   end if
- loop while key = ""
- key_code = asc(right(key, 1))
- if len(key) > 1 then key_code = key_code * &h100 + 255
+ loop while key = "" and mouse_code = 0
+ if mouse_code <> 0 then
+  key_code = mouse_code
+ else
+  key_code = asc(right(key, 1))
+  if len(key) > 1 then key_code = key_code * &h100 + 255
+ end if
  last_key = key_code
  result = ProcessKey(key_code)
 

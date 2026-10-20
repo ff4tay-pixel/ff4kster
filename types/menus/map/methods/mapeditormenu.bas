@@ -323,10 +323,89 @@ sub MapEditorMenu.Undo()
 end sub
 
 
+function MapEditorMenu.MouseCode(byref active_menu as GridMenu ptr) as UInteger
+
+ 'Mouse in the map editor. Left click paints (drag to keep painting) or, in
+ ' paste mode, places the copied area; right click picks the tile under the
+ ' pointer (Esc in paste mode); clicking the tile palette chooses a tile; the
+ ' wheel moves the cursor up and down. Returns the key it stands for.
+
+ dim cell_x as Integer
+ dim cell_y as Integer
+ dim left_click as Boolean
+ dim right_click as Boolean
+ dim wheel_steps as Integer
+ dim tx as Integer
+ dim ty as Integer
+ dim on_map as Boolean
+
+ PollMouse(cell_x, cell_y, left_click, right_click, wheel_steps)
+ on_map = map_menu.HitTile(mouse_pixel_x, mouse_pixel_y, tx, ty)
+
+ if not mouse_left_held then dragging = false
+
+ if paste_mode then
+  if right_click then return ESC_KEY
+  if left_click and on_map then
+   map_menu.cursor_x = tx
+   map_menu.cursor_y = ty
+   return ENTER_KEY
+  end if
+  return 0
+ end if
+
+ if right_click and on_map then
+  active_menu = @map_menu
+  palette_menu.active = false
+  map_menu.active = true
+  map_menu.cursor_w = 0
+  map_menu.cursor_h = 0
+  map_menu.cursor_x = tx
+  map_menu.cursor_y = ty
+  return BACKSPACE_KEY
+ end if
+
+ if left_click then
+  if on_map then
+   active_menu = @map_menu
+   palette_menu.active = false
+   map_menu.active = true
+   map_menu.cursor_w = 0
+   map_menu.cursor_h = 0
+   map_menu.cursor_x = tx
+   map_menu.cursor_y = ty
+   dragging = true
+   drag_paint = false
+   return ENTER_KEY
+  elseif palette_menu.HitTile(mouse_pixel_x, mouse_pixel_y, tx, ty) then
+   palette_menu.cursor_x = tx
+   palette_menu.cursor_y = ty
+   return 1
+  end if
+ end if
+
+ if dragging and mouse_left_held and on_map then
+  if tx <> map_menu.cursor_x or ty <> map_menu.cursor_y then
+   map_menu.cursor_x = tx
+   map_menu.cursor_y = ty
+   drag_paint = true
+   return ENTER_KEY
+  end if
+ end if
+
+ if wheel_steps > 0 then return UP_KEY
+ if wheel_steps < 0 then return DOWN_KEY
+
+ return 0
+
+end function
+
+
 sub MapEditorMenu.UserSelect()
 
  dim key as String
  dim keycode as UInteger
+ dim mouse_code as UInteger
  dim done as Boolean
  dim active_menu as GridMenu ptr
  
@@ -343,12 +422,20 @@ sub MapEditorMenu.UserSelect()
    Display()
    do
     key = inkey
-    if key = "" then sleep 10
-    keycode = asc(right(key, 1))
-    if len(key) > 1 then keycode = keycode * &h100 + 255
+    mouse_code = 0
+    if key = "" then
+     mouse_code = MouseCode(active_menu)
+     if mouse_code = 0 then sleep 10
+    end if
+    if mouse_code <> 0 then
+     keycode = mouse_code
+    else
+     keycode = asc(right(key, 1))
+     if len(key) > 1 then keycode = keycode * &h100 + 255
+    end if
     map_menu.Animate()
     palette_menu.Animate()
-   loop while key = ""
+   loop while key = "" and mouse_code = 0
   if paste_mode then
    select case keycode
     case ENTER_KEY
@@ -380,7 +467,8 @@ sub MapEditorMenu.UserSelect()
      end if
     case ENTER_KEY
      if active_menu = @map_menu then
-      SaveUndo()
+      if not drag_paint then SaveUndo()
+      drag_paint = false
       for i as Integer = 0 to map_menu.cursor_w step sgn(map_menu.cursor_w)
        for j as Integer = 0 to map_menu.cursor_h step sgn(map_menu.cursor_h)
         map_menu.options.Assign(map_menu.cursor_x + i + 1, map_menu.cursor_y + j + 1, palette_menu.options.ItemAt(palette_menu.cursor_x + 1, palette_menu.cursor_y + 1))

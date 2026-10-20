@@ -24,7 +24,9 @@ type BlueMenu
  
  declare function CursorX(h as Boolean = false) as UByte
  declare function CursorY(h as Boolean = false) as UByte
+ declare function HitItem(cell_x as Integer, cell_y as Integer) as Integer
  declare function ItemWidth() as UByte
+ declare function MouseCode() as UInteger
  declare function ProcessKey(key_code as UInteger) as Boolean
  declare function UserInput() as Boolean
  declare function WindowHeight() as UByte

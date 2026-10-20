@@ -32,6 +32,7 @@ type GridMenu
 
  declare function Columns() as UInteger
  declare function Height() as UByte
+ declare function HitTile(pixel_x as Integer, pixel_y as Integer, byref tile_x as Integer, byref tile_y as Integer) as Boolean
  declare function ProcessKey(k as UInteger) as Boolean
  declare function Rows() as UInteger
  declare function UserInput() as Boolean

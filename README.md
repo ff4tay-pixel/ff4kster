@@ -168,6 +168,12 @@ CONTROLS
     Ctrl-U:      Show where the entry is used
     Yellow names mark entries that differ from the loaded ROM, and the list
     reopens on the entry you were last on.
+  The mouse works in menus: click an entry to select it, click it again to
+  open it, right click goes back (Esc) and the wheel moves the cursor. Message
+  boxes close on a click. In the map editor a left click paints the selected
+  tile (drag to keep painting, one undo step per stroke), a right click picks
+  the tile under the pointer, clicking the tile palette chooses a tile, and in
+  paste mode a click places the copied area.
   F1 shows key help in any menu: the keys that work everywhere plus the keys of
   the editor you are in (the same text the main menu shows beside its entries). The main menu also lists the keys that matter
   for whichever editor is highlighted, and the map editor, the battle sprite
@@ -1211,6 +1217,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * Since 0.8
+    - Mouse support in menus, message boxes and the map editor
     - Ctrl-Z undo in the entry lists; command and actor lists get the changed marks,
       revert and copy / paste; F1 shows the keys of the editor you are in
     - Main menu grouped under headings; confirmation before deleting an event
