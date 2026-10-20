@@ -14,7 +14,7 @@ sub EditTools()
   do
    information_menu.SetTo(select_tool.selected)
    information_menu.Display()
-  loop until select_tool.UserInput()
+  loop until ListInput(select_tool, "tools")
   
   if not select_tool.cancelled then
    information_menu.UserSelect()

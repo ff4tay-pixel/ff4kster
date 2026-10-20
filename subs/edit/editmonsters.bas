@@ -126,7 +126,7 @@ sub EditMonsters()
     reaction_menu.Hide()
    end if
    
-  loop until select_monster.UserInput()
+  loop until ListInput(select_monster, "monsters")
   
   if not select_monster.cancelled then
   

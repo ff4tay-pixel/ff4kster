@@ -27,6 +27,7 @@ sub DrawMainHelp(selected as Integer)
  HelpLine(lines(), n, "Ctrl-F        Find entry by name")
  HelpLine(lines(), n, "Ctrl-N        Find next match")
  HelpLine(lines(), n, "Ctrl-G        Go to entry number")
+ HelpLine(lines(), n, "F1            Key help in any menu")
  HelpLine(lines(), n, "Tab           Switch panel two-pane editors")
  HelpLine(lines(), n, "")
  HelpLine(lines(), n, "THIS ENTRY")
@@ -39,11 +40,14 @@ sub DrawMainHelp(selected as Integer)
   case 2
    HelpLine(lines(), n, "Item ranges: which items are two-handed,")
    HelpLine(lines(), n, "bows, arrows, shields, helmets, etc.")
-  case 3, 5, 6
-   HelpLine(lines(), n, "Shift-Enter on one entry, move, then")
-   HelpLine(lines(), n, "Shift-Enter again to swap two entries.")
+  case 3, 5 to 8
+   HelpLine(lines(), n, "Yellow names are changed since load.")
+   HelpLine(lines(), n, "Ctrl-R  Revert entry   Ctrl-U  Where used")
+   HelpLine(lines(), n, "Ctrl-C / V  Copy / paste entry")
+   HelpLine(lines(), n, "Shift-Enter twice swaps two entries")
+   HelpLine(lines(), n, "spells, weapons, armors.")
    HelpLine(lines(), n, "Enter opens the entry's editor.")
-  case 4, 7, 8
+  case 4
    HelpLine(lines(), n, "Enter opens the entry's editor.")
   case 9
    HelpLine(lines(), n, "Edit what each shop sells.")
@@ -84,6 +88,8 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "Ctrl-C / V   Copy / paste   Ctrl-Z  Undo")
   case 21
    HelpLine(lines(), n, "Enter opens the monster's editor.")
+   HelpLine(lines(), n, "Yellow = changed.  Ctrl-R revert, Ctrl-U")
+   HelpLine(lines(), n, "where used, Ctrl-C / V copy / paste.")
    HelpLine(lines(), n, "Tab switches between the flag lists and")
    HelpLine(lines(), n, "their details.")
    HelpLine(lines(), n, "In Edit AI: L switches between the regular")
@@ -102,6 +108,12 @@ sub DrawMainHelp(selected as Integer)
   case 28
    HelpLine(lines(), n, "Shows what your edits changed, and writes")
    HelpLine(lines(), n, "exports/rom_diff.txt with offsets.")
+  case 29
+   HelpLine(lines(), n, "Pick another ROM file; shows every byte")
+   HelpLine(lines(), n, "region that differs from your current work.")
+  case 30
+   HelpLine(lines(), n, "Type part of a spell, item or monster name,")
+   HelpLine(lines(), n, "pick a match, and its editor opens on it.")
   case else
    HelpLine(lines(), n, "Leave the editor. You are asked to save")
    HelpLine(lines(), n, "if there are unsaved edits.")

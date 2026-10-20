@@ -970,3 +970,13 @@ VERSION HISTORY
 - **Export CSV / Import CSV** (main menu): spells, weapons, armors, medicines, tools and monsters go to/from `exports/<table>.csv` (next to the editor). Edit them in a spreadsheet and import them back; only the columns present are applied, so a file with just `id,attack` works. Names use `{HH}` for characters with no ASCII equivalent. Imports change the in-memory data only; use Save ROM to keep them.
 - **Compare to Original ROM** (main menu): shows which tables your edits changed and writes `exports/rom_diff.txt` with offsets and old/new bytes. Edits are measured against what Save ROM would write for the unedited data (Save also re-lays-out some data, which is reported as a separate count).
 - **In any menu:** Ctrl+F finds an entry by name, Ctrl+N jumps to the next match, Ctrl+G goes to an entry by number.
+
+## Safety and navigation extras
+
+- **Automatic backup:** the first Save ROM of a session copies the ROM file to `<rom>.<date>-<time>.bak` before writing.
+- **Command line / last ROM:** `ff4kster-console.exe path	oom.smc` (or drag a ROM onto the exe) skips the file selector. Without an argument the editor offers the ROM used last time (`lastrom.cfg`).
+- **Window title** shows the ROM name and a `*` when there are unsaved edits.
+- **Spell, weapon, armor, medicine, tool and monster lists:** names that differ from the loaded ROM are yellow. Ctrl-R reverts an entry, Ctrl-C / Ctrl-V copy and paste an entry (the target keeps its name), Ctrl-U shows where it is used (formations and encounter areas, shops and chests, weapons that cast a spell). The editor reopens on the entry you were last on.
+- **Search Everywhere** (main menu) finds a spell, item or monster by name and opens its editor on it.
+- **Compare with ROM File** (main menu) diffs your current work against another ROM file.
+- **F1** shows key help in any menu. Deleting triggers, NPCs and messages asks for confirmation.

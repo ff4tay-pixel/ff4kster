@@ -75,6 +75,7 @@
 #include once "subs/csv/exportcsv.bas"
 #include once "subs/csv/importcsv.bas"
 #include once "subs/general/romdiff.bas"
+#include once "subs/general/listtools.bas"
 #include once "subs/general/mainhelp.bas"
 
 'Editing
@@ -103,3 +104,5 @@
 #include once "subs/edit/editautobattles.bas"
 #include once "subs/edit/editsolobattles.bas"
 #include once "subs/edit/exportimport.bas"
+#include once "subs/general/globalsearch.bas"
+#include once "subs/general/lastrom.bas"

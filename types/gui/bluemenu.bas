@@ -15,6 +15,8 @@ type BlueMenu
  snapshot as Any ptr
  debug as Boolean = false
  keyboard_visible as Boolean = true
+ last_key as UInteger
+ marked as Boolean
  
  declare constructor(starting_x as UInteger = 0, starting_y as UInteger = 0)
  

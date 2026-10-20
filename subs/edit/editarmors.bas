@@ -51,7 +51,7 @@ sub EditArmors()
    equip_menu.Display()
    stat_menu.Display()
 
-  loop until select_armor.UserInput()
+  loop until ListInput(select_armor, "armors")
   
   if not select_armor.cancelled then
   

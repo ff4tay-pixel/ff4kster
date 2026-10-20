@@ -134,7 +134,7 @@ sub EditWeapons()
    properties_menu.Display()
    'immutables.Display()
    
-  loop until select_weapon.UserInput()
+  loop until ListInput(select_weapon, "weapons")
   
   'Bring up editing menu  
   if not select_weapon.cancelled then

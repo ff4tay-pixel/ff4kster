@@ -36,7 +36,7 @@ sub EditSpells()
    element_menu.Display()
    visual_menu.Display()
   
-  loop until select_spell.UserInput()
+  loop until ListInput(select_spell, "spells")
   
   if not select_spell.cancelled then
   

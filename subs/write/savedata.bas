@@ -1,3 +1,24 @@
+function CopyFile(source as String, destination as String) as Boolean
+
+ 'Copies a file byte for byte. Returns true on success.
+
+ dim a as Integer = freefile
+ dim file_bytes as String
+
+ if open(source for binary access read as #a) <> 0 then return false
+ file_bytes = string(lof(a), 0)
+ if lof(a) > 0 then get #a, , file_bytes
+ close #a
+
+ if open(destination for binary access write as #a) <> 0 then return false
+ if len(file_bytes) > 0 then put #a, , file_bytes
+ close #a
+
+ return true
+
+end function
+
+
 sub ApplyDataToROM()
 
  dim start as UInteger
@@ -178,12 +199,26 @@ sub SaveData(filename as String)
 
  'Write the ROM image to the actual file.
  if not warning then
-  open filename for binary access write as #1
+  'Keep a copy of the file as it was before the first save of this session.
+  if not backup_done then
+   if dir(filename) <> "" then
+    last_backup_name = filename + "." + mid(date, 7, 4) + left(date, 2) + mid(date, 4, 2) + "-" + left(time, 2) + mid(time, 4, 2) + mid(time, 7, 2) + ".bak"
+    if CopyFile(filename, last_backup_name) then
+     backup_done = true
+    else
+     last_backup_name = ""
+    end if
+   end if
+  end if
+  if open(filename for binary access write as #1) <> 0 then
+   warning = true
+  else
    dim temp as String
    temp = ff4rom
    if unheadered then temp = mid(ff4rom, &h200 + 1)
    put #1, , temp
-  close #1
+   close #1
+  end if
  end if
  
 end sub

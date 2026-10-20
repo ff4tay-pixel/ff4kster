@@ -149,7 +149,7 @@ do
         end if
        case DELETE_KEY
         if select_map.selected < 252 or select_map.selected > 254 then
-         if maps(select_map.selected).triggers.Length() > 0 then
+         if maps(select_map.selected).triggers.Length() > 0 andalso ConfirmBox("Delete this trigger?") then
           maps(select_map.selected).triggers.Remove(select_trigger.selected)
           total_triggers -= 1
           select_trigger.ClearAll()
@@ -163,7 +163,7 @@ do
           put (52 * 8, 42 * 8), minimap_img, trans
          end if
         else
-         if maps(select_map.selected).triggers.Length() > 0 then
+         if maps(select_map.selected).triggers.Length() > 0 andalso ConfirmBox("Delete this trigger?") then
           maps(select_map.selected).triggers.Remove(select_trigger.selected)
           select_trigger.ClearAll()
           for i as Integer = 1 to maps(select_map.selected).triggers.Length()

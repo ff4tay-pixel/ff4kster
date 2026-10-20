@@ -55,30 +55,27 @@ sub BuildBaselineROM()
 end sub
 
 
-function BuildDiffReport() as String
+function DiffImages(newer as String, older as String, report_file as String, heading as String, byref changed as UInteger) as String
 
- dim saved_warning as Boolean = warning
- dim saved_rom as String = ff4rom
- dim saved_applied as String
+ 'Compares two headered ROM images byte by byte. Writes the full list of
+ ' changed regions to exports/<report_file> and returns a short summary
+ ' (lines separated by "|"). `changed` receives the number of changed bytes.
+
  static regions(0 to 99999) as DiffRegion
  dim n as Integer
- dim changed as UInteger
  dim header as Integer = &h200
  dim last_changed as Integer = -100
  dim f as Integer = freefile
- dim report as String
  dim label as String
  dim labels(0 to 63) as String
  dim label_bytes(0 to 63) as UInteger
  dim nlabels as Integer
  dim found as Boolean
+ dim summary as String
 
- 'Build the image that Save ROM would write, then restore the working copy.
- ApplyDataToROM()
- saved_applied = ff4rom
-
- for i as Integer = header to len(baseline_rom) - 1
-  if asc(mid(ff4rom, i + 1, 1)) <> asc(mid(baseline_rom, i + 1, 1)) then
+ changed = 0
+ for i as Integer = header to Min(len(newer), len(older)) - 1
+  if asc(mid(newer, i + 1, 1)) <> asc(mid(older, i + 1, 1)) then
    changed += 1
    if i - last_changed > 4 or n = 0 then
     if n < 99999 then
@@ -107,11 +104,9 @@ function BuildDiffReport() as String
   end if
  next
 
- 'Full report to disk
- report = ExportPath("rom_diff.txt")
- if open(report for output as #f) = 0 then
-  print #f, "ROM diff: edits made this session (vs. what Save ROM wrote for the unedited data)"
-  print #f, "Offsets are file offsets as used by the editor (add header size -0x200 for headerless ROM offsets)."
+ if open(ExportPath(report_file) for output as #f) = 0 then
+  print #f, heading
+  print #f, "Offsets are file offsets as used by the editor (subtract 0x200 for headerless ROM offsets)."
   print #f, str(changed) + " bytes changed in " + str(n) + " regions"
   print #f,
   print #f, "Summary by table:"
@@ -122,15 +117,14 @@ function BuildDiffReport() as String
   print #f, "Regions (file offset / headerless offset, length, table):"
   for j as Integer = 0 to n - 1
    print #f, hex(regions(j).start, 6) + " / " + hex(regions(j).start - header, 6) + "  " + str(regions(j).length) + " bytes  " + DiffLabel(regions(j).start)
-   'show old -> new bytes for short regions
    if regions(j).length <= 16 then
     dim old_bytes as String
     dim new_bytes as String
     old_bytes = ""
     new_bytes = ""
     for b as Integer = 0 to regions(j).length - 1
-     old_bytes += hex(asc(mid(baseline_rom, regions(j).start + b + 1, 1)), 2) + " "
-     new_bytes += hex(asc(mid(ff4rom, regions(j).start + b + 1, 1)), 2) + " "
+     old_bytes += hex(asc(mid(older, regions(j).start + b + 1, 1)), 2) + " "
+     new_bytes += hex(asc(mid(newer, regions(j).start + b + 1, 1)), 2) + " "
     next
     print #f, "    " + old_bytes + "-> " + new_bytes
    end if
@@ -138,24 +132,43 @@ function BuildDiffReport() as String
   close #f
  end if
 
- 'Restore the working ROM image and warning state.
- ff4rom = saved_rom
- warning = saved_warning
-
- dim summary as String
- dim vs_file as UInteger
- for i as Integer = header to len(original_rom) - 1
-  if asc(mid(saved_applied, i + 1, 1)) <> asc(mid(original_rom, i + 1, 1)) then vs_file += 1
- next
  if changed = 0 then
-  summary = "No edits since the ROM was loaded."
+  summary = "No differences."
  else
   summary = str(changed) + " bytes changed in " + str(n) + " regions:|"
   for j as Integer = 0 to Min(nlabels - 1, 30)
    summary += "|" + labels(j) + ": " + str(label_bytes(j))
   next
-  summary += "||Full report: exports/rom_diff.txt"
+  summary += "||Full report: exports/" + report_file
  end if
+
+ return summary
+
+end function
+
+
+function BuildDiffReport() as String
+
+ 'Edits made this session vs. what Save ROM wrote for the unedited data.
+
+ dim saved_warning as Boolean = warning
+ dim saved_rom as String = ff4rom
+ dim applied as String
+ dim changed as UInteger
+ dim vs_file as UInteger
+ dim summary as String
+
+ ApplyDataToROM()
+ applied = ff4rom
+ ff4rom = saved_rom
+ warning = saved_warning
+
+ summary = DiffImages(applied, baseline_rom, "rom_diff.txt", "ROM diff: edits made this session (vs. what Save ROM wrote for the unedited data)", changed)
+ if changed = 0 then summary = "No edits since the ROM was loaded."
+
+ for i as Integer = &h200 to len(original_rom) - 1
+  if asc(mid(applied, i + 1, 1)) <> asc(mid(original_rom, i + 1, 1)) then vs_file += 1
+ next
  summary += "||Saving would change " + str(vs_file) + " bytes vs. the ROM file as loaded"
  summary += "|This includes data the editor re-lays-out on each save."
 
@@ -167,5 +180,57 @@ end function
 sub CompareWithOriginal()
 
  InfoBox(BuildDiffReport() + "||Press any key")
+
+end sub
+
+
+sub CompareWithFile()
+
+ 'Compares the ROM as it would be saved now against another ROM file.
+
+ dim old_dir as String = curdir
+ dim other_name as String
+ dim other as String
+ dim f as Integer = freefile
+ dim saved_rom as String = ff4rom
+ dim saved_warning as Boolean = warning
+ dim applied as String
+ dim changed as UInteger
+
+ cls
+ other_name = LoadROM()
+ if other_name = "" then
+  chdir(old_dir)
+  exit sub
+ end if
+
+ if open(other_name for binary access read as #f) <> 0 then
+  chdir(old_dir)
+  InfoBox("Could not open that file.||Press any key")
+  exit sub
+ end if
+ if lof(f) = 1048576 then
+  other = string(lof(f), 0)
+  get #f, , other
+  other = string(&h200, 0) + other
+ elseif lof(f) = 1049088 then
+  other = string(lof(f), 0)
+  get #f, , other
+ else
+  close #f
+  chdir(old_dir)
+  InfoBox("That file is not a FF4 ROM (wrong size).||Press any key")
+  exit sub
+ end if
+ close #f
+ chdir(old_dir)
+
+ ApplyDataToROM()
+ applied = ff4rom
+ ff4rom = saved_rom
+ warning = saved_warning
+
+ cls
+ InfoBox("Current ROM (with your edits) vs. the other ROM:||" + DiffImages(applied, other, "rom_diff_other.txt", "ROM diff: current edits vs. " + other_name, changed) + "||Press any key")
 
 end sub

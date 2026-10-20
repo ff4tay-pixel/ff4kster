@@ -94,7 +94,7 @@ sub EditMessages()
            next
            select_message.ChangeSelected(old)
           case DELETE_KEY
-           if maps(select_map.selected).dialogues.Length() > 1 then
+           if maps(select_map.selected).dialogues.Length() > 1 andalso ConfirmBox("Delete this message?") then
             maps(select_map.selected).dialogues.Remove(select_message.selected)
             old = select_message.selected
             select_message.ClearAll()

@@ -31,8 +31,19 @@ dim save_prompt as BlueMenu
 ' (You need to supply a ROM to even use the editor, as it reads its font and
 ' window graphics from the ROM)
 system_path = curdir
+
+'A ROM path may be given on the command line (or dragged onto the exe).
+filename = command(1)
+if filename <> "" and dir(filename) = "" then
+ print "ROM not found: "; filename
+ filename = ""
+end if
+
+'Otherwise offer the ROM used last time.
+if filename = "" then filename = AskLastROM()
 if filename = "" then filename = LoadROM()
 if filename = "" then end
+RememberROM(filename)
 
 'Configure graphic mode.
 screen 18, 32
@@ -42,6 +53,7 @@ screen 18, 32
 ' It will not write anything to the actual ROM until you explicitly tell it to save.
 ReadData(filename)
 BuildBaselineROM()
+SnapshotOriginalRows()
 
 'Draw the tile overlays
 warp_overlay = ImageCreate(16, 16, RGB(255, 0, 255))
@@ -99,6 +111,8 @@ editor_menu.AddOption(FF4Text("Edit Solobattles"))
 editor_menu.AddOption(FF4Text("Export CSV"))
 editor_menu.AddOption(FF4Text("Import CSV"))
 editor_menu.AddOption(FF4Text("Compare to Original ROM"))
+editor_menu.AddOption(FF4Text("Compare with ROM File"))
+editor_menu.AddOption(FF4Text("Search Everywhere"))
 editor_menu.AddOption(FF4Text("Quit"))
 
 save_prompt.x = 24
@@ -111,6 +125,7 @@ save_prompt.AddOption(FF4Text("Cancel"))
 do
 
  cls
+ windowtitle "FF4kster - " + filename + iif(modified, " *", "")
  editor_menu.cancelled = false
  do
   DrawMainHelp(editor_menu.selected)
@@ -118,13 +133,13 @@ do
 
  if not editor_menu.cancelled then
 
-  if editor_menu.selected >= 2 and editor_menu.selected <= 25 then
+  if (editor_menu.selected >= 2 and editor_menu.selected <= 25) or editor_menu.selected = 30 then
    modified = true
    editor_menu.ChangeOption(1, FF4Text("Save ROM *"))
   end if
 
   'Start every editor on a black screen so nothing from the main menu is left behind.
-  if editor_menu.selected >= 2 and editor_menu.selected <= 28 then cls
+  if editor_menu.selected >= 2 and editor_menu.selected <= 30 then cls
 
   select case editor_menu.selected
 
@@ -135,13 +150,16 @@ do
      warning = false
      BlueBox(20, 1, 11, 1)
      WriteText(FF4Text("Save failed"), 21, 2)
+     getkey
     else
       modified = false
       editor_menu.ChangeOption(1, FF4Text("Save ROM"))
-     BlueBox(20, 1, 10, 1)
-     WriteText(FF4Text("Data saved"), 21, 2)
+     if last_backup_name <> "" then
+      InfoBox("Data saved|Backup: " + last_backup_name + "||Press any key", 4, 1)
+     else
+      InfoBox("Data saved||Press any key", 20, 1)
+     end if
     end if
-    getkey
 
    case 2: EditItemRanges()
    case 3: EditSpells()
@@ -170,6 +188,8 @@ do
    case 26: ExportImportTables(false)
    case 27: ExportImportTables(true)
    case 28: CompareWithOriginal()
+   case 29: CompareWithFile()
+   case 30: SearchEverywhere()
 
    case else
     if not modified then

@@ -167,22 +167,6 @@ sub ImportRow(kind as String, id as Integer)
 end sub
 
 
-function CsvTableSize(kind as String) as Integer
-
- select case kind
-  case "spells": return total_spells
-  case "weapons": return total_weapons
-  case "armors": return total_armors
-  case "medicines": return total_medicines
-  case "tools": return total_tools
-  case "monsters": return total_monsters
- end select
-
- return 0
-
-end function
-
-
 function ImportCsv(kind as String, byref errors as Integer, byref first_error as String) as Integer
 
  'Applies a CSV file to the in-memory objects. Returns the number of rows

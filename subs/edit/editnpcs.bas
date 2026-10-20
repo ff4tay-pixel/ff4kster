@@ -184,7 +184,7 @@ minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
         done = select_placement.ProcessKey(a)
        end if
       case DELETE_KEY
-       if placement_groups(select_map.selected).placements.Length() > 0 then
+       if placement_groups(select_map.selected).placements.Length() > 0 andalso ConfirmBox("Delete this NPC / placement?") then
         placement_groups(select_map.selected).placements.Remove(select_placement.selected)
         select_placement.Remove(select_placement.options.Length())
         if placement_groups(select_map.selected).placements.Length() = 0 then select_placement.AddOption(FF4Text(Pad("-- EMPTY --", 12)))

@@ -99,6 +99,8 @@ function BlueMenu.ProcessKey(key_code as UInteger) as Boolean
     selected += temp * columns
    end if
   end if
+ case F1_KEY
+  ShowKeyHelp()
  case 6 'Ctrl+F: find an entry by name
   FindNext(true)
  case 14 'Ctrl+N: find the next match
@@ -130,6 +132,7 @@ function BlueMenu.UserInput() as Boolean
  loop while key = ""
  key_code = asc(right(key, 1))
  if len(key) > 1 then key_code = key_code * &h100 + 255
+ last_key = key_code
  result = ProcessKey(key_code)
 
  return result

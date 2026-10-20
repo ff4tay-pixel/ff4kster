@@ -40,7 +40,7 @@ sub EditMedicines()
    effect_menu.Display()
    element_menu.Display()
   
-  loop until select_medicine.UserInput()
+  loop until ListInput(select_medicine, "medicines")
   
   if not select_medicine.cancelled then
   
