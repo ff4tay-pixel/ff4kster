@@ -18,6 +18,7 @@ sub EditMaps()
  dim candidate as Integer
   
  select_map.swap_enabled = true
+ select_map.keyboard_visible = false
  select_map.max_rows = 8
  for i as Integer = 1 to total_maps
   select_map.AddOption(Pad(map_names.ItemAt(i), screen_width - 2,, FF4Text(" ")))

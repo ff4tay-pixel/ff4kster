@@ -103,6 +103,8 @@ function BlueMenu.ProcessKey(key_code as UInteger) as Boolean
   indexed_mode = not indexed_mode
   RestoreSnapshot()
   TakeSnapshot()
+ case asc("h"), asc("H")
+  keyboard_visible = not keyboard_visible
  end select
  
  return result
@@ -228,8 +230,34 @@ sub BlueMenu.Display()
  
  put (x * 8, y * 8), menu_image, trans
  ImageDestroy(menu_image)
+ DisplayKeyboardSidebar()
 
   
+end sub
+
+
+sub BlueMenu.DisplayKeyboardSidebar()
+
+ dim blank as Any ptr
+
+ if keyboard_visible then
+  BlueBox(60, 42, 19, 14)
+  WriteText(FF4Text("KEYBOARD"), 61, 43, 15)
+  WriteText(FF4Text("ARROWS  Move"), 61, 44, 15)
+  WriteText(FF4Text("ENTER   Select"), 61, 45, 15)
+  WriteText(FF4Text("ESC     Back"), 61, 46, 15)
+  WriteText(FF4Text("HOME    Top"), 61, 47, 15)
+  WriteText(FF4Text("END     Bottom"), 61, 48, 15)
+  WriteText(FF4Text("PGUP/DN Page"), 61, 49, 15)
+  WriteText(FF4Text("/       Index"), 61, 50, 15)
+  if swap_enabled then WriteText(FF4Text("SHIFT+ENTER Swap"), 61, 51, 15)
+  WriteText(FF4Text("H       Hide"), 61, 52, 15)
+ else
+  blank = ImageCreate(20 * 8, 15 * 8, RGB(0, 0, 0))
+  put (60 * 8, 42 * 8), blank, pset
+  ImageDestroy(blank)
+ end if
+
 end sub
 
 

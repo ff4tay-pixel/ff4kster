@@ -126,6 +126,11 @@ CONTROLS
     Shift-Enter: Highlight the current entry; pressing Enter on another
                  entry will then swap the two instead of confirming (only
                  certain menus can do this)
+    H:           Show or hide the keyboard sidebar
+
+  The standard list menus display these controls in a keyboard sidebar at the
+  bottom right. Specialized editors may add their own context-specific keys to
+  the sidebar.
 
   In numeric inputs:
 
