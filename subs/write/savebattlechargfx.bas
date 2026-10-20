@@ -29,5 +29,12 @@ sub SaveBattleCharGfx()
    next
   next
  next
+ 
+ for i as Integer = 0 to 15
+  for j as Integer = 0 to 15
+   WriteByte(battle_palette_table + i * 32 + j * 2, battle_palette_raw(i, j) mod &h100)
+   WriteByte(battle_palette_table + i * 32 + j * 2 + 1, battle_palette_raw(i, j) \ &h100)
+  next
+ next
 
 end sub

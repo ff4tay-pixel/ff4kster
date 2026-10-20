@@ -4,11 +4,6 @@
 'one tile changes every pose that uses it. Palettes are the 16 battle character palettes.
 'Golbez and Anna (sheets 15 and 16) use a different layout and are not included yet.
 
-const battle_pose_offset_table = &h6FA3C 'sprite position id for each pose
-const battle_sprite_offset_table = &h6FA61 'x, y, ?, attributes for the six sprites of a position id
-const battle_tile_table = &h6FB61 'six tile numbers for each pose
-const battle_palette_table = &hE7F00 '16 palettes of 16 colors
-const battle_pose_count = 12
 
 const bs_transparent = &hFF282840 'RGB(40, 40, 64): shown where a pixel is color 0
 const bs_undo_depth = 32
@@ -20,6 +15,10 @@ dim shared bs_undo_pixels(bs_undo_depth - 1, 7, 7) as UByte
 dim shared bs_undo_count as Integer
 dim shared bs_clip(7, 7) as UByte
 dim shared bs_clip_available as Boolean
+dim shared bs_pal_undo_pal(bs_undo_depth - 1) as Integer
+dim shared bs_pal_undo_slot(bs_undo_depth - 1) as Integer
+dim shared bs_pal_undo_value(bs_undo_depth - 1) as UInteger
+dim shared bs_pal_undo_count as Integer
 
 
 function BattleSheetName(sheet as Integer) as String
@@ -32,35 +31,15 @@ function BattleSheetName(sheet as Integer) as String
 end function
 
 
-function BattlePoseName(pose as Integer) as String
+sub RefreshBattlePalettes()
 
- select case pose
-  case 0: return "Standing"
-  case 1: return "Ready"
-  case 2: return "Running"
-  case 3: return "Kneeling"
-  case 4: return "Right arm up"
-  case 5: return "Left arm down"
-  case 6: return "Left arm up"
-  case 7: return "Hit"
-  case 8: return "Victory"
-  case 9: return "Dead"
-  case 10: return "Chant 1"
-  case 11: return "Chant 2"
- end select
-
- return ""
-
-end function
-
-
-sub LoadBattlePalettes()
+ 'Rebuilds the display colors from the raw SNES color values
 
  dim v as UInteger
 
  for i as Integer = 0 to 15
   for j as Integer = 0 to 15
-   v = ByteAt(battle_palette_table + i * 32 + j * 2) + ByteAt(battle_palette_table + i * 32 + j * 2 + 1) * &h100
+   v = battle_palette_raw(i, j)
    battle_palettes(i, j) = RGB((v mod 32) * 8, ((v \ 32) mod 32) * 8, ((v \ 1024) mod 32) * 8)
   next
  next
@@ -166,7 +145,28 @@ sub BattleSpriteUndo(byref sheet as Integer, byref tile_id as Integer)
 end sub
 
 
-sub DrawBattleSpriteScreen(sheet as Integer, tile_id as Integer, pose as Integer, pal as Integer, pixel_mode as Boolean, pixel_x as Integer, pixel_y as Integer, brush as Integer)
+sub BattlePaletteSaveUndo(pal as Integer, slot as Integer)
+
+ if bs_pal_undo_count = bs_undo_depth then
+  for i as Integer = 1 to bs_undo_depth - 1
+   bs_pal_undo_pal(i - 1) = bs_pal_undo_pal(i)
+   bs_pal_undo_slot(i - 1) = bs_pal_undo_slot(i)
+   bs_pal_undo_value(i - 1) = bs_pal_undo_value(i)
+  next
+  bs_pal_undo_count -= 1
+ end if
+ 
+ bs_pal_undo_pal(bs_pal_undo_count) = pal
+ bs_pal_undo_slot(bs_pal_undo_count) = slot
+ bs_pal_undo_value(bs_pal_undo_count) = battle_palette_raw(pal, slot)
+ bs_pal_undo_count += 1
+
+end sub
+
+
+sub DrawBattleSpriteScreen(sheet as Integer, tile_id as Integer, pose as Integer, pal as Integer, mode as Integer, pixel_x as Integer, pixel_y as Integer, brush as Integer)
+
+ 'mode: 0 = tile sheet, 1 = pixel editor, 2 = palette editor (brush is then the selected color)
 
  dim tx as Integer
  dim ty as Integer
@@ -188,7 +188,7 @@ sub DrawBattleSpriteScreen(sheet as Integer, tile_id as Integer, pose as Integer
  next
  tx = 16 + (tile_id mod 8) * 33
  ty = 64 + (tile_id \ 8) * 33
- if pixel_mode then c = RGB(160, 160, 160) else c = RGB(255, 255, 0)
+ if mode <> 0 then c = RGB(160, 160, 160) else c = RGB(255, 255, 0)
  line (tx - 2, ty - 2)-(tx + 33, ty + 33), c, b
  line (tx - 1, ty - 1)-(tx + 32, ty + 32), c, b
 
@@ -201,7 +201,7 @@ sub DrawBattleSpriteScreen(sheet as Integer, tile_id as Integer, pose as Integer
    line (460 + col * 20, 64 + row * 20)-step(18, 18), BattleColor(pal, battle_char_gfx(sheet, tile_id, row, col)), bf
   next
  next
- if pixel_mode then
+ if mode = 1 then
   px = 460 + pixel_x * 20
   py = 64 + pixel_y * 20
   line (px - 1, py - 1)-(px + 19, py + 19), RGB(255, 255, 0), b
@@ -220,20 +220,25 @@ sub DrawBattleSpriteScreen(sheet as Integer, tile_id as Integer, pose as Integer
  for i as Integer = 0 to 15
   px = 16 + i * 30
   line (px, 344)-(px + 27, 364), BattleColor(pal, i), bf
-  if pixel_mode and i = brush then
+  if mode <> 0 and i = brush then
    line (px - 2, 342)-(px + 29, 366), RGB(255, 255, 0), b
   end if
   WriteText(FF4Text(hex(i)), (px + 10) \ 8, 47, 15)
  next
 
- if pixel_mode then
+ if mode = 2 then
+  WriteText(FF4Text("Editing palette " + str(pal) + ", color " + hex(brush) + IIf(brush = 0, " (transparent, not editable)", "   R " + str((battle_palette_raw(pal, brush) mod 32)) + "  G " + str((battle_palette_raw(pal, brush) \ 32) mod 32) + "  B " + str((battle_palette_raw(pal, brush) \ 1024) mod 32))), 2, 49, 14)
+  WriteText(FF4Text("Left / Right pick a color   Q / A red + -   W / S green + -   E / D blue + -"), 2, 51, 15)
+  WriteText(FF4Text("Ctrl-Z undo   Ctrl-R revert this palette to the loaded ROM"), 2, 53, 15)
+  WriteText(FF4Text("Esc back to the tile sheet"), 2, 55, 15)
+ elseif mode = 1 then
   WriteText(FF4Text("Arrows move   0-9 A-F paint a color   Space paint with brush"), 2, 51, 15)
   WriteText(FF4Text("[ ] change brush   X / Y flip   Ctrl-Z undo   Ctrl-C / V copy tile"), 2, 53, 15)
   WriteText(FF4Text("Esc back to the tile sheet"), 2, 55, 15)
  else
   WriteText(FF4Text("Arrows move   Enter edit tile   PgUp / PgDn change pose"), 2, 51, 15)
-  WriteText(FF4Text(", . change palette   Ctrl-C / V copy / paste tile   Ctrl-Z undo"), 2, 53, 15)
-  WriteText(FF4Text("R revert this sheet to the loaded ROM   Esc back"), 2, 55, 15)
+  WriteText(FF4Text(", . change palette   P edit palette colors   Ctrl-C / V copy / paste tile"), 2, 53, 15)
+  WriteText(FF4Text("Ctrl-Z undo   R revert this sheet to the loaded ROM   Esc back"), 2, 55, 15)
  end if
  screenunlock
 
@@ -247,7 +252,11 @@ sub EditBattleSheet(sheet as Integer)
  dim tile_id as Integer = 0
  dim pose as Integer = 0
  dim pal as Integer = sheet
- dim pixel_mode as Boolean = false
+ dim mode as Integer = 0 '0 = tile sheet, 1 = pixel editor, 2 = palette editor
+ dim slot as Integer = 1
+ dim raw as Integer
+ dim channel as Integer
+ dim shift as Integer
  dim pixel_x as Integer = 0
  dim pixel_y as Integer = 0
  dim brush as Integer = 1
@@ -257,10 +266,11 @@ sub EditBattleSheet(sheet as Integer)
  dim t as Integer
 
  bs_undo_count = 0
+ bs_pal_undo_count = 0
 
  do
 
-  DrawBattleSpriteScreen(sheet, tile_id, pose, pal, pixel_mode, pixel_x, pixel_y, brush)
+  DrawBattleSpriteScreen(sheet, tile_id, pose, pal, mode, pixel_x, pixel_y, iif(mode = 2, slot, brush))
 
   do
    key = inkey
@@ -269,8 +279,8 @@ sub EditBattleSheet(sheet as Integer)
   keycode = asc(right(key, 1))
   if len(key) > 1 then keycode = keycode * &h100 + 255
 
-  'Keys that work in both modes
-  select case keycode
+  'Tile keys that work in the tile sheet and the pixel editor (the palette editor has its own)
+  select case iif(mode = 2, 0, keycode)
    case 3 'Ctrl-C
     for r as Integer = 0 to 7
      for c as Integer = 0 to 7
@@ -297,11 +307,11 @@ sub EditBattleSheet(sheet as Integer)
     keycode = 0
   end select
 
-  if pixel_mode then
+  if mode = 1 then
 
    select case keycode
     case ESC_KEY
-     pixel_mode = false
+     mode = 0
     case LEFT_KEY
      if pixel_x > 0 then pixel_x -= 1
     case RIGHT_KEY
@@ -341,11 +351,55 @@ sub EditBattleSheet(sheet as Integer)
      next
    end select
 
+  elseif mode = 2 then
+
+   select case keycode
+    case ESC_KEY
+     mode = 0
+    case LEFT_KEY
+     if slot > 1 then slot -= 1
+    case RIGHT_KEY
+     if slot < 15 then slot += 1
+    case asc("q"), asc("Q"), asc("a"), asc("A"), asc("w"), asc("W"), asc("s"), asc("S"), asc("e"), asc("E"), asc("d"), asc("D")
+     select case keycode and &hDF
+      case asc("Q"), asc("A"): shift = 0
+      case asc("W"), asc("S"): shift = 5
+      case else: shift = 10
+     end select
+     channel = (battle_palette_raw(pal, slot) \ (2 ^ shift)) mod 32
+     select case keycode and &hDF
+      case asc("Q"), asc("W"), asc("E"): channel += 1
+      case else: channel -= 1
+     end select
+     if channel >= 0 and channel <= 31 then
+      BattlePaletteSaveUndo(pal, slot)
+      raw = battle_palette_raw(pal, slot) and not (31 shl shift)
+      battle_palette_raw(pal, slot) = raw or (channel shl shift)
+      RefreshBattlePalettes()
+     end if
+    case 26 'Ctrl-Z
+     if bs_pal_undo_count > 0 then
+      bs_pal_undo_count -= 1
+      battle_palette_raw(bs_pal_undo_pal(bs_pal_undo_count), bs_pal_undo_slot(bs_pal_undo_count)) = bs_pal_undo_value(bs_pal_undo_count)
+      RefreshBattlePalettes()
+     end if
+    case 18 'Ctrl-R
+     if ConfirmBox("Revert this palette to the loaded ROM?") then
+      for j as Integer = 0 to 15
+       battle_palette_raw(pal, j) = asc(mid(original_rom, battle_palette_table + pal * 32 + j * 2 + 1, 1)) + asc(mid(original_rom, battle_palette_table + pal * 32 + j * 2 + 2, 1)) * &h100
+      next
+      RefreshBattlePalettes()
+      bs_pal_undo_count = 0
+     end if
+   end select
+
   else
 
    select case keycode
     case ESC_KEY
      done = true
+    case asc("p"), asc("P")
+     mode = 2
     case LEFT_KEY
      if tile_id mod 8 > 0 then tile_id -= 1
     case RIGHT_KEY
@@ -355,7 +409,7 @@ sub EditBattleSheet(sheet as Integer)
     case DOWN_KEY
      if tile_id < 56 then tile_id += 8
     case ENTER_KEY
-     pixel_mode = true
+     mode = 1
     case PAGEUP_KEY
      pose = (pose + battle_pose_count - 1) mod battle_pose_count
     case PAGEDOWN_KEY
@@ -384,12 +438,16 @@ sub EditBattleSprites()
 
  dim select_sheet as BlueMenu
 
- LoadBattlePalettes()
+ RefreshBattlePalettes()
 
- select_sheet.max_rows = total_battle_char_sheets
+ select_sheet.max_rows = total_battle_char_sheets + 4
  for i as Integer = 0 to total_battle_char_sheets - 1
   select_sheet.AddOption(BattleSheetName(i))
  next
+ select_sheet.AddOption(FF4Text("Export sheets + palettes"))
+ select_sheet.AddOption(FF4Text("Import sheets + palettes"))
+ select_sheet.AddOption(FF4Text("Export poses + palettes"))
+ select_sheet.AddOption(FF4Text("Import poses + palettes"))
 
  do
 
@@ -399,11 +457,45 @@ sub EditBattleSprites()
    WriteText(FF4Text("Pick a character, Enter to edit"), 0, 0, 15)
    select_sheet.y = 2
    select_sheet.Display()
-   DrawBattlePose(select_sheet.selected - 1, 0, 300, 64, 6, select_sheet.selected - 1)
+   if select_sheet.selected <= total_battle_char_sheets then
+    DrawBattlePose(select_sheet.selected - 1, 0, 300, 64, 6, select_sheet.selected - 1)
+   else
+    select case select_sheet.selected - total_battle_char_sheets
+     case 1
+      WriteText(FF4Text("Writes one BMP per sheet (the 64 tiles in order)"), 37, 8, 15)
+      WriteText(FF4Text("to exports\battle_sprites. The 16 pixels in the top"), 37, 9, 15)
+      WriteText(FF4Text("right corner, top to bottom, are the palette colors."), 37, 10, 15)
+     case 2
+      WriteText(FF4Text("Reads every sheet_NN_pal_PP.bmp. The 16 top right"), 37, 8, 15)
+      WriteText(FF4Text("pixels become palette PP and the sprites take the"), 37, 9, 15)
+      WriteText(FF4Text("index of the palette pixel with the same color."), 37, 10, 15)
+     case 3
+      WriteText(FF4Text("Writes one BMP per character with all the poses, in"), 37, 8, 15)
+      WriteText(FF4Text("16x24 cells (poses_NN_pal_PP.bmp), plus any tiles no"), 37, 9, 15)
+      WriteText(FF4Text("pose uses on a strip below. The 16 palette colors are"), 37, 10, 15)
+      WriteText(FF4Text("the top right pixels, top to bottom."), 37, 11, 15)
+     case else
+      WriteText(FF4Text("Reads every poses_NN_pal_PP.bmp and splits the poses"), 37, 8, 15)
+      WriteText(FF4Text("back into tiles. Tiles shared by several poses take"), 37, 9, 15)
+      WriteText(FF4Text("the pose you changed; if two differ, the first pose"), 37, 10, 15)
+      WriteText(FF4Text("wins and you are told."), 37, 11, 15)
+    end select
+   end if
    screenunlock
   loop until select_sheet.UserInput()
 
-  if not select_sheet.cancelled then EditBattleSheet(select_sheet.selected - 1)
+  if not select_sheet.cancelled then
+   if select_sheet.selected <= total_battle_char_sheets then
+    EditBattleSheet(select_sheet.selected - 1)
+   elseif select_sheet.selected = total_battle_char_sheets + 1 or select_sheet.selected = total_battle_char_sheets + 3 then
+    InfoBox(ExportBattleSprites(select_sheet.selected = total_battle_char_sheets + 3) + "||Press any key", 4, 20)
+   else
+    if ConfirmBox("Import replaces the current sprites and palettes. Continue?") then
+     InfoBox(ImportBattleSprites(select_sheet.selected = total_battle_char_sheets + 4) + "||Press any key", 4, 20)
+     RefreshBattlePalettes()
+    end if
+   end if
+  end if
 
  loop until select_sheet.cancelled
 

@@ -125,7 +125,11 @@ sub DrawMainHelp(selected as Integer)
   case 33
    HelpLine(lines(), n, "Edit the in-battle sprite of each character.")
    HelpLine(lines(), n, "Enter edits a tile, PgUp / PgDn changes the")
-   HelpLine(lines(), n, "pose preview, , and . change the palette.")
+   HelpLine(lines(), n, "pose preview, , and . change the palette,")
+   HelpLine(lines(), n, "P edits the palette colors. The last four list")
+   HelpLine(lines(), n, "entries export / import BMPs (per sheet or per")
+   HelpLine(lines(), n, "pose set). The 16 pixels in the top right corner")
+   HelpLine(lines(), n, "of each BMP are its palette colors.")
    HelpLine(lines(), n, "Golbez and Anna are not included yet.")
   case else
    HelpLine(lines(), n, "Leave the editor. You are asked to save")

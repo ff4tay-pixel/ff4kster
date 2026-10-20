@@ -2,6 +2,11 @@
 'Pixels are held as color indices (0-15) so the sprite editor can change them.
 
 const battle_char_gfx_base = &hD0200 'includes the 0x200 header that ff4rom always carries
+const battle_palette_table = &hE7F00 '16 palettes of 16 colors
+const battle_pose_offset_table = &h6FA3C 'sprite position id for each pose
+const battle_sprite_offset_table = &h6FA61 'x, y, ?, attributes for the six sprites of a position id
+const battle_tile_table = &h6FB61 'six tile numbers for each pose
+const battle_pose_count = 12
 
 sub DecodeBattleCharGfx(source as String, sheet as Integer, tile_id as Integer)
 
@@ -31,6 +36,12 @@ sub ReadBattleCharGfx()
  for s as Integer = 0 to total_battle_char_sheets - 1
   for t as Integer = 0 to 63
    DecodeBattleCharGfx(ff4rom, s, t)
+  next
+ next
+ 
+ for i as Integer = 0 to 15
+  for j as Integer = 0 to 15
+   battle_palette_raw(i, j) = ByteAt(battle_palette_table + i * 32 + j * 2) + ByteAt(battle_palette_table + i * 32 + j * 2 + 1) * &h100
   next
  next
 
