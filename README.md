@@ -249,23 +249,29 @@ headings. The editors are in this order: Features, Spells, Spell Sets,
 Weapons, Armors, Medicines, Tools, Shops, Jobs, Battle Sprites, Characters,
 Commands, Actors, Messages, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
 Monsters, Formations, Encounters, Autobattles and Solobattles, followed by
-Search Everywhere, Space Usage and Changed Entries. "Edit World Maps" (under World) edits the
-overworld (256x256 tiles), the underground (256x256) and the moon (64x64).
-Arrows move the cursor over the 16x16 pixel tiles, PgUp / PgDn and Home / End
-jump 16 tiles, Tab changes world and a click on the small map jumps there.
-Enter paints the chosen tile (over the selected block, if there is one), Backspace
-picks the tile under the cursor, Space flood fills, R replaces every tile like the
-one under the cursor in the whole world, Shift with the arrows selects a block,
-Ctrl-C / Ctrl-V copy and paste a block at the cursor, Ctrl-Z / Ctrl-Y undo and
-redo, and Comma / Period / the square bracket keys (or a click on the tile picker
-below the map) choose the tile. With the mouse a left click paints (drag to keep
-painting) and a right click picks the tile. The side panel shows the tile number
-and what can cross it (walking, chocobos, hovercraft, airship, whale) and whether
-it has random battles. The map is shown as stored in the ROM; the game changes a
-few overworld tiles while it runs, and the editor does not change that. Each
-world has a fixed amount of room in the ROM (16384, 7424 and 7808 bytes); the
-editor shows how much the world takes and Space Usage lists it too. If a world
-does not fit, Save ROM refuses. Edits to the tile graphics, palettes and tile
+Search Everywhere, Space Usage and Changed Entries. "Edit World Maps" (under World) first lists
+the three worlds, like the list of maps, with a picture of the selected one and how
+full its data is; Enter edits it. The editor looks and works like the map editor:
+the tile palette on the left (8 tiles wide, tile numbers in the same order as in the
+map editor), the map on the right (30 by 24 tiles at a time, scrolling), a small map of
+the whole world under the palette and a status box at the bottom with the panel, the
+tile, the size of the selection, the position, the room left in the ROM and what the
+tile under the cursor allows. Tab switches between the map and the palette (the active
+panel has the white cursor) and the arrows move the cursor of the active panel. Home,
+End, PgUp and PgDn go to the top left, bottom left, top right and bottom right corner
+like in the map editor's grids, and Ctrl with an arrow jumps 16 tiles on the map. On the
+map: Enter places the palette tile (over the selected block, if there is one), Space
+flood fills, R replaces every tile like the one under the cursor in the whole world,
+Backspace picks the tile under the cursor into the palette, Shift with the arrows
+selects a block, Ctrl-C copies the block, Ctrl-V shows it as a preview that the arrows
+move, Enter places and Esc cancels, and Ctrl-Z / Ctrl-Y undo and redo. Esc goes back to
+the list of worlds. With the mouse a left click on the map paints (drag to keep
+painting), a right click picks the tile, a click on the palette chooses a tile, a click
+on the small map jumps there and the wheel moves the cursor; in paste mode a click
+places the block. The map is shown as stored in the ROM; the game changes a few
+overworld tiles while it runs, and the editor does not change that. Each world has a
+fixed amount of room in the ROM (16384, 7424 and 7808 bytes); Space Usage lists it too.
+If a world does not fit, Save ROM refuses. Edits to the tile graphics, palettes and tile
 properties are not part of this editor. A panel beside the menu
 shows the keys for the highlighted entry. The CSV export/import and the two ROM
 comparison tools described under "Extras" below are still in the program but

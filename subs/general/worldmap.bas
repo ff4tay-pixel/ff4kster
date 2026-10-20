@@ -33,10 +33,8 @@
 'each), palettes 148900h (80h each), tile properties 148A80h (100h each), graphics 1D8000h (2000h each).
 
 const world_count = 3
-const world_view_cols = 32
-const world_view_rows = 22
-const world_panel_x = 512
-const world_picker_y = 352
+const world_view_cols = 30 'tiles of the map that show at once
+const world_view_rows = 24
 
 dim shared world_size(2) as Integer
 dim shared world_capacity(2) as Integer
@@ -681,109 +679,173 @@ end sub
 
 
 '--- the screen -------------------------------------------------------------------------------
+'The layout and keys follow the regular map editor: the tile palette on the left, the map on the right,
+'a status box at the bottom, Tab switches between the two panels, Shift with the arrows selects a block,
+'Enter places, Space fills, R replaces, Backspace picks, Ctrl-C / Ctrl-V copy and paste (paste shows a
+'preview that Enter places and Esc cancels), Ctrl-Z / Ctrl-Y undo and redo, Esc leaves. A list of the
+'three worlds comes first, like the list of maps.
 
-sub DrawWorldView()
+const world_map_box_x = 18 'cells
+const world_pal_px = 8 'pixel position of the first palette tile
+const world_pal_py = 8
+const world_map_px = world_map_box_x * 8 + 8 'pixel position of the first map tile
+const world_map_py = 8
+const world_mini_box_y = 34 'cells
+const world_mini_px = 8
+const world_mini_py = world_mini_box_y * 8 + 8
+
+dim shared wv_pal_x as Integer 'palette cursor, 8 columns by 16 rows (tile = row \ 2 * 16 + row mod 2 * 8 + column)
+dim shared wv_pal_y as Integer
+dim shared wv_map_active as Boolean = true 'Tab switches between the map and the palette
+dim shared wv_paste_mode as Boolean
+
+
+function WorldPaletteTile() as Integer
+
+ return (wv_pal_y \ 2) * 16 + (wv_pal_y mod 2) * 8 + wv_pal_x
+
+end function
+
+
+sub WorldPickTile(tile_number as Integer)
+
+ 'Puts the palette cursor on a tile
+
+ wv_pal_x = tile_number mod 8
+ wv_pal_y = (tile_number \ 16) * 2 + (tile_number mod 16) \ 8
+ wv_tile = tile_number
+
+end sub
+
+
+sub DrawWorldCursor(px as Integer, py as Integer, tiles_wide as Integer, tiles_high as Integer, active as Boolean)
+
+ 'The map editor's cursor: a black / white / white / black frame around the tile (gray if the panel is not active)
+
+ dim c as UInteger
+ dim w_px as Integer = tiles_wide * 16
+ dim h_px as Integer = tiles_high * 16
+
+ if active then c = RGB(255, 255, 255) else c = RGB(127, 127, 127)
+ line (px - 4, py - 4)-(px + w_px + 3, py + h_px + 3), RGB(0, 0, 0), b
+ line (px - 3, py - 3)-(px + w_px + 2, py + h_px + 2), c, b
+ line (px - 2, py - 2)-(px + w_px + 1, py + h_px + 1), c, b
+ line (px - 1, py - 1)-(px + w_px, py + h_px), RGB(0, 0, 0), b
+
+end sub
+
+
+function WorldFlagsText(w as Integer, tile_number as Integer) as String
+
+ 'What the tile allows, in a few words
+
+ dim names(7) as String = {"Walk", "Chocobo", "Black chocobo flies", "Black chocobo lands", "Hovercraft", "Airship flies", "Walk upper level", "Whale flies"}
+ dim result as String
+ dim passability as Integer = ByteAt(WorldOffset(&h148A80) + w * &h100 + tile_number * 2)
+ dim extra as Integer = ByteAt(WorldOffset(&h148A80) + w * &h100 + tile_number * 2 + 1)
+
+ for i as Integer = 0 to 7
+  if (passability and (1 shl i)) <> 0 then result += names(i) + ", "
+ next
+ if (extra and &h08) <> 0 then result += "Hides feet, "
+ if (extra and &h10) <> 0 then result += "Airship lands, "
+ if (extra and &h40) <> 0 then result += "Random battles, "
+ if (extra and &h80) <> 0 then result += "Trigger tile, "
+ if len(result) = 0 then return "Nothing can cross"
+
+ return left(result, len(result) - 2)
+
+end function
+
+
+sub DrawWorldEditor()
 
  dim w as Integer = wv_world
  dim tile_number as Integer
- dim screen_x as Integer
- dim screen_y as Integer
- dim passability as Integer
- dim extra as Integer
- dim row as Integer
- dim box_x as Integer
- dim box_y as Integer
- dim box_w as Integer
- dim box_h as Integer
+ dim px as Integer
+ dim py as Integer
  dim x0 as Integer
  dim y0 as Integer
  dim x1 as Integer
  dim y1 as Integer
  dim used as Integer
- dim names(7) as String = {"Walk", "Chocobo", "Black choc fly", "Black choc land", "Hovercraft", "Airship flies", "Walk upper", "Whale flies"}
+ dim box_x as Integer
+ dim box_y as Integer
+ dim box_w as Integer
+ dim box_h as Integer
+ dim status as String
+ dim clip_x as Integer
+ dim clip_y as Integer
 
  if wv_minimap_dirty(w) then BuildWorldMinimap(w)
 
  screenlock
 
+ 'The tile palette
+ BlueBox(0, 0, 16, 32)
+ for t as Integer = 0 to 127
+  put (world_pal_px + (t mod 8) * 16, world_pal_py + ((t \ 16) * 2 + (t mod 16) \ 8) * 16), world_tile_img(w, t), pset
+ next
+ DrawWorldCursor(world_pal_px + wv_pal_x * 16, world_pal_py + wv_pal_y * 16, 1, 1, not wv_map_active)
+
+ 'The map
+ BlueBox(world_map_box_x, 0, world_view_cols * 2, world_view_rows * 2)
  for r as Integer = 0 to world_view_rows - 1
   for c as Integer = 0 to world_view_cols - 1
    if wv_view_y + r < world_size(w) and wv_view_x + c < world_size(w) then
     tile_number = world_tiles(w, wv_view_y + r, wv_view_x + c) and 127
-    put (c * 16, r * 16), world_tile_img(w, tile_number), pset
+    put (world_map_px + c * 16, world_map_py + r * 16), world_tile_img(w, tile_number), pset
    else
-    line (c * 16, r * 16)-(c * 16 + 15, r * 16 + 15), RGB(0, 0, 0), bf
+    line (world_map_px + c * 16, world_map_py + r * 16)-step(15, 15), RGB(0, 0, 0), bf
    end if
   next
  next
-
- 'The selection (or the cursor)
- WorldSelectionRect(x0, y0, x1, y1)
- screen_x = (x0 - wv_view_x) * 16
- screen_y = (y0 - wv_view_y) * 16
- line (screen_x, screen_y)-(screen_x + (x1 - x0 + 1) * 16 - 1, screen_y + (y1 - y0 + 1) * 16 - 1), RGB(255, 255, 255), b
- line (screen_x + 1, screen_y + 1)-(screen_x + (x1 - x0 + 1) * 16 - 2, screen_y + (y1 - y0 + 1) * 16 - 2), RGB(0, 0, 0), b
-
- 'The tile picker and the area beside it
- line (0, world_picker_y)-(world_panel_x - 1, 479), RGB(0, 0, 96), bf
- for t as Integer = 0 to 127
-  put ((t mod 16) * 16, world_picker_y + (t \ 16) * 16), world_tile_img(w, t), pset
- next
- screen_x = (wv_tile mod 16) * 16
- screen_y = world_picker_y + (wv_tile \ 16) * 16
- line (screen_x, screen_y)-(screen_x + 15, screen_y + 15), RGB(255, 255, 255), b
- line (screen_x + 1, screen_y + 1)-(screen_x + 14, screen_y + 14), RGB(0, 0, 0), b
-
- WriteText(FF4Text("Tile " + hex(wv_tile, 2) + " chosen"), 33, 44, 14)
- WriteText(FF4Text("Enter paints  Bksp picks"), 33, 46, 15)
- WriteText(FF4Text("Space fills  R replaces all"), 33, 47, 15)
- WriteText(FF4Text("Shift arrows select a block"), 33, 48, 15)
- WriteText(FF4Text("Ctrl C V copy paste"), 33, 49, 15)
- WriteText(FF4Text("Ctrl Z Y undo redo"), 33, 50, 15)
- WriteText(FF4Text("Comma Period pick tile"), 33, 51, 15)
- WriteText(FF4Text("Click paints  Right picks"), 33, 52, 15)
- used = WorldDataBytes(w)
- if used > world_capacity(w) then
-  WriteText(FF4Text("OVER by " + str(used - world_capacity(w)) + " bytes"), 33, 55, 12)
+ view screen (world_map_px - 4, world_map_py - 4)-(world_map_px + world_view_cols * 16 + 3, world_map_py + world_view_rows * 16 + 3)
+ if wv_paste_mode then
+  'preview of what Enter would place
+  for y as Integer = 0 to world_clip_h - 1
+   for x as Integer = 0 to world_clip_w - 1
+    clip_x = wv_cursor_x + x - wv_view_x
+    clip_y = wv_cursor_y + y - wv_view_y
+    if clip_x >= 0 and clip_y >= 0 and clip_x < world_view_cols and clip_y < world_view_rows and wv_cursor_x + x < world_size(w) and wv_cursor_y + y < world_size(w) then
+     put (world_map_px + clip_x * 16, world_map_py + clip_y * 16), world_tile_img(w, world_clip(y, x) and 127), alpha, 160
+    end if
+   next
+  next
+  DrawWorldCursor(world_map_px + (wv_cursor_x - wv_view_x) * 16, world_map_py + (wv_cursor_y - wv_view_y) * 16, min(world_clip_w, world_view_cols), min(world_clip_h, world_view_rows), true)
  else
-  WriteText(FF4Text("Data " + str(used) + " of " + str(world_capacity(w))), 33, 55, 15)
+  WorldSelectionRect(x0, y0, x1, y1)
+  DrawWorldCursor(world_map_px + (x0 - wv_view_x) * 16, world_map_py + (y0 - wv_view_y) * 16, x1 - x0 + 1, y1 - y0 + 1, wv_map_active)
  end if
- if WorldChanged(w) then WriteText(FF4Text("Changed"), 33, 56, 10) else WriteText(FF4Text("Unchanged"), 33, 56, 15)
+ view screen
 
- 'The side panel
- line (world_panel_x, 0)-(639, 479), RGB(0, 0, 96), bf
- put (world_panel_x + 8, 8), wv_minimap(w), pset
- box_x = world_panel_x + 8 + wv_view_x * 128 \ world_size(w)
- box_y = 8 + wv_view_y * 128 \ world_size(w)
+ 'The whole world
+ BlueBox(0, world_mini_box_y, 16, 16)
+ put (world_mini_px, world_mini_py), wv_minimap(w), pset
+ box_x = world_mini_px + wv_view_x * 128 \ world_size(w)
+ box_y = world_mini_py + wv_view_y * 128 \ world_size(w)
  box_w = min(world_view_cols, world_size(w)) * 128 \ world_size(w)
  box_h = min(world_view_rows, world_size(w)) * 128 \ world_size(w)
  line (box_x, box_y)-(box_x + box_w - 1, box_y + box_h - 1), RGB(255, 255, 0), b
 
- WriteText(FF4Text(WorldNameText(w)), 65, 18, 14)
- WriteText(FF4Text("X " + str(wv_cursor_x) + " Y " + str(wv_cursor_y)), 65, 19, 15)
+ 'The status box
+ used = WorldDataBytes(w)
+ WorldSelectionRect(x0, y0, x1, y1)
+ status = "Panel: " + iif(wv_map_active, "Map", "Palette") + "  Tile:" + hex(wv_tile, 2) + "  Size:" + str(x1 - x0 + 1) + "x" + str(y1 - y0 + 1) + "  X " + str(wv_cursor_x) + " Y " + str(wv_cursor_y)
+ BlueBox(0, 52, 76, 3)
+ WriteText(FF4Text(Pad(status, 74)), 1, 53, 15)
+ if used > world_capacity(w) then
+  WriteText(FF4Text(Pad("Over by " + str(used - world_capacity(w)) + " bytes", 22, true)), 54, 53, 12)
+ else
+  WriteText(FF4Text(Pad("Room " + str(world_capacity(w) - used) + " bytes", 22, true)), 54, 53, 15)
+ end if
+ if wv_paste_mode then
+  WriteText(FF4Text(Pad("PASTE: arrows move, Enter place, Esc cancel", 74)), 1, 54, 14)
+ else
+  WriteText(FF4Text(Pad("Tab panel  Enter place  Space fill  R replace  Esc back", 74)), 1, 54, 15)
+ end if
  tile_number = world_tiles(w, wv_cursor_y, wv_cursor_x) and 127
- WriteText(FF4Text("Tile " + hex(tile_number, 2)), 65, 20, 15)
- passability = ByteAt(WorldOffset(&h148A80) + w * &h100 + tile_number * 2)
- extra = ByteAt(WorldOffset(&h148A80) + w * &h100 + tile_number * 2 + 1)
- row = 22
- for i as Integer = 0 to 7
-  if (passability and (1 shl i)) <> 0 then
-   WriteText(FF4Text(names(i)), 65, row, 12)
-   row += 1
-  end if
- next
- if (extra and &h08) <> 0 then WriteText(FF4Text("Hides feet"), 65, row, 10): row += 1
- if (extra and &h10) <> 0 then WriteText(FF4Text("Airship lands"), 65, row, 10): row += 1
- if (extra and &h40) <> 0 then WriteText(FF4Text("Random battles"), 65, row, 10): row += 1
- if (extra and &h80) <> 0 then WriteText(FF4Text("Trigger tile"), 65, row, 10): row += 1
-
- WriteText(FF4Text("Arrows move"), 65, 49, 15)
- WriteText(FF4Text("PgUp PgDn jump"), 65, 50, 15)
- WriteText(FF4Text("Home End jump"), 65, 51, 15)
- WriteText(FF4Text("Tab next world"), 65, 52, 15)
- WriteText(FF4Text("Click the map"), 65, 53, 15)
- WriteText(FF4Text("to jump there"), 65, 54, 15)
- WriteText(FF4Text("Esc leaves"), 65, 55, 15)
+ WriteText(FF4Text(Pad(left(WorldNameText(w) + " " + hex(tile_number, 2) + ": " + WorldFlagsText(w, tile_number), 74), 74)), 1, 55, 10)
 
  screenunlock
 
@@ -810,7 +872,63 @@ sub WorldKeepCursorInView()
 end sub
 
 
-sub EditWorldMaps()
+sub WorldMoveCursor(key_code as UInteger, shift_held as Boolean, ctrl_held as Boolean)
+
+ 'Arrows and the corner keys move the cursor of whichever panel is active, like the map editor's grids:
+ ' Home is the top left, End the bottom left, PgUp the top right, PgDn the bottom right. On the map,
+ ' Shift selects a block and Ctrl jumps 16 tiles.
+
+ dim last_x as Integer
+ dim last_y as Integer
+ dim step_size as Integer = 1
+
+ if not wv_map_active then
+  select case key_code
+   case UP_KEY: if wv_pal_y > 0 then wv_pal_y -= 1
+   case DOWN_KEY: if wv_pal_y < 15 then wv_pal_y += 1
+   case LEFT_KEY: if wv_pal_x > 0 then wv_pal_x -= 1
+   case RIGHT_KEY: if wv_pal_x < 7 then wv_pal_x += 1
+   case HOME_KEY: wv_pal_x = 0: wv_pal_y = 0
+   case END_KEY: wv_pal_x = 0: wv_pal_y = 15
+   case PAGEUP_KEY: wv_pal_x = 7: wv_pal_y = 0
+   case PAGEDOWN_KEY: wv_pal_x = 7: wv_pal_y = 15
+  end select
+  wv_tile = WorldPaletteTile()
+  exit sub
+ end if
+
+ last_x = world_size(wv_world) - 1
+ last_y = world_size(wv_world) - 1
+ if shift_held and not wv_selecting and not wv_paste_mode then
+  wv_selecting = true
+  wv_anchor_x = wv_cursor_x
+  wv_anchor_y = wv_cursor_y
+ elseif not shift_held or wv_paste_mode then
+  wv_selecting = false
+ end if
+ if ctrl_held then step_size = 16
+ select case key_code
+  case UP_KEY: wv_cursor_y -= step_size
+  case DOWN_KEY: wv_cursor_y += step_size
+  case LEFT_KEY: wv_cursor_x -= step_size
+  case RIGHT_KEY: wv_cursor_x += step_size
+  case HOME_KEY: wv_cursor_x = 0: wv_cursor_y = 0
+  case END_KEY: wv_cursor_x = 0: wv_cursor_y = last_y
+  case PAGEUP_KEY: wv_cursor_x = last_x: wv_cursor_y = 0
+  case PAGEDOWN_KEY: wv_cursor_x = last_x: wv_cursor_y = last_y
+ end select
+
+end sub
+
+
+sub WorldSwitchToMap()
+
+ wv_map_active = true
+
+end sub
+
+
+sub EditOneWorld(w as Integer)
 
  dim key as String
  dim key_code as UInteger
@@ -824,80 +942,43 @@ sub EditWorldMaps()
  dim mx as Integer
  dim my as Integer
  dim shift_held as Boolean
+ dim ctrl_held as Boolean
  dim painting as Boolean
  dim last_paint_x as Integer = -1
  dim last_paint_y as Integer = -1
  dim tile_x as Integer
  dim tile_y as Integer
+ dim act_on_map as Boolean
 
- if not world_loaded then ReadWorldMaps()
- for i as Integer = 0 to 2
-  if not world_built(i) then BuildWorldTiles(i)
-  BuildWorldMinimap(i)
- next
+ wv_world = w
+ wv_view_x = 0
+ wv_view_y = 0
+ wv_cursor_x = world_size(w) \ 2
+ wv_cursor_y = world_size(w) \ 2
+ wv_selecting = false
+ wv_paste_mode = false
+ wv_map_active = true
+ WorldPickTile(world_tiles(w, wv_cursor_y, wv_cursor_x) and 127)
 
- 'Undo only covers this visit
+ 'Undo covers this visit to the world
  wu_ops = 0
  wu_cur = 0
  wu_cells = 0
  wu_op_start(0) = 0
- wv_selecting = false
 
  cls
  do
   if redraw then
    WorldKeepCursorInView()
-   DrawWorldView()
+   DrawWorldEditor()
    redraw = false
   end if
 
   key = inkey
+  key_code = 0
   if key <> "" then
    key_code = asc(right(key, 1))
    if len(key) > 1 then key_code = key_code * &h100 + 255
-   shift_held = multikey(SC_LSHIFT) or multikey(SC_RSHIFT)
-   redraw = true
-   select case key_code
-    case ESC_KEY: done = true
-    case UP_KEY, DOWN_KEY, LEFT_KEY, RIGHT_KEY, PAGEUP_KEY, PAGEDOWN_KEY, HOME_KEY, END_KEY
-     if shift_held and not wv_selecting then
-      wv_selecting = true
-      wv_anchor_x = wv_cursor_x
-      wv_anchor_y = wv_cursor_y
-     elseif not shift_held then
-      wv_selecting = false
-     end if
-     select case key_code
-      case UP_KEY: wv_cursor_y -= 1
-      case DOWN_KEY: wv_cursor_y += 1
-      case LEFT_KEY: wv_cursor_x -= 1
-      case RIGHT_KEY: wv_cursor_x += 1
-      case PAGEUP_KEY: wv_cursor_y -= 16
-      case PAGEDOWN_KEY: wv_cursor_y += 16
-      case HOME_KEY: wv_cursor_x -= 16
-      case END_KEY: wv_cursor_x += 16
-     end select
-    case TAB_KEY
-     wv_world = (wv_world + 1) mod world_count
-     wv_view_x = 0
-     wv_view_y = 0
-     wv_cursor_x = world_size(wv_world) \ 2
-     wv_cursor_y = world_size(wv_world) \ 2
-     wv_selecting = false
-    case ENTER_KEY: WorldPaintSelection()
-    case BACKSPACE_KEY: wv_tile = world_tiles(wv_world, wv_cursor_y, wv_cursor_x) and 127
-    case SPACE_KEY: WorldFill()
-    case asc("r"), asc("R"): WorldReplaceAll()
-    case asc(","): wv_tile = (wv_tile + 127) mod 128
-    case asc("."): wv_tile = (wv_tile + 1) mod 128
-    case asc("["): wv_tile = (wv_tile + 112) mod 128
-    case asc("]"): wv_tile = (wv_tile + 16) mod 128
-    case 3: WorldCopySelection()
-    case 22: WorldPasteAtCursor()
-    case 26: if not WorldUndo() then redraw = false
-    case 25: if not WorldRedo() then redraw = false
-    case else: redraw = false
-   end select
   else
    PollMouse(cell_x, cell_y, left_click, right_click, wheel_steps)
    mx = mouse_pixel_x
@@ -907,62 +988,174 @@ sub EditWorldMaps()
     painting = false
     last_paint_x = -1
    end if
+   tile_x = wv_view_x + (mx - world_map_px) \ 16
+   tile_y = wv_view_y + (my - world_map_py) \ 16
+   act_on_map = (mx >= world_map_px and my >= world_map_py and mx < world_map_px + world_view_cols * 16 and my < world_map_py + world_view_rows * 16 and tile_x < world_size(w) and tile_y < world_size(w))
    if right_click then
-    if mx >= 0 and mx < world_view_cols * 16 and my < world_view_rows * 16 then
-     tile_x = wv_view_x + mx \ 16
-     tile_y = wv_view_y + my \ 16
-     if tile_x < world_size(wv_world) and tile_y < world_size(wv_world) then
-      wv_tile = world_tiles(wv_world, tile_y, tile_x) and 127
-      redraw = true
-     end if
+    if wv_paste_mode then
+     key_code = ESC_KEY
+    elseif act_on_map then
+     WorldSwitchToMap()
+     wv_selecting = false
+     wv_cursor_x = tile_x
+     wv_cursor_y = tile_y
+     key_code = BACKSPACE_KEY
     end if
-   elseif wheel_steps <> 0 then
-    wv_cursor_y -= sgn(wheel_steps) * 3
-    wv_selecting = false
-    redraw = true
+   elseif wheel_steps > 0 then
+    key_code = UP_KEY
+   elseif wheel_steps < 0 then
+    key_code = DOWN_KEY
    elseif left_click and mx >= 0 then
-    if mx < world_view_cols * 16 and my < world_view_rows * 16 then
-     tile_x = wv_view_x + mx \ 16
-     tile_y = wv_view_y + my \ 16
-     if tile_x < world_size(wv_world) and tile_y < world_size(wv_world) then
-      wv_cursor_x = tile_x
-      wv_cursor_y = tile_y
-      wv_selecting = false
+    if act_on_map then
+     WorldSwitchToMap()
+     wv_selecting = false
+     wv_cursor_x = tile_x
+     wv_cursor_y = tile_y
+     if wv_paste_mode then
+      key_code = ENTER_KEY
+     else
       WorldBeginOp()
       painting = true
-      WorldSetTile(wv_world, tile_x, tile_y, wv_tile)
+      WorldSetTile(w, tile_x, tile_y, wv_tile)
       last_paint_x = tile_x
       last_paint_y = tile_y
       redraw = true
      end if
-    elseif mx < 256 and my >= world_picker_y and my < world_picker_y + 128 then
-     wv_tile = ((my - world_picker_y) \ 16) * 16 + mx \ 16
+    elseif mx >= world_pal_px and my >= world_pal_py and mx < world_pal_px + 128 and my < world_pal_py + 256 then
+     wv_pal_x = (mx - world_pal_px) \ 16
+     wv_pal_y = (my - world_pal_py) \ 16
+     wv_tile = WorldPaletteTile()
      redraw = true
-    elseif mx >= world_panel_x + 8 and mx < world_panel_x + 136 and my >= 8 and my < 136 then
-     wv_cursor_x = (mx - world_panel_x - 8) * world_size(wv_world) \ 128
-     wv_cursor_y = (my - 8) * world_size(wv_world) \ 128
+    elseif mx >= world_mini_px and mx < world_mini_px + 128 and my >= world_mini_py and my < world_mini_py + 128 then
+     wv_cursor_x = (mx - world_mini_px) * world_size(w) \ 128
+     wv_cursor_y = (my - world_mini_py) * world_size(w) \ 128
      wv_view_x = wv_cursor_x - world_view_cols \ 2
      wv_view_y = wv_cursor_y - world_view_rows \ 2
      wv_selecting = false
      redraw = true
     end if
-   elseif painting and mouse_left_held and mx >= 0 and mx < world_view_cols * 16 and my < world_view_rows * 16 then
-    tile_x = wv_view_x + mx \ 16
-    tile_y = wv_view_y + my \ 16
-    if (tile_x <> last_paint_x or tile_y <> last_paint_y) and tile_x < world_size(wv_world) and tile_y < world_size(wv_world) then
+   elseif painting and mouse_left_held and act_on_map then
+    if tile_x <> last_paint_x or tile_y <> last_paint_y then
      wv_cursor_x = tile_x
      wv_cursor_y = tile_y
-     WorldSetTile(wv_world, tile_x, tile_y, wv_tile)
+     WorldSetTile(w, tile_x, tile_y, wv_tile)
      last_paint_x = tile_x
      last_paint_y = tile_y
      redraw = true
     end if
    end if
-   if not redraw then sleep 10
+   if key_code = 0 and not redraw then sleep 10
+  end if
+
+  if key_code <> 0 then
+   shift_held = multikey(SC_LSHIFT) or multikey(SC_RSHIFT)
+   ctrl_held = multikey(SC_CONTROL)
+   redraw = true
+   if wv_paste_mode then
+    select case key_code
+     case ENTER_KEY
+      WorldPasteAtCursor()
+      wv_paste_mode = false
+     case ESC_KEY
+      wv_paste_mode = false
+     case UP_KEY, DOWN_KEY, LEFT_KEY, RIGHT_KEY, HOME_KEY, END_KEY, PAGEUP_KEY, PAGEDOWN_KEY
+      WorldMoveCursor(key_code, false, ctrl_held)
+     case else
+      redraw = false
+    end select
+   else
+    select case key_code
+     case ESC_KEY: done = true
+     case UP_KEY, DOWN_KEY, LEFT_KEY, RIGHT_KEY, HOME_KEY, END_KEY, PAGEUP_KEY, PAGEDOWN_KEY
+      WorldMoveCursor(key_code, shift_held, ctrl_held)
+     case TAB_KEY
+      wv_map_active = not wv_map_active
+      wv_selecting = false
+     case ENTER_KEY
+      if wv_map_active then WorldPaintSelection()
+     case BACKSPACE_KEY
+      if wv_map_active then WorldPickTile(world_tiles(w, wv_cursor_y, wv_cursor_x) and 127)
+     case SPACE_KEY
+      if wv_map_active then WorldFill()
+     case asc("r"), asc("R")
+      if wv_map_active then WorldReplaceAll()
+     case 3
+      if wv_map_active then WorldCopySelection()
+     case 22
+      if wv_map_active and world_clip_w > 0 then
+       wv_paste_mode = true
+       wv_selecting = false
+      end if
+     case 26
+      if not WorldUndo() then redraw = false
+     case 25
+      if not WorldRedo() then redraw = false
+     case else
+      redraw = false
+    end select
+   end if
   end if
  loop until done
 
  if painting then WorldEndOp()
+ 'End with a draw on the screen itself so no destroyed image stays the drawing target
+ pset (0, 0), point(0, 0)
+ cls
+
+end sub
+
+
+sub DrawWorldListPreview(w as Integer)
+
+ dim used as Integer = WorldDataBytes(w)
+
+ if wv_minimap_dirty(w) then BuildWorldMinimap(w)
+ screenlock
+ BlueBox(0, 8, 16, 16)
+ put (8, 8 * 8 + 8), wv_minimap(w), pset
+ line (20 * 8, 9 * 8)-(78 * 8, 24 * 8), RGB(0, 0, 0), bf
+ WriteText(FF4Text(WorldNameText(w) + ", " + str(world_size(w)) + " by " + str(world_size(w)) + " tiles"), 20, 9, 14)
+ if used > world_capacity(w) then
+  WriteText(FF4Text("Map data " + str(used) + " of " + str(world_capacity(w)) + " bytes, over by " + str(used - world_capacity(w))), 20, 11, 12)
+ else
+  WriteText(FF4Text("Map data " + str(used) + " of " + str(world_capacity(w)) + " bytes, room " + str(world_capacity(w) - used)), 20, 11, 15)
+ end if
+ if WorldChanged(w) then WriteText(FF4Text("Edited since the ROM was loaded"), 20, 12, 10) else WriteText(FF4Text("Not edited"), 20, 12, 15)
+ WriteText(FF4Text("Enter edits this world, Esc goes back"), 20, 14, 15)
+ screenunlock
+
+end sub
+
+
+sub EditWorldMaps()
+
+ 'The list of worlds, like the list of maps; Enter opens the editor for the one selected
+
+ dim select_world as BlueMenu
+
+ if not world_loaded then ReadWorldMaps()
+ for i as Integer = 0 to 2
+  if not world_built(i) then BuildWorldTiles(i)
+  BuildWorldMinimap(i)
+ next
+
+ select_world.AddOption(FF4Text("Overworld"))
+ select_world.AddOption(FF4Text("Underground"))
+ select_world.AddOption(FF4Text("Moon"))
+ select_world.min_width = 16
+ select_world.title = "Worlds"
+
+ cls
+ do
+  do
+   DrawWorldListPreview(select_world.selected - 1)
+  loop until select_world.UserInput()
+  if not select_world.cancelled then
+   EditOneWorld(select_world.selected - 1)
+   cls
+  end if
+ loop until select_world.cancelled
+
  'End with a draw on the screen itself so no destroyed image stays the drawing target
  pset (0, 0), point(0, 0)
  cls
