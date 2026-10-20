@@ -49,6 +49,7 @@ sub TriggerInfoMenu.Display()
   parameters_menu.AddOption(FF4Text("X:      " + str(t->new_x)))
   parameters_menu.AddOption(FF4Text("Y:      " + str(t->new_y)))
   parameters_menu.AddOption(FF4Text("Facing: " + FacingString(t->facing)))
+  parameters_menu.AddOption(FF4Text("Pick the spot on the map"))
   parameters_menu.ChangeSelected(1)
  elseif t->treasure then
   type_menu.ChangeSelected(2)
@@ -85,6 +86,7 @@ end sub
 
 sub TriggerInfoMenu.UserSelect()
 
+ dim old_destination as Integer
  dim xy as BlueNumberInput
  dim destination_menu_overworld as BlueMenu
  dim destination_menu_underworld as BlueMenu
@@ -197,6 +199,7 @@ sub TriggerInfoMenu.UserSelect()
       if not parameters_menu.cancelled then
        select case parameters_menu.selected
         case 1 'Destination
+         old_destination = t->new_map
          if underworld then
           if t->new_map < 128 then
            destination_menu_underworld.ChangeSelected(t->new_map + 1)
@@ -216,6 +219,10 @@ sub TriggerInfoMenu.UserSelect()
           destination_menu_overworld.UserSelect()
           if not destination_menu_overworld.cancelled then t->new_map = destination_menu_overworld.selected - 1
          end if
+         'show the destination so the arrival spot can be picked on it
+         if t->new_map <> old_destination then
+          if PickDestinationSpot(t, underworld) then Display()
+         end if
         case 2 'X
          xy.x = destination_menu_overworld.x
          xy.y = destination_menu_overworld.y + 1
@@ -232,6 +239,8 @@ sub TriggerInfoMenu.UserSelect()
          facing_menu.ChangeSelected(t->facing + 1)
          facing_menu.UserSelect()
          if not facing_menu.cancelled then t->facing = facing_menu.selected - 1
+        case 5 'Pick the spot on the map
+         if not PickDestinationSpot(t, underworld) then InfoBox("This destination cannot be shown.|Use X and Y.||Press any key", 20, 20)
        end select
        Display()
       end if

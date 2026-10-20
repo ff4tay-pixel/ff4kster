@@ -35,6 +35,137 @@ function PlainName(s as String) as String
 end function
 
 
+function TeleportDestinationIndex(underworld as Boolean, new_map as Integer) as Integer
+
+ 'The number in the map list (and in maps()) of the map a teleport goes to
+
+ if underworld and new_map < 128 then return new_map + 257
+
+ return new_map + 1
+
+end function
+
+
+function PickTeleportSpot(map_index as Integer, byref spot_x as Integer, byref spot_y as Integer) as Boolean
+
+ 'Shows the map a teleport goes to and lets the user move a cursor to where the party should arrive.
+ ' Arrows move, Enter (or clicking the cursor tile again) chooses, Esc or a right click cancels. Returns
+ ' true if a spot was chosen. False too if the map cannot be shown (the world maps, or a map with no
+ ' data), in which case the caller keeps the numbers.
+
+ dim em as MapEditorMenu
+ dim backdrop as Any ptr
+ dim underground as Integer
+ dim key as String
+ dim key_code as UInteger
+ dim done as Boolean
+ dim chosen as Boolean
+ dim moved as Boolean
+ dim cell_x as Integer
+ dim cell_y as Integer
+ dim left_click as Boolean
+ dim right_click as Boolean
+ dim wheel_steps as Integer
+ dim tile_x as Integer
+ dim tile_y as Integer
+
+ if map_index < 1 or map_index > total_maps then return false
+ if map_index >= 252 and map_index <= 256 then return false
+ if map_index > &h100 then underground = &h100
+ if mapgrids(maps(map_index).grid_index + underground + 1).no_data then return false
+
+ backdrop = ImageCreate(640, 480)
+ get (0, 0)-(639, 479), backdrop
+
+ em = MapEditorMenu(0, 3)
+ em.SetTo(map_index)
+ em.map_menu.x = 4
+ em.map_menu.y = 4
+ em.map_menu.active = true
+ em.map_menu.cursor_x = min(spot_x, 31)
+ em.map_menu.cursor_y = min(spot_y, 31)
+ em.map_menu.ProcessKey(0) 'brings the cursor into view
+ cls
+
+ do
+  em.map_menu.Display()
+  BlueBox(4, 40, 70, 2)
+  WriteText(FF4Text(Pad("Teleport to " + FF4Name(map_names.ItemAt(map_index)) + ", X " + str(em.map_menu.cursor_x) + "  Y " + str(em.map_menu.cursor_y), 68)), 5, 41, 15)
+  WriteText(FF4Text(Pad("Arrows move, Enter chooses, Esc cancels.  Yellow: triggers, cyan: NPCs", 68)), 5, 42, 14)
+  moved = false
+  do
+   key = inkey
+   key_code = 0
+   if key <> "" then
+    key_code = asc(right(key, 1))
+    if len(key) > 1 then key_code = key_code * &h100 + 255
+   else
+    PollMouse(cell_x, cell_y, left_click, right_click, wheel_steps)
+    if right_click then
+     key_code = ESC_KEY
+    elseif wheel_steps > 0 then
+     key_code = UP_KEY
+    elseif wheel_steps < 0 then
+     key_code = DOWN_KEY
+    elseif left_click and em.map_menu.HitTile(mouse_pixel_x, mouse_pixel_y, tile_x, tile_y) then
+     if tile_x = em.map_menu.cursor_x and tile_y = em.map_menu.cursor_y then
+      key_code = ENTER_KEY
+     else
+      em.map_menu.cursor_x = tile_x
+      em.map_menu.cursor_y = tile_y
+      moved = true
+     end if
+    end if
+   end if
+   em.map_menu.Animate()
+   if key_code = 0 and not moved then sleep 10
+  loop while key_code = 0 and not moved
+  select case key_code
+   case ENTER_KEY
+    chosen = true
+    done = true
+   case ESC_KEY
+    done = true
+   case UP_KEY, DOWN_KEY, LEFT_KEY, RIGHT_KEY, HOME_KEY, END_KEY, PAGEUP_KEY, PAGEDOWN_KEY
+    em.map_menu.cursor_w = 0
+    em.map_menu.cursor_h = 0
+    em.map_menu.ProcessKey(key_code)
+  end select
+ loop until done
+
+ if chosen then
+  spot_x = em.map_menu.cursor_x
+  spot_y = em.map_menu.cursor_y
+ end if
+
+ put (0, 0), backdrop, pset
+ ImageDestroy(backdrop)
+ 'a draw on the screen itself, so the destroyed image is not left as the drawing target
+ pset (0, 0), point(0, 0)
+
+ return chosen
+
+end function
+
+
+function PickDestinationSpot(t as Trigger ptr, underworld as Boolean) as Boolean
+
+ 'Lets the user pick, on the map the teleport goes to, where the party arrives; sets new_x and new_y
+
+ dim spot_x as Integer = t->new_x
+ dim spot_y as Integer = t->new_y
+
+ if PickTeleportSpot(TeleportDestinationIndex(underworld, t->new_map), spot_x, spot_y) then
+  t->new_x = min(spot_x, 63)
+  t->new_y = spot_y
+  return true
+ end if
+
+ return false
+
+end function
+
+
 function TriggerSummary(m as Integer, t as Trigger ptr) as String
 
  'A few words about what a trigger does

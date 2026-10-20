@@ -853,7 +853,11 @@ the placement under it.
 Fields. A trigger has a type, an X and a Y. Treasures have their contents,
 whether they are trapped and the battle that starts if they are. Teleporters
 have a destination map, the destination coordinates and the direction the
-party faces on arrival. Events have the event call (which event runs, with its
+party faces on arrival. After you choose a new destination map, the editor shows that
+map (with its triggers and NPCs marked) so you can move a cursor to where the party
+should arrive and press Enter; "Pick the spot on the map" in the parameters does the
+same later, and X and Y can still be typed. The world maps cannot be shown that way
+(their X and Y stay numbers). Events have the event call (which event runs, with its
 parameters), the flag settings and the list of messages described above.
 
 
@@ -1286,7 +1290,8 @@ VERSION HISTORY
     - Edit World Maps: edit the overworld, underground and moon (paint, fill, replace,
       copy / paste, undo, mouse painting); saved into the fixed room the game gives
       each world, with a space check; O shows triggers and encounter zones over the map;
-      T / Insert / Delete edit the world triggers from the map; the regular map editor
+      T / Insert / Delete edit the world triggers from the map; teleport triggers pick
+      their arrival spot on a picture of the destination map; the regular map editor
       has the same keys for the triggers of the map
     - Revert, copy / paste, undo and changed marks for solobattles, autobattles, spell
       sets and encounter areas; Changed Entries lists commands, actors and those too
