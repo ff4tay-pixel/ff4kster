@@ -1,14 +1,14 @@
 'Export and import of battle character sprites and palettes.
 '
-'Each character is one 4 bits per pixel BMP, exports\battle_sprites\poses_NN_pal_PP.bmp (130x56), with the poses in
-'16x24 cells, 8 per row. The palette is stored in the image itself: the 16 pixels in the top right
-'corner, from top to bottom (x = width - 1, y = 0 to 15), are palette colors 0-15 (pixel N has
-'palette index N). The column next to them is left empty. The palette number PP is kept in the
-'file name.
+'Each character is one 4 bits per pixel BMP, exports\battle_sprites\poses_NN_pal_PP.bmp (113x48). The palette is
+'stored in the image itself: the 16 pixels in the top right corner, from top to bottom (x = 112,
+'y = 0 to 15), are palette colors 0-15 (pixel N has palette index N). The palette number PP is kept
+'in the file name. The poses are packed with no gaps:
 '
-'    row 1: Standing, Ready, Running, Kneeling, Right arm up, Left arm down, Left arm up
-'    row 2: Hit, Victory, Dead (two cells wide), Chant 1, Chant 2, Special (two cells wide)
-'    bottom strip: the tiles that no pose uses (if any)
+'    row 1 (7 poses of 16x24):  Standing, Ready, Running, Kneeling, Right arm up, Left arm down,
+'                               Left arm up
+'    row 2:  Hit (x 0), Victory (16), Dead (32, 24 wide), Chant 1 (56), Chant 2 (72),
+'            Special (88, 24 wide). The tile no pose uses sits in Special's empty bottom left corner.
 '
 'On import the 16 palette pixels define palette PP, and every other pixel takes the palette index
 'of the palette pixel with the same color. That keeps indices right even if an image editor
@@ -17,12 +17,12 @@
 'Poses share tiles (the head tiles are used by five poses). If the same tile was edited
 'differently in two poses, the first pose (in list order) wins and the import says so.
 
-const image_strip = 2 'columns on the right that hold the palette pixels
-const pose_image_width = 128 + image_strip
-const pose_image_height = 56
-const pose_image_extras_y = 48
-const pose_cell_width = 16
-const pose_cell_height = 24
+const image_strip = 1 'columns on the right that hold the palette pixels
+const pose_image_width = 112 + image_strip
+const pose_image_height = 48
+const extra_tile_x = 88 'where the tile that no pose uses is placed (at most one)
+const extra_tile_y = 40
+const max_extra_tiles = 1
 const max_pose_uses = 12
 const special_pose_id = &h24 'the Golbez-style special pose, which no normal pose shares tiles with
 const image_pose_count = 13 'poses 0-11 and the special pose
@@ -110,7 +110,7 @@ end sub
 function WriteIndexedBMP(path as String, width_px as Integer, height_px as Integer, pal as Integer) as Boolean
 
  'Writes the top left width_px x height_px part of bmp_px as a 4 bits per pixel BMP
- ' using palette pal as the color table. Width must be even.
+ ' using palette pal as the color table. 
 
  dim bmp_data as String
  dim v as UInteger
@@ -132,6 +132,7 @@ function WriteIndexedBMP(path as String, width_px as Integer, height_px as Integ
   for x as Integer = 0 to width_px - 2 step 2
    bmp_data += chr(bmp_px(y, x) * 16 + bmp_px(y, x + 1))
   next
+  if width_px mod 2 = 1 then bmp_data += chr(bmp_px(y, width_px - 1) * 16)
   if pad_bytes > 0 then bmp_data += string(pad_bytes, chr(0))
  next
 
@@ -319,21 +320,20 @@ end function
 
 sub PoseImageOrigin(pose as Integer, byref ox as Integer, byref oy as Integer)
 
- 'Top left corner of a pose's cell in the pose image: eight 16x24 cells per row. The wide Dead
- ' and Special poses use two cells each.
+ 'Top left corner of a pose in the pose image. Poses are packed: seven 16 wide poses on the first
+ ' row, then Hit, Victory, Dead (24 wide), Chant 1, Chant 2 and Special (24 wide) on the second.
 
- dim cell as Integer
-
+ oy = 0
  select case pose
-  case 0 to 6: cell = pose
-  case 7, 8: cell = pose + 1
-  case 9: cell = 10
-  case 10, 11: cell = pose + 2
-  case else: cell = 14
+  case 0 to 6: ox = pose * 16
+  case 7: ox = 0
+  case 8: ox = 16
+  case 9: ox = 32
+  case 10: ox = 56
+  case 11: ox = 72
+  case else: ox = 88
  end select
-
- ox = (cell mod 8) * pose_cell_width
- oy = (cell \ 8) * pose_cell_height
+ if pose >= 7 then oy = 24
 
 end sub
 
@@ -428,10 +428,10 @@ function WriteBattlePosesBMP(path as String, sheet as Integer, pal as Integer) a
  next
 
  PoseExtraTiles(extras(), extra_count, used())
- for n as Integer = 0 to extra_count - 1
+ for n as Integer = 0 to min(extra_count, max_extra_tiles) - 1
   for y as Integer = 0 to 7
    for x as Integer = 0 to 7
-    bmp_px(pose_image_extras_y + y, n * 8 + x) = battle_char_gfx(sheet, extras(n), y, x)
+    bmp_px(extra_tile_y + y, extra_tile_x + x) = battle_char_gfx(sheet, extras(n), y, x)
    next
   next
  next
@@ -535,11 +535,11 @@ function ReadBattlePosesBMP(path as String, sheet as Integer, pal as Integer, by
  next
 
  PoseExtraTiles(extras(), extra_count, used())
- for n as Integer = 0 to extra_count - 1
+ for n as Integer = 0 to min(extra_count, max_extra_tiles) - 1
   touched(extras(n)) = true
   for y as Integer = 0 to 7
    for x as Integer = 0 to 7
-    new_tiles(extras(n), y, x) = bmp_px(pose_image_extras_y + y, n * 8 + x)
+    new_tiles(extras(n), y, x) = bmp_px(extra_tile_y + y, extra_tile_x + x)
    next
   next
  next

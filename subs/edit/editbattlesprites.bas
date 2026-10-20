@@ -460,10 +460,9 @@ sub EditBattleSprites()
    else
     select case select_sheet.selected - total_battle_char_sheets
      case 1
-      WriteText(FF4Text("Writes one BMP per character with all the poses, in"), 37, 8, 15)
-      WriteText(FF4Text("16x24 cells (poses_NN_pal_PP.bmp), plus any tiles no"), 37, 9, 15)
-      WriteText(FF4Text("pose uses on a strip below. The 16 palette colors are"), 37, 10, 15)
-      WriteText(FF4Text("the top right pixels, top to bottom."), 37, 11, 15)
+      WriteText(FF4Text("Writes one BMP per character with all the poses packed"), 37, 8, 15)
+      WriteText(FF4Text("together (poses_NN_pal_PP.bmp, 113x48). The 16 palette"), 37, 9, 15)
+      WriteText(FF4Text("colors are the top right pixels, top to bottom."), 37, 10, 15)
      case else
       WriteText(FF4Text("Reads every poses_NN_pal_PP.bmp and splits the poses"), 37, 8, 15)
       WriteText(FF4Text("back into tiles. Tiles shared by several poses take"), 37, 9, 15)
