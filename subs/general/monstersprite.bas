@@ -355,6 +355,11 @@ sub MonsterSpritePanelShow(gfx_ptr as UInteger, size as UByte, pal as UByte, byr
   ImageDestroy(sprite)
  end if
 
+ 'Finish with a draw on the screen itself (the same pixel, so nothing changes). Without it FreeBASIC
+ ' keeps pointing at the destroyed sprite image as its drawing target, and the next menu that builds
+ ' an image corrupts it (the template menu drew as a thin strip).
+ pset (monster_panel_x * 8, monster_panel_y * 8), point(monster_panel_x * 8, monster_panel_y * 8)
+
 end sub
 
 

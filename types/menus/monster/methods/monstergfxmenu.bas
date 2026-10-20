@@ -93,6 +93,13 @@ sub MonsterGfxMenu.UserSelect()
         'The preview follows the highlighted template; Esc puts the old pointer and size back
         old_ptr = gfx_ptr
         old_size = size
+        'Start on the template that matches the current pointer and size, if there is one
+        for i as Integer = 1 to gfx_menu.options.Length()
+         if val(left(monstergfxnames.Lookup(gfx_menu.options.ItemAt(i)), 5)) = gfx_ptr and val(mid(monstergfxnames.Lookup(gfx_menu.options.ItemAt(i)), 7)) = size then
+          gfx_menu.ChangeSelected(i)
+          exit for
+         end if
+        next
         shown_entry = gfx_menu.selected
         gfx_menu.cancelled = false
         gfx_menu.TakeSnapshot()
