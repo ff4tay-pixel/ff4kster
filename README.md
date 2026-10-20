@@ -1192,57 +1192,86 @@ little explanation.
          to edit the details of the extra data in question, select the 
          appropriate flag and press TAB (will only work if the flag is set).
 
-* AIs: There is a list of AIs which monsters can use. Each monster has associated
-       with it a number indicating the index in the list of the AI that it uses.
-       The AI editor allows you to change not only this index, but also the 
-       details of the associated AI. The AI editor consists of five components
-       which can be navigated between by pressing TAB:
-       
-       * AI index: This allows you to edit which index AI you wish the monster
-                   to use. Monsters that appear on the moon use a different list
-                   so this index will refer to a different AI for those monsters
-                   than it will for a monster anywhere else.
-       
-       * Condition set list: This is the tall, thin menu on the left side and it
-                             indicates the list of condition sets the AI checks
-                             to see which script to execute. You can change the
-                             set index with ENTER, you can add a new set with
-                             INSERT, or you can remove any set except the last
-                             with DELETE.
-       
-       * Condition set: This is the set of conditions that must all be true in
-                        order for the corresponding script to be executed.
-                        Pressing ENTER on a condition will allow you to pick a
-                        different one from a list, then when you pick it, you
-                        will be prompted to change its parameters. If you do,
-                        they will also be changed for all references to that
-                        condition. You can add extra conditions with INSERT and
-                        remove them with DELETE. You cannot delete a condition
-                        if to do so would leave you with an empty list.
-                        
-       * Script index: This is the index of the script that corresponds to the
-                       currently selected condition set.
-                       
-       * Script: This is the list of executable commands that the monster will
-                 carry out if the conditions are met. You can change an entry
-                 with ENTER, add additional lines with INSERT, and delete lines
-                 with DELETE.
-                 
+* AIs: "Edit AI" opens a full screen editor for the monster's AI (see ENEMY AI
+       below). The AI column in the monster list only shows it.
+
 The monsters screen is organized in three groups. The monster list is on the
 left. Next to it is a column of titled boxes of equal width: the monster's
 name and basic data and the Edit menu, its graphics (with Spell Power
 beside them when the monster has it), combat stats, drops and the list of
 extra flags, and below those the status and element grids for the flags that
 are set (Adds, Resist, Weak, Races). The AI is in the column on the right, with
-a header line above it that shows which bank is in use ("Regular" or "LUNAR";
-press L in the AI editor to switch banks), and the reaction AI below it when
-the monster has one.
+a header line above it that shows which bank is in use ("Regular" or "LUNAR")
+and the reaction AI below it when the monster has one.
 
 Monsters that appear in certain lunar maps use a different set of scripts
 than monsters in the other areas. For the most part, the monster editor
 displays this correctly, however there is a known bug where some lunar
 monsters (particularly the lunar bosses) are displaying "regular" scripts
 instead of lunar ones. A fix for this is being worked on.
+
+
+ENEMY AI
+--------
+
+An AI (1 to 254) is a list of pairs. The game goes through the pairs in order
+and carries out the actions of the first pair whose conditions are all true.
+Each pair is a condition set (all of its conditions must hold) and a script (the
+actions to carry out). "Edit AI" in the monster editor opens one full screen
+list that shows the whole AI at once. Every pair is a heading with its
+conditions (WHEN, AND) and its actions (THEN) under it, and green "Add" rows
+that add a part:
+
+    PAIR 1   Condition set 12, used 3x   Script 34, used 2x
+        WHEN unit self has 1000 HP or less
+        AND  takes damage
+             Add a condition
+        THEN Cast Fire on single
+        THEN Target self
+             Add an action
+    Add a new pair of conditions and actions
+
+The title shows the monster, which AI and bank it uses and which other monsters
+use the same AI. Monsters that appear on the moon use a different bank of
+scripts (shown as LUNAR). The cursor walks the lines, a line below the list
+says what the keys do on the line the cursor is on, and the keys depend on it.
+
+    UP, DOWN, PAGE UP/DOWN, HOME, END: Move through the lines.
+    ENTER:           On a pair, choose another condition set or script from a
+                     list (it shows the first line of each, and yellow ones
+                     are unused). On a condition or an action, change its kind
+                     and parameters, in a list of all kinds. On an Add row, add
+                     a new part and open it at once.
+    INSERT:          Add after this line: a pair, a condition or an action.
+                     The new condition or action opens at once, and ESC in its
+                     first menu takes it away again. A new pair gets its own
+                     unused condition set, condition and script (a condition
+                     of "no condition", which is always true, and the action
+                     "Do nothing"), so changing it touches nothing else.
+    DELETE:          Remove the line (an AI keeps at least one pair, a pair at
+                     least one condition).
+    S:               On a condition, switch to another existing condition.
+    U:               Make private copies of what this line shares.
+    CTRL+C / CTRL+V: Copy a pair, a condition or an action, and paste it after
+                     the cursor line. Copying works across AIs.
+    CTRL+Z:          Undo the last action (kept until you change AI or bank).
+    N / P:           Next / previous AI. G: go to an AI number.
+    L:               Switch between the regular and the lunar script bank.
+    R:               Switch between the attack AI and the reaction AI of the
+                     monster (when it has a reaction).
+    ESC:             Back to the monster list.
+
+Conditions, condition sets and scripts are shared in the ROM: one script can
+serve many pairs and many AIs. The number after "used" counts the places that
+use it (yellow when it is more than one), and a change to a shared item changes
+all of them. To change only this pair, press U first: it points the pair at a
+private copy in an unused slot (a ROM where all slots are taken says so and
+changes nothing). Adding a pair, a condition or an action also needs unused
+slots for the new parts.
+
+The footer shows how full the four AI areas of the ROM are (groups, condition
+sets, regular scripts and lunar scripts). Over the limit, Save ROM refuses to
+write and names the area; Space Usage lists them too.
 
 
 FORMATIONS
@@ -1476,6 +1505,10 @@ VERSION HISTORY
       wrote past the end of the monster list), which could crash the editor
     - Monsters screen reorganized: aligned, titled boxes and a clearer AI
       column with a bank header
+    - Enemy AI editor rewritten as a full screen list of pairs, conditions
+      and actions with insert/delete, private copies on request,
+      copy/paste, undo, a list of the monsters that use the AI and a
+      room check (Save ROM refuses AI data that does not fit)
     - Level up editor rewritten as a full screen table with free cell
       navigation, direct number entry, copy/fill/paste, undo, character
       switching and per-level total stats, HP, MP and EXP
@@ -1621,7 +1654,7 @@ VERSION HISTORY
 - **Search Everywhere** (main menu) finds a spell, item or monster by name and opens its editor on it.
 - **Compare with ROM File** (currently hidden from the main menu) diffs your current work against another ROM file.
 - **F1** shows key help in any menu. Deleting triggers, NPCs and messages asks for confirmation.
-- **Space Usage** (main menu) shows how full each fixed ROM area is (events, triggers, map data, text banks, item descriptions); over 100% means Save ROM will refuse.
+- **Space Usage** (main menu) shows how full each fixed ROM area is (events, triggers, map data, text banks, item descriptions, monster AI); over 100% means Save ROM will refuse.
 - **Changed Entries** (main menu) lists every spell, item, monster, shop, formation, job, command, actor, spell set, encounter area, autobattle and solobattle changed since loading and opens the one you pick.
 - **Number boxes:** press X to switch between decimal and hexadecimal entry (A-F are accepted in hex mode).
 - **Saving** asks before overwriting a ROM file that changed on disk since it was loaded or last saved.

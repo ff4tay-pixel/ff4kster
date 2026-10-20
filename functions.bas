@@ -19,4 +19,5 @@
 #include once "functions/placementspace.bas"
 #include once "functions/conditionparametercount.bas"
 #include once "functions/scripttakesparameter.bas"
+#include once "functions/aiusage.bas"
 #include once "functions/statuslist.bas"

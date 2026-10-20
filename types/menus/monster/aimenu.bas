@@ -20,13 +20,11 @@ type AIMenu
  declare constructor(starting_x as UByte = 0, starting_y as UByte = 0)
  
  declare function CurrentCondition() as UByte
- declare function ReadKey() as UInteger
  
  declare sub Display()
  declare sub Hide()
  declare sub RefreshConditions()
  declare sub RefreshScripts()
  declare sub SetTo(new_index as UByte, new_lunar as Boolean = false)
- declare sub UserSelect()
 
 end type

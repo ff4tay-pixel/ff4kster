@@ -15,7 +15,7 @@ Editors on the main menu: Features, Spells (with animation preview), Spell Sets,
 preview), Armors, Medicines, Tools, Shops, Jobs, **Battle Sprites** (tile/palette editor, BMP export/import), **Portraits** (menu faces, 32x32 3bpp, entry 32),
 Characters (full-screen **level up editor** with totals), Commands, Actors, Messages, Events, Triggers and NPCs
 (with overview minimaps), Tilesets, Map Info, Maps (paste preview, redo, replace tile, NPC/trigger overlay),
-Monsters (sprite preview, reorganized screen), Formations (**battlefield preview**), Encounters, Autobattles,
+Monsters (sprite preview, reorganized screen, **full screen AI editor** `subs/edit/editai.bas` with the pickers in `aitools.bas`), Formations (**battlefield preview**), Encounters, Autobattles,
 Solobattles, **Edit World Maps** (overworld, underground, moon: paint, fill, replace, copy/paste preview,
 undo, triggers and encounter zones overlay, mouse), plus Search Everywhere, Space Usage, Changed Entries.
 CSV export/import and the two ROM comparisons still exist in `subs/csv` and `subs/general` but are hidden
@@ -111,7 +111,7 @@ the rip JSON and in `.asm` comments are SNES `bank/address` or file offsets: use
   (`ModOverworldTilemap`); the editor shows the stored map.
 - Map messages belong to the map (`maps(m).dialogues`): every NPC and trigger on that map that uses a message
   shows an edit of it.
-- Save checks space for events, triggers, **map data**, text banks, spell lists; overflow shows a warning and the file is not written.
+- Save checks space for events, triggers, **map data**, text banks, spell lists, monster AI (`AIBytes`/`AIRoom`); overflow shows a warning and the file is not written.
 
 ## Pitfalls (all hit during development)
 

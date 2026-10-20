@@ -168,9 +168,15 @@ sub EditMonsters()
       monster_gfx.UserSelect()
      
      case 3 'Edit AI
-      ai_menu.UserSelect()
-      monsters(select_monster.selected).lunar = ai_menu.lunar
-      monsters(select_monster.selected).attack_sequence_group = ai_menu.index - 1
+      dim attack_ai as Integer = monsters(select_monster.selected).attack_sequence_group + 1
+      dim reaction_ai as Integer = 0
+      dim ai_lunar_flag as Boolean = monsters(select_monster.selected).lunar
+      if monsters(select_monster.selected).has_reaction then reaction_ai = monsters(select_monster.selected).reaction_index + 1
+      EditMonsterAI(attack_ai, reaction_ai, ai_lunar_flag, select_monster.selected)
+      monsters(select_monster.selected).lunar = ai_lunar_flag
+      monsters(select_monster.selected).attack_sequence_group = attack_ai - 1
+      if reaction_ai > 0 then monsters(select_monster.selected).reaction_index = reaction_ai - 1
+      select_monster.Display()
      
      case 4 'Edit Stats
       monster_stats.UserSelect()
@@ -231,8 +237,13 @@ sub EditMonsters()
            
           case 6
            if monsters(select_monster.selected).has_reaction then
-            reaction_menu.UserSelect()
-            monsters(select_monster.selected).reaction_index = reaction_menu.index - 1
+            dim attack_ai as Integer = monsters(select_monster.selected).attack_sequence_group + 1
+            dim reaction_ai as Integer = monsters(select_monster.selected).reaction_index + 1
+            dim ai_lunar_flag as Boolean = monsters(select_monster.selected).lunar
+            EditMonsterAI(attack_ai, reaction_ai, ai_lunar_flag, select_monster.selected, true)
+            monsters(select_monster.selected).lunar = ai_lunar_flag
+            monsters(select_monster.selected).attack_sequence_group = attack_ai - 1
+            monsters(select_monster.selected).reaction_index = reaction_ai - 1
            end if
           
          end select

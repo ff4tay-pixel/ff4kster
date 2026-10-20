@@ -19,6 +19,12 @@ sub DrawLetter(letter as UByte, x as UInteger, y as UInteger, c as Integer = 15,
    actual_color = RGB(255, 63, 63)
   case 14
    actual_color = RGB(255, 255, 0)
+  case 21
+   actual_color = RGB(110, 220, 255)
+  case 22
+   actual_color = RGB(255, 170, 70)
+  case 23
+   actual_color = RGB(170, 180, 215)
   case else
    actual_color = RGB(255, 255, 255)
  end select

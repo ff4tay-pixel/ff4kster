@@ -5,6 +5,14 @@ sub SaveAIs()
  
  'dim debug as UInteger
 
+ for area as Integer = 1 to 4
+  if AIBytes(area) > AIRoom(area) then
+   dim area_name as String = iif(area = 1, "AI groups", iif(area = 2, "AI condition sets", iif(area = 3, "AI scripts", "Lunar AI scripts")))
+   WarningMessage(FF4Text(area_name + " take " + str(AIBytes(area)) + " bytes, only " + str(AIRoom(area)) + " fit"))
+   exit sub
+  end if
+ next
+
  'AI groups
  start = &h76230
  for i as Integer = 1 to total_ai_groups

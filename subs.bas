@@ -116,6 +116,8 @@ declare function ChestFormation(m as Integer, chest_byte as Integer) as Integer
 #include once "subs/general/triggertools.bas"
 #include once "subs/general/worldmap.bas"
 #include once "subs/general/formationview.bas"
+#include once "subs/edit/aitools.bas"
+#include once "subs/edit/editai.bas"
 #include once "subs/edit/editmonsters.bas"
 #include once "subs/edit/editformations.bas"
 #include once "subs/edit/editencounters.bas"
