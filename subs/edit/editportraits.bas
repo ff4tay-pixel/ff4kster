@@ -3,7 +3,7 @@
 'palette of the same number, which the game also uses for the Pig, Small and Toad pictures.
 
 const pt_undo_depth = 48
-const portrait_export_width = 32 + image_strip
+const portrait_export_width = 32
 const portrait_export_height = 32
 
 dim shared pt_undo_portrait(pt_undo_depth - 1) as Integer
@@ -143,6 +143,68 @@ sub PortraitFill(portrait as Integer, x as Integer, y as Integer, brush as Integ
 end sub
 
 
+function PortraitColorRole(index as Integer) as String
+
+ 'What the color usually is in the portraits, "" if it has no fixed use
+
+ select case index
+  case 0: return "transparent"
+  case 1: return "white"
+  case 2: return "skin"
+  case 3: return "skin shadow"
+ end select
+
+ return ""
+
+end function
+
+
+function PortraitColorTag(index as Integer) as String
+
+ select case index
+  case 0: return "Clr"
+  case 1: return "Wht"
+  case 2: return "Skn"
+  case 3: return "Shd"
+ end select
+
+ return ""
+
+end function
+
+
+sub PortraitMoveColor(pal as Integer, slot as Integer, other as Integer)
+
+ 'Swaps two palette colors and renumbers the pixels of the portraits that use this palette,
+ ' so that they look the same. Those are the portraits with the palette's own number.
+
+ dim v as UInteger = portrait_palette_raw(pal, slot)
+ dim c as Integer
+
+ portrait_palette_raw(pal, slot) = portrait_palette_raw(pal, other)
+ portrait_palette_raw(pal, other) = v
+
+ for p as Integer = 0 to total_portraits - 1
+  if PortraitDefaultPalette(p) = pal then
+   for r as Integer = 0 to 31
+    for col as Integer = 0 to 31
+     c = portrait_gfx(p, r, col)
+     if c = slot then
+      portrait_gfx(p, r, col) = other
+     elseif c = other then
+      portrait_gfx(p, r, col) = slot
+     end if
+    next
+   next
+  end if
+ next
+
+ pt_undo_count = 0
+ pt_pal_undo_count = 0
+
+end sub
+
+
 sub DrawPortraitScreen(portrait as Integer, pal as Integer, mode as Integer, pixel_x as Integer, pixel_y as Integer, brush as Integer)
 
  'mode: 0 = pixel editor, 1 = palette editor (brush is then the selected color)
@@ -188,15 +250,16 @@ sub DrawPortraitScreen(portrait as Integer, pal as Integer, mode as Integer, pix
   line (px, 320)-(px + 30, 340), PortraitColor(pal, i), bf
   if i = brush then line (px - 2, 318)-(px + 32, 342), RGB(255, 255, 0), b
   WriteText(FF4Text(str(i)), (px + 12) \ 8, 43, 15)
+  if len(PortraitColorTag(i)) > 0 then WriteText(FF4Text(PortraitColorTag(i)), (px + 4) \ 8, 44, 14)
  next
 
  if mode = 1 then
   v = portrait_palette_raw(pal, brush)
-  WriteText(FF4Text("Editing palette " + str(pal) + ", color " + str(brush) + IIf(brush = 0, ", transparent, not editable", "   R " + str(v mod 32) + "  G " + str((v \ 32) mod 32) + "  B " + str((v \ 1024) mod 32))), 2, 46, 14)
-  WriteText(FF4Text("Left Right pick a color. Q A red, W S green, E D blue: up and down"), 2, 49, 15)
-  WriteText(FF4Text("Palette " + str(pal) + " is also used by the Pig, Small and Toad pictures"), 2, 51, 15)
-  WriteText(FF4Text("Ctrl-Z undo   Ctrl-R revert this palette to the loaded ROM"), 2, 53, 15)
-  WriteText(FF4Text("Esc back to the picture"), 2, 55, 15)
+  WriteText(FF4Text("Editing palette " + str(pal) + ", color " + str(brush) + IIf(brush = 0, ", transparent, not editable", IIf(len(PortraitColorRole(brush)) > 0, ", " + PortraitColorRole(brush), "") + "   R " + str(v mod 32) + "  G " + str((v \ 32) mod 32) + "  B " + str((v \ 1024) mod 32))), 2, 46, 14)
+  WriteText(FF4Text("Left Right pick a color. Q A red, W S green, E D blue: up and down"), 2, 48, 15)
+  WriteText(FF4Text("Palette " + str(pal) + " is also used by the Pig, Small and Toad pictures"), 2, 50, 15)
+  WriteText(FF4Text("Bracket keys move this color left or right in the palette, the pixels follow"), 2, 52, 15)
+  WriteText(FF4Text("Ctrl-Z undo   Ctrl-R revert this palette   Esc back to the picture"), 2, 54, 15)
  else
   WriteText(FF4Text("Arrows move   0-7 paint a color   Space paint with brush   F fill"), 2, 48, 15)
   WriteText(FF4Text("Comma Period change palette   P edit the palette colors"), 2, 50, 15)
@@ -358,6 +421,12 @@ sub EditPortrait(portrait_start as Integer)
       raw = portrait_palette_raw(pal, slot) and not (31 shl shift)
       portrait_palette_raw(pal, slot) = raw or (channel shl shift)
      end if
+    case asc("["), asc("]")
+     target = slot + iif(keycode = asc("["), -1, 1)
+     if target >= 1 and target <= 7 then
+      PortraitMoveColor(pal, slot, target)
+      slot = target
+     end if
     case 26 'Ctrl-Z
      if pt_pal_undo_count > 0 then
       pt_pal_undo_count -= 1
@@ -406,7 +475,6 @@ function WritePortraitBMP(path as String, portrait as Integer, pal as Integer) a
   next
  next
  for i as Integer = 0 to 7
-  bmp_px(i, portrait_export_width - 1) = i
   colors(i) = portrait_palette_raw(pal, i)
  next
 
@@ -419,8 +487,10 @@ function ReadPortraitBMP(path as String, portrait as Integer, pal as Integer, by
 
  dim new_palette(15) as UInteger
 
- if not ReadIndexedBMP(path, portrait_export_width, portrait_export_height, problem) then return false
- if not ResolveSwatchPalette(portrait_export_width, portrait_export_height, new_palette(), problem, 8) then return false
+ for i as Integer = 0 to 7
+  new_palette(i) = portrait_palette_raw(pal, i)
+ next
+ if not ReadBMPWithPalette(path, portrait_export_width, portrait_export_height, 8, new_palette(), problem) then return false
 
  for y as Integer = 0 to 31
   for x as Integer = 0 to 31
@@ -508,11 +578,11 @@ sub EditPortraits()
     select case select_portrait.selected - total_portraits
      case 1
       WriteText(FF4Text("Writes one BMP per portrait, portrait_NN_pal_PP.bmp,"), 37, 8, 15)
-      WriteText(FF4Text("33x32. The 8 palette colors are the top right pixels,"), 37, 9, 15)
-      WriteText(FF4Text("top to bottom."), 37, 10, 15)
+      WriteText(FF4Text("32x32. The palette is the BMP's own color table,"), 37, 9, 15)
+      WriteText(FF4Text("colors 0 to 7."), 37, 10, 15)
      case else
-      WriteText(FF4Text("Reads every portrait_NN_pal_PP.bmp. The top right"), 37, 8, 15)
-      WriteText(FF4Text("pixels set the colors of palette PP, which other"), 37, 9, 15)
+      WriteText(FF4Text("Reads every portrait_NN_pal_PP.bmp. Its color table"), 37, 8, 15)
+      WriteText(FF4Text("sets the colors of palette PP, which other"), 37, 9, 15)
       WriteText(FF4Text("portraits of the same character share."), 37, 10, 15)
     end select
    end if

@@ -164,6 +164,72 @@ sub BattlePaletteSaveUndo(pal as Integer, slot as Integer)
 end sub
 
 
+function BattleColorRole(index as Integer) as String
+
+ 'What the color usually is in the character sprites, "" if it has no fixed use
+
+ select case index
+  case 0: return "transparent"
+  case 1: return "black"
+  case 2: return "white, eyes"
+  case 3: return "skin"
+  case 4: return "skin shadow"
+  case 8: return "eye color"
+ end select
+
+ return ""
+
+end function
+
+
+function BattleColorTag(index as Integer) as String
+
+ select case index
+  case 0: return "Tr"
+  case 1: return "Bk"
+  case 2: return "Wh"
+  case 3: return "Sk"
+  case 4: return "Sd"
+  case 8: return "Ey"
+ end select
+
+ return ""
+
+end function
+
+
+sub BattleMoveColor(pal as Integer, slot as Integer, other as Integer)
+
+ 'Swaps two palette colors and renumbers the pixels of the sheet that uses this palette
+ ' (the sheet with the same number), so that it looks the same.
+
+ dim v as UInteger = battle_palette_raw(pal, slot)
+ dim c as Integer
+
+ battle_palette_raw(pal, slot) = battle_palette_raw(pal, other)
+ battle_palette_raw(pal, other) = v
+
+ if pal < total_battle_char_sheets then
+  for t as Integer = 0 to 63
+   for r as Integer = 0 to 7
+    for col as Integer = 0 to 7
+     c = battle_char_gfx(pal, t, r, col)
+     if c = slot then
+      battle_char_gfx(pal, t, r, col) = other
+     elseif c = other then
+      battle_char_gfx(pal, t, r, col) = slot
+     end if
+    next
+   next
+  next
+ end if
+
+ bs_undo_count = 0
+ bs_pal_undo_count = 0
+
+end sub
+
+
 sub DrawBattleSpriteScreen(sheet as Integer, tile_id as Integer, pose as Integer, pal as Integer, mode as Integer, pixel_x as Integer, pixel_y as Integer, brush as Integer)
 
  'mode: 0 = tile sheet, 1 = pixel editor, 2 = palette editor (brush is then the selected color)
@@ -224,13 +290,14 @@ sub DrawBattleSpriteScreen(sheet as Integer, tile_id as Integer, pose as Integer
    line (px - 2, 342)-(px + 29, 366), RGB(255, 255, 0), b
   end if
   WriteText(FF4Text(hex(i)), (px + 10) \ 8, 47, 15)
+  if len(BattleColorTag(i)) > 0 then WriteText(FF4Text(BattleColorTag(i)), (px + 7) \ 8, 48, 14)
  next
 
  if mode = 2 then
-  WriteText(FF4Text("Editing palette " + str(pal) + ", color " + hex(brush) + IIf(brush = 0, ", transparent, not editable", "   R " + str((battle_palette_raw(pal, brush) mod 32)) + "  G " + str((battle_palette_raw(pal, brush) \ 32) mod 32) + "  B " + str((battle_palette_raw(pal, brush) \ 1024) mod 32))), 2, 49, 14)
-  WriteText(FF4Text("Left Right pick a color. Q A red, W S green, E D blue: up and down"), 2, 51, 15)
-  WriteText(FF4Text("Ctrl-Z undo   Ctrl-R revert this palette to the loaded ROM"), 2, 53, 15)
-  WriteText(FF4Text("Esc back to the tile sheet"), 2, 55, 15)
+  WriteText(FF4Text("Editing palette " + str(pal) + ", color " + hex(brush) + IIf(brush = 0, ", transparent, not editable", IIf(len(BattleColorRole(brush)) > 0, ", " + BattleColorRole(brush), "") + "   R " + str((battle_palette_raw(pal, brush) mod 32)) + "  G " + str((battle_palette_raw(pal, brush) \ 32) mod 32) + "  B " + str((battle_palette_raw(pal, brush) \ 1024) mod 32))), 2, 50, 14)
+  WriteText(FF4Text("Left Right pick a color. Q A red, W S green, E D blue: up and down"), 2, 52, 15)
+  WriteText(FF4Text("Bracket keys move this color left or right, the sprite pixels follow"), 2, 54, 15)
+  WriteText(FF4Text("Ctrl-Z undo   Ctrl-R revert this palette   Esc back to the tile sheet"), 2, 56, 15)
  elseif mode = 1 then
   WriteText(FF4Text("Arrows move   0-9 A-F paint a color   Space paint with brush"), 2, 51, 15)
   WriteText(FF4Text("Brackets change the brush. X Y flip. Ctrl-Z undo. Ctrl-C Ctrl-V copy tile"), 2, 53, 15)
@@ -377,6 +444,13 @@ sub EditBattleSheet(sheet as Integer)
       battle_palette_raw(pal, slot) = raw or (channel shl shift)
       RefreshBattlePalettes()
      end if
+    case asc("["), asc("]")
+     s = slot + iif(keycode = asc("["), -1, 1)
+     if s >= 1 and s <= 15 then
+      BattleMoveColor(pal, slot, s)
+      RefreshBattlePalettes()
+      slot = s
+     end if
     case 26 'Ctrl-Z
      if bs_pal_undo_count > 0 then
       bs_pal_undo_count -= 1
@@ -461,13 +535,13 @@ sub EditBattleSprites()
     select case select_sheet.selected - total_battle_char_sheets
      case 1
       WriteText(FF4Text("Writes one BMP per character with all the poses packed"), 37, 8, 15)
-      WriteText(FF4Text("together, poses_NN_pal_PP.bmp, 113x48. The 16 palette"), 37, 9, 15)
-      WriteText(FF4Text("colors are the top right pixels, top to bottom."), 37, 10, 15)
+      WriteText(FF4Text("together, poses_NN_pal_PP.bmp, 112x48. The palette"), 37, 9, 15)
+      WriteText(FF4Text("is the BMP's own color table."), 37, 10, 15)
      case else
       WriteText(FF4Text("Reads every poses_NN_pal_PP.bmp and splits the poses"), 37, 8, 15)
       WriteText(FF4Text("back into tiles. Tiles shared by several poses take"), 37, 9, 15)
       WriteText(FF4Text("the pose you changed. If two differ, the first pose"), 37, 10, 15)
-      WriteText(FF4Text("wins and you are told. The top right pixels set the palette."), 37, 11, 15)
+      WriteText(FF4Text("wins and you are told. The color table sets the palette."), 37, 11, 15)
     end select
    end if
    screenunlock

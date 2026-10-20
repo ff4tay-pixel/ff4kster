@@ -1,24 +1,25 @@
 'Export and import of battle character sprites and palettes.
 '
-'Each character is one 4 bits per pixel BMP, exports\battle_sprites\poses_NN_pal_PP.bmp (113x48). The palette is
-'stored in the image itself: the 16 pixels in the top right corner, from top to bottom (x = 112,
-'y = 0 to 15), are palette colors 0-15 (pixel N has palette index N). The palette number PP is kept
-'in the file name. The poses are packed with no gaps:
+'Each character is one 4 bits per pixel BMP, exports\battle_sprites\poses_NN_pal_PP.bmp (112x48). The palette is
+'the BMP's own color table: entry N is palette color N and a pixel's value is its palette index. The
+'palette number PP is kept in the file name. (Older 113x48 files, with the palette as the 16 pixels in
+'the top right corner, are still read.) The poses are packed with no gaps:
 '
 '    row 1 (7 poses of 16x24):  Standing, Ready, Running, Kneeling, Right arm up, Left arm down,
 '                               Left arm up
 '    row 2:  Hit (x 0), Victory (16), Dead (32, 24 wide), Chant 1 (56), Chant 2 (72),
 '            Special (88, 24 wide). The tile no pose uses sits in Special's empty bottom left corner.
 '
-'On import the 16 palette pixels define palette PP, and every other pixel takes the palette index
-'of the palette pixel with the same color. That keeps indices right even if an image editor
-'reorders the BMP's own color table. Pixels of any other color are rejected.
+'On import the color table defines palette PP and the pixels keep their values, so an image editor must
+'not renumber the colors (the palette editor can reorder them: bracket keys). A pixel above color 15
+'is rejected. For an older file with palette pixels, every other pixel takes the index of the palette
+'pixel with the same color and a pixel of any other color is rejected.
 '
 'Poses share tiles (the head tiles are used by five poses). If the same tile was edited
 'differently in two poses, the first pose (in list order) wins and the import says so.
 
-const image_strip = 1 'columns on the right that hold the palette pixels
-const pose_image_width = 112 + image_strip
+const image_strip = 1 'columns on the right that hold the palette pixels (monster images, and older pose images)
+const pose_image_width = 112 'the palette is the BMP's own color table
 const pose_image_height = 48
 const extra_tile_x = 88 'where the tile that no pose uses is placed (at most one)
 const extra_tile_y = 40
@@ -256,6 +257,21 @@ function ReadIndexedBMP(path as String, width_px as Integer, height_px as Intege
 end function
 
 
+function BmpColorToSnes(c as UInteger) as UInteger
+
+ dim r as Integer = (((c shr 16) and 255) + 4) \ 8
+ dim g as Integer = (((c shr 8) and 255) + 4) \ 8
+ dim b as Integer = ((c and 255) + 4) \ 8
+
+ if r > 31 then r = 31
+ if g > 31 then g = 31
+ if b > 31 then b = 31
+
+ return r + g * 32 + b * 1024
+
+end function
+
+
 function ResolveSwatchPalette(width_px as Integer, height_px as Integer, new_palette() as UInteger, byref problem as String, swatch_count as Integer = 16) as Boolean
 
  'Turns the raw indices in bmp_px into palette indices using the 16 swatch pixels in the top right
@@ -311,6 +327,43 @@ function ResolveSwatchPalette(width_px as Integer, height_px as Integer, new_pal
  next
  
  return true
+
+end function
+
+
+function ReadBMPWithPalette(path as String, width_px as Integer, height_px as Integer, color_count as Integer, new_palette() as UInteger, byref problem as String) as Boolean
+
+ 'Reads an indexed BMP of width_px x height_px into bmp_px. Its own color table is the palette, so pixel
+ ' values are palette color numbers (at most color_count of them). new_palette keeps its value for a color
+ ' that the table does not have. An older image that is image_strip pixels wider and holds the
+ ' palette as pixels in its top right corner is read as well.
+
+ dim first_problem as String
+
+ if ReadIndexedBMP(path, width_px, height_px, problem) then
+  for y as Integer = 0 to height_px - 1
+   for x as Integer = 0 to width_px - 1
+    if bmp_px(y, x) >= color_count then
+     problem = "pixel " + str(x) + "," + str(y) + " uses color " + str(bmp_px(y, x)) + ", but only colors 0 to " + str(color_count - 1) + " exist"
+     return false
+    end if
+   next
+  next
+  for i as Integer = 0 to min(color_count, bmp_table_count) - 1
+   new_palette(i) = BmpColorToSnes(bmp_table(i))
+  next
+  return true
+ end if
+
+ if left(problem, 7) <> "must be" then return false
+ first_problem = problem
+ problem = ""
+ if not ReadIndexedBMP(path, width_px + image_strip, height_px, problem) then
+  problem = first_problem
+  return false
+ end if
+
+ return ResolveSwatchPalette(width_px + image_strip, height_px, new_palette(), problem, color_count)
 
 end function
 
@@ -461,8 +514,6 @@ function WriteBattlePosesBMP(path as String, sheet as Integer, pal as Integer) a
   next
  next
 
- PutPaletteSwatches(pose_image_width)
-
  return WriteIndexedBMP(path, pose_image_width, pose_image_height, pal)
 
 end function
@@ -499,8 +550,10 @@ function ReadBattlePosesBMP(path as String, sheet as Integer, pal as Integer, by
  dim conflicts as String
  dim conflict_count as Integer
 
- if not ReadIndexedBMP(path, pose_image_width, pose_image_height, problem) then return false
- if not ResolveSwatchPalette(pose_image_width, pose_image_height, new_palette(), problem) then return false
+ for i as Integer = 0 to 15
+  new_palette(i) = battle_palette_raw(pal, i)
+ next
+ if not ReadBMPWithPalette(path, pose_image_width, pose_image_height, 16, new_palette(), problem) then return false
 
  for img as Integer = 0 to image_pose_count - 1
   pose_id = ImagePoseId(img)

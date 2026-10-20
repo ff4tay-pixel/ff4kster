@@ -504,6 +504,10 @@ three sizes, every portrait small, and the palette.
     , and .:        Look at the picture with another palette
     P:              Edit the palette colors (Left Right pick a color, Q A red,
                     W S green, E D blue, Ctrl-Z undo, Ctrl-R revert, Esc back)
+    [ and ] in the palette editor:  Move the color left or right in the
+                    palette; the pixels follow, so the picture looks the same
+                    (the portraits that use the palette are renumbered; undo
+                    history is cleared).
     PAGE UP/DOWN:   Other portrait
     HOME / END:     Cursor to the first / last row
     ESC:            Back
@@ -513,12 +517,20 @@ Small and Toad pictures take the palette of whoever was transformed, so changing
 palette 3 recolors every picture shown with it. The editor starts each portrait
 with its own palette number (Pig 14, Small and Toad 15).
 
+Palette colors have usual meanings, shown as short tags under the palette and
+named on the "Editing palette" line. Portraits: 0 transparent, 1 white, 2 skin,
+3 skin shadow (the other colors are free: hair, clothes, ...). Keep these
+numbers when you recolor or reorder, because the game does not care but your
+own images, and the next person using the palette, will.
+
 The last two list entries export and import one BMP per portrait,
-portrait_NN_pal_PP.bmp in exports\portraits. They are 33x32 indexed images:
-the 8 pixels in the top right corner (x = 32, y = 0 to 7) are the palette's
-colors, and every other pixel takes the number of the palette pixel of the same
-color, as in the battle sprite images. Import also sets palette PP (colors 1 to
-7), so several files that name the same palette must agree on its colors. Like
+portrait_NN_pal_PP.bmp in exports\portraits. They are 32x32 indexed images
+whose own color table is the palette: entry N is color N and a pixel's value is
+its color number, so your image editor must not renumber the colors (move a
+color with the bracket keys in the palette editor instead). A pixel above color
+7 is rejected. Import also sets palette PP (colors 1 to 7), so several files
+that name the same palette must agree on its colors. Older 33x32 files that
+store the palette as pixels in the top right corner are still read. Like
 everything else it only changes the in-memory data until Save ROM.
 
 
@@ -540,6 +552,9 @@ On the tile sheet:
     PAGE UP/DOWN:  Change the pose shown in the middle.
     , and .:       Change which palette is used to display the sprite.
     P:             Edit the palette's colors.
+    [ and ] in the palette editor:  Move the color left or right in the
+                   palette; the sheet's pixels follow, so the sprite looks the
+                   same (undo history is cleared).
     CTRL+C / V:    Copy and paste a whole tile.
     CTRL+Z:        Undo.
     R:             Revert the whole sheet to the loaded ROM.
@@ -562,10 +577,16 @@ by other parts of the game as well, so recoloring one can change it elsewhere.
 Golbez and Anna, whose sprites use a different layout, and the tiny Mini and
 Toad forms are not included.
 
+Palette colors have usual meanings, shown as two letter tags under the palette
+and named on the "Editing palette" line: 0 transparent (Tr), 1 black (Bk), 2
+white for the eyes (Wh), 3 skin (Sk), 4 skin shadow (Sd), 8 eye color (Ey). The
+other colors are free (hair, armor, ...). Keep these numbers when you recolor,
+reorder colors or import an image, so that the characters stay consistent.
+
 Export and import. The last two entries of the character list write and read
 one BMP per character in the `exports/battle_sprites` folder next to the editor,
 named `poses_NN_pal_PP.bmp` (NN is the character sheet, PP the palette). Each is
-a 113x48 image with 4 bits per pixel, so it opens in any editor that supports
+a 112x48 image with 4 bits per pixel, so it opens in any editor that supports
 indexed color (Aseprite, GIMP, GraphicsGale, ...). The poses are packed together
 in the order the game uses them:
 
@@ -574,13 +595,14 @@ in the order the game uses them:
     Row 2:  Hit, Victory, Dead (24 wide), Chant 1, Chant 2, Special (24 wide)
 
 The one tile that no pose uses sits in the empty corner under the Special pose.
-The palette is stored in the image itself: the 16 pixels in the top right
-corner, from top to bottom (x = 112, y = 0 to 15), are the palette's colors 0 to
-15, and a sprite pixel's value is its palette color number. On import those 16
-pixels become the palette, and every other pixel takes the number of the palette
-pixel with the same color, so the numbers stay right even if your image editor
-reorders its own color table. A pixel of a color that is not one of the 16 is
-rejected. Colors are rounded to the SNES's 32 levels per channel. Images may
+The palette is the image's own color table: entry N is the palette's color N
+and a sprite pixel's value is its palette color number. On import the table
+becomes the palette and the pixels keep their values, so your image editor must
+not renumber the colors (to reorder them, use the bracket keys in the palette
+editor instead). A pixel above color 15 is rejected. Older 113x48 files that
+store the palette as the 16 pixels in the top right corner are still read; there
+every other pixel takes the number of the palette pixel of the same color.
+Colors are rounded to the SNES's 32 levels per channel. Images may
 be 4 or 8 bits per pixel and uncompressed. Each bad file is skipped with a
 message and the others still import; import only changes the in-memory data, so
 use Save ROM to keep it.
