@@ -22,12 +22,16 @@ IMPORTANT NOTES
   on in case it gets horribly messed up.
   
 * There are some areas of memory to which this editor allows you to add or
-  append data. Some of these have built-in safeguards preventing you from
-  adding in more data than there is room for in the rom. However, others
-  do not (yet). Thus, be careful when adding in extra data, since if you
-  add too much and it doesn't check for room, the new data will simply
-  bleed into whatever comes after it in the rom, possibly breaking your
-  game in a way that may be difficult to repair.
+  append data. Most of them are checked when you save: events, triggers,
+  every bank of messages, item descriptions, map labels and the spell lists
+  show an overflow warning and the ROM is not written if there is too much
+  data (the Space Usage entry on the main menu shows how full each one is),
+  and NPC placements cannot be added once their area is full. Map data is
+  the exception: the map editor shows how much room is left, but saving does
+  not stop you if the maps take up too much space. Extra map data is written
+  over whatever comes after it in the rom, which can break your game in a way
+  that may be difficult to repair, so watch the "Over" counter in the map
+  editor and keep a backup.
 
 ABOUT
 -----
@@ -289,6 +293,13 @@ index will likewise be affected. Note also that for "status healing" effects,
 the statuses that are lit up are the ones that the effect DOES NOT remove.
 The darkened/disabled statuses are the ones it will remove.
 
+Fields. "Information" has the spell's effect (what it does), target, power,
+hit chance, delay (casting time), MP cost, whether it can be reflected, whether
+it can hit bosses, impact and damage flags. "Animation" has the sound effect,
+the palette, the sprites, the sequence and the effect (see above for what the
+last four do). "Elements" picks the element/status chart entry. "Name" is the
+spell's name (6 letters for the player spells, 8 for monster techniques).
+
 
 SPELL SETS
 ----------
@@ -346,6 +357,12 @@ When editing stat bonuses, you can set which stats will get a bonus and which
 will get a penalty. Then you can select from a chart of possible
 bonus/penalty pairs.
 
+Fields. A weapon's editor is split into: Information (name, price, attack,
+hit percentage, description), Element/Status, Stat Bonuses, Races, Properties (long range, throwable, magnetic and
+so on; the names come from config/weaponproperties.dat), Equip (who can equip
+it), Visuals (palette, sprite, swing and slash used when it attacks) and Casts
+(the spell it casts when used, with its power and visual).
+
 
 ARMOR
 -----
@@ -354,12 +371,19 @@ The armor fields are more or less the same as the weapons, but with fewer
 properties to edit. Which armors go in which equip slots (Head, Body, etc)
 can be changed in the Features Editor.
 
+Fields. Information (name, price, defense, evade, magic defense, magic
+evade, whether it is metallic, description), Element/Status, Races, Equip (who
+can equip it) and Stat Bonuses.
+
 
 MEDICINES
 ---------
 
 Medicines are the name I've given to items that cannot be equipped but can be
 used in battle for some kind of effect.
+
+Fields. Information (name, price, visual and description), Effect and
+Element/Status.
 
 
 TOOLS
@@ -369,6 +393,8 @@ Tools are the name I've given to items that can neither be equipped nor used
 in battle. They only have a use on the menu screen, if indeed they have a use
 at all. Some are only plot items such as the package given to you by King
 Baron.
+
+Fields. Name, price and description.
 
 
 SHOPS
@@ -395,6 +421,10 @@ desired, and the names of the spell colors (black, white, call) can be
 changed as well. Changing the name of a spell color will change it for
 all characters, and will not change the name of the corresponding menu
 command in battle.
+
+Fields. "Edit name" changes the job's name. "Edit spell set links" chooses the
+black, white and call spell set the job uses in battle and in the menu. "Edit
+spell set names" renames the spell sets themselves.
 
 
 BATTLE SPRITES
@@ -527,6 +557,14 @@ parameters of certain commands. The more that gets discovered and posted
 about the locations of various features of the commands, the more I will be
 able to expand this component of the editor.
 
+The command editor has three parts. Ranges sets the item ranges that three
+of the commands (the ones that need a particular kind of weapon) are limited
+to. Information has the command's name, target, delay index, the persistent
+and temporary statuses that disable it, and the waiting and acting stances.
+Parameters shows the details that go with the command if it has any that can
+be edited (for example base values, multipliers and the stats and elements
+involved).
+
 
 ACTORS
 ------
@@ -558,6 +596,11 @@ There is a certain actor (default = Edge) whose "black" spell set outside
 of battle will have the text "Black" replaced with another string of text
 (default = "Ninja"). The actor this applies to can be changed, as well as
 the string of text that will replace it.
+
+Fields. An actor's editor is split into Edit Commands, Edit Equipment, Edit
+Load/Save (which character slot it loads from or which shadow slot it saves to),
+Edit Name, Edit Special Set (the Ninja rename) and Edit Job Change (the job a
+character returns with).
 
 
 MESSAGES
@@ -752,6 +795,12 @@ with each placement shown as a red square and the selected one in yellow. Press
 TAB to move a crosshair around it with the arrow keys and press ENTER to select
 the placement under it.
 
+Fields. A trigger has a type, an X and a Y. Treasures have their contents,
+whether they are trapped and the battle that starts if they are. Teleporters
+have a destination map, the destination coordinates and the direction the
+party faces on arrival. Events have the event call (which event runs, with its
+parameters), the flag settings and the list of messages described above.
+
 
 TILESETS
 --------
@@ -774,6 +823,11 @@ committing to a certain color palette in the Map Info editor, but also
 the default palette index 0 has a lot of black and thus some tiles from
 other tilesets are not visible under this palette.
 
+Fields. A tile has these yes/no properties: Layer 1, Layer 2, Bridge Layer,
+Save Point, Closed Door, Damage Floor, Walk Behind, Bottom Half, Warp, Talk
+Over, Encounters and Triggerable, plus a few bits whose purpose is not known
+(shown as "Byte 1 Bit 5", "Byte 1 Bit 6", "Byte 1 Bit 7" and "Byte 2 Bit 1").
+
 
 MAP INFO
 --------
@@ -785,6 +839,13 @@ the appropriate menus. Sometimes the "NPC Index" of a map is different from the
 map index itself. In such a situation, the NPC placements for that map in the
 NPC editor will appear on a different map (the map specified by the NPC Index;
 if the map has the "underground" flag set, then add 256 to find the actual map).
+
+Fields. "Edit information" has the map's name, grid index, whether it is
+underground, music, whether it is warpable and exitable, magnetic, the
+encounter rate, and a mystery flag. "Edit graphics" has the battle background,
+tileset, border tile, tile palette, the two NPC palettes and the NPC index.
+"Edit background" has the background layer, vertical and horizontal scrolling,
+move direction and speed, whether it is translucent, and another mystery flag.
 
 
 MAPS
@@ -853,8 +914,9 @@ with the locations of other things such as triggers and npcs. It also
 displays the amount of space remaining for map data in total. If this
 number is displayed in red, it means there is more map data to store than
 room to store it in the rom, so you must delete or simplify some maps to
-reduce it down before saving; otherwise, you will get a "Map Data Overflow"
-error and the data will not be saved. This number is not updated as you
+reduce it down before saving. The editor does NOT stop you from saving while
+it is red: the extra data would be written over whatever follows the map data
+in the rom and can break the game, so always fix it first. This number is not updated as you
 edit; it is only updated when you go back to the map selection menu.
 
 
@@ -962,6 +1024,13 @@ Since there is no way for an event to "know" the nature of the map the
 player is on when it executes, the formation display in the event editor
 previews both formations.
 
+Fields. Each formation has its arrangement, battle music, whether it is an
+auto battle, a back attack, a "versus player" battle, whether the monsters are
+transparent or floating, whether the party can flee or can lose, whether it
+gives rewards, whether defeating the boss ends the battle, and two parameters
+whose purpose is not known ("Mystery Amount" and "Mystery Byte"), plus the
+monsters in it.
+
 
 ENCOUNTERS
 ----------
@@ -1014,6 +1083,65 @@ an actor. Whenever this formation is encountered, it will hide all actors
 except the one specified, unless the one specified is the "Non-solo"
 actor. In that case, only that actor will be hidden, and the rest will be
 visible/playable as normal.
+
+
+CONFIG FILES
+------------
+
+Labels that the ROM does not contain are read from the files in the `config`
+folder (next to the program). They are plain text, one entry per line. Every
+line starts with the entry's number and the label starts at a fixed column, so
+keep the columns lined up with the existing lines, use spaces and not tabs,
+and save the file as plain text. You can change a label, delete a line (the
+editor then shows a default like "Map 012"), or add lines for numbers that
+are not listed yet. Changes are read when the editor starts. The "From" column
+below says whether the first number on a line starts at 0 or at 1, and "Label
+at" is the column the label starts in (counting the first character as 1).
+
+  File                  What it names                            From  Label at
+  actors.dat            Actors (the party members)               1     5
+  battlebgs.dat         Battle backgrounds                       1     4
+  characters.dat        Characters (starting data / levelups)    1     5
+  effects.dat           Spell animation "effects"                0     6
+  elements.dat          Elements and statuses                    1     4
+  events.dat            Events                                   1     5
+  flags.dat             Plot flags                               0     5
+  maps.dat              Maps                                     1     5
+  monstersizes.dat      Monster sprite sizes                     0     5
+  npcs.dat              NPCs                                     0     5
+  npcsprites.dat        NPC sprites                              0     5
+  palettes.dat          Spell and weapon animation palettes      0     5
+  poses.dat             Battle poses                             1     4
+  races.dat             Races (monster / weapon)                 1     3
+  sequences.dat         Spell animation "sequences"              0     6
+  shop.dat              Shops                                    1     after the colon
+  slashes.dat           Weapon slash animations                  0     5
+  songs.dat             Songs                                    1     4
+  soundeffects.dat      Sound effects                            0     5
+  spelleffects.dat      What a spell does (its effect)           0     5
+  spellsets.dat         Spell sets                               1     5
+  stances.dat           Battle stances                           1     4
+  swings.dat            Weapon swing animations                  0     5
+  targets.dat           Target types                             0     3
+  tilesets.dat          Tilesets                                 1     4
+  visualfx.dat          Visual effects (medicines, weapon casts) 0     5
+  weaponproperties.dat  Weapon property flags (1 to 8)           1     3
+  weaponsprites.dat     Weapon sprites                           0     5
+
+Three files are different:
+
+  font.dat                  Which FF4 character each typed character becomes.
+                            Each line is the typed character, a space and the
+                            FF4 character code in hex (for example "A 42").
+                            Characters that are not listed become "?".
+  monstergfxpointers.dat    The "Template" list in the monster graphics editor.
+                            Each line is a pointer, a slash and a size code
+                            ("32768/0") followed by a label that starts at
+                            column 11.
+  lunar.dat                 Monsters that are always treated as lunar, so the
+                            monster editor uses their lunar AI scripts. Each
+                            line is a monster number and a label; lines that
+                            start with # are ignored.
 
 
 ACKNOWLEDGEMENTS
@@ -1071,6 +1199,8 @@ VERSION HISTORY
     - CSV export/import and the two ROM comparisons are hidden from the menu
     - Removed the breadcrumb line
     - Help text no longer uses symbols the font cannot draw
+    - README documents the config files, the fields of each editor, the
+      overview maps, the shared keys and which areas are checked for space
 
 * 0.8
     - Added safeguard to prevent overflow in:
