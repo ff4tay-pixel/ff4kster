@@ -18,6 +18,9 @@
 '  party members used as enemies (size 40-7F) are drawn from the battle sprite sheets: edit them with the
 '                                  Battle Sprites editor.
 '
+'After an import the sprite editor sorts the palette the usual way (1 black, 2 white, the rest from light
+'to dark; MsSortPalette), renumbering every monster that shares the tiles or palette.
+'
 'Importing writes the tiles and the palette straight into the ROM image, so every monster that uses the
 'same graphics pointer or the same palette changes too (the message says how many).
 

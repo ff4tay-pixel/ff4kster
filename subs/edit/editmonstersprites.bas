@@ -23,6 +23,7 @@ dim shared ms_pal_undo_slot(ms_undo_depth - 1) as Integer
 dim shared ms_pal_undo_value(ms_undo_depth - 1) as UInteger
 dim shared ms_pal_undo_count as Integer
 dim shared ms_touched(&h30000) as UByte 'tiles already renumbered, by address \ 8
+dim shared ms_family_tile(&h30000) as UByte 'tiles used by the monsters whose colors move together, by address \ 8
 dim shared ms_fill_x(191 * 191) as Integer
 dim shared ms_fill_y(191 * 191) as Integer
 
@@ -171,10 +172,47 @@ sub MsCommitPalette()
 end sub
 
 
+function MsMonsterTiles(i as Integer, mark as Boolean) as Boolean
+
+ 'Marks the tiles of monster i in ms_family_tile (mark = true), or tells whether any of them is marked
+
+ dim gfx_ptr as Integer = monsters(i).gfx_ptr1 + monsters(i).gfx_ptr2 * &h100
+ dim deep as Boolean = MonsterIsDeep(gfx_ptr)
+ dim tiles_wide as Integer
+ dim tiles_high as Integer
+ dim palette_id as Integer
+ dim cell_count as Integer
+ dim problem as String
+ dim start as Integer = MonsterSpriteOffset(gfx_ptr)
+ dim bytes as Integer = MonsterTileBytes(deep)
+ dim address as Integer
+
+ if not MonsterLayout(monsters(i).size, monsters(i).pal, tiles_wide, tiles_high, palette_id, cell_count, problem) then return false
+ for n as Integer = 0 to cell_count - 1
+  if boss_cells(n) >= 0 and boss_cells(n) < ms_max_cells then
+   address = (start + boss_cells(n) * bytes) \ 8
+   if address >= 0 and address <= ubound(ms_family_tile) then
+    if mark then
+     ms_family_tile(address) = 1
+    elseif ms_family_tile(address) <> 0 then
+     return true
+    end if
+   end if
+  end if
+ next
+
+ return false
+
+end function
+
+
 sub MsMoveColor(slot as Integer, other as Integer)
 
  'Swaps two palette colors and renumbers the pixels of every monster that uses this palette, so they all
- ' look the same. The picture being edited is stored first and read back afterwards.
+ ' look the same. Many monsters are recolors: they draw the same tiles with another palette. Those
+ ' palettes get the same two colors swapped, and so on for everything that shares tiles or a palette
+ ' with them, so nothing changes how it looks. The picture being edited is stored first and read back
+ ' afterwards.
 
  dim gfx_ptr as Integer
  dim size as Integer
@@ -189,43 +227,102 @@ sub MsMoveColor(slot as Integer, other as Integer)
  dim tile_number as Integer
  dim c as Integer
  dim tile_px(63) as UByte
+ dim member(total_monsters) as Boolean 'monsters whose tiles are renumbered
+ dim palette_of(total_monsters) as Integer
+ dim palette_in(total_monster_palettes) as Boolean 'palettes that get the two colors swapped
+ dim grew as Boolean
+ dim v1 as Integer
+ dim v2 as Integer
 
  MsCommit()
  for i as Integer = 0 to ubound(ms_touched)
   ms_touched(i) = 0
  next
 
+ 'The family: monsters using this palette, then any that share their tiles or palettes, and so on
  for i as Integer = 1 to total_monsters
   size = monsters(i).size
   gfx_ptr = monsters(i).gfx_ptr1 + monsters(i).gfx_ptr2 * &h100
   user_deep = MonsterIsDeep(gfx_ptr)
+  palette_of(i) = -1
   if (size < &h40 or size >= &h80) and user_deep = ms_deep then
    if MonsterLayout(size, monsters(i).pal, tiles_wide, tiles_high, palette_id, cell_count, problem) then
-    if palette_id = ms_palette_id then
-     start = MonsterSpriteOffset(gfx_ptr)
-     bytes = MonsterTileBytes(user_deep)
-     for n as Integer = 0 to cell_count - 1
-      tile_number = boss_cells(n)
-      if tile_number >= 0 and tile_number < ms_max_cells and start + tile_number * bytes + bytes <= len(ff4rom) then
-       if ms_touched((start + tile_number * bytes) \ 8) = 0 then
-        ms_touched((start + tile_number * bytes) \ 8) = 1
-        for row as Integer = 0 to 7
-         for col as Integer = 0 to 7
-          c = MonsterTileColor(start, tile_number, row, col, user_deep)
-          if c = slot then
-           c = other
-          elseif c = other then
-           c = slot
-          end if
-          tile_px(row * 8 + col) = c
-         next
-        next
-        MonsterWriteTile(start, tile_number, tile_px(), user_deep)
-       end if
-      end if
-     next
-    end if
+    palette_of(i) = palette_id
+    if palette_id = ms_palette_id then member(i) = true
    end if
+  end if
+ next
+ palette_in(ms_palette_id) = true
+ if not ms_deep then
+  for i as Integer = 0 to ubound(ms_family_tile)
+   ms_family_tile(i) = 0
+  next
+  for i as Integer = 1 to total_monsters
+   if member(i) then MsMonsterTiles(i, true)
+  next
+  do
+   grew = false
+   for i as Integer = 1 to total_monsters
+    if member(i) then palette_in(palette_of(i)) = true
+   next
+   for i as Integer = 1 to total_monsters
+    if palette_of(i) >= 0 and not member(i) then
+     if palette_in(palette_of(i)) or MsMonsterTiles(i, false) then
+      member(i) = true
+      MsMonsterTiles(i, true)
+      grew = true
+     end if
+    end if
+   next
+  loop until not grew
+  for i as Integer = 1 to total_monsters
+   if member(i) then palette_in(palette_of(i)) = true
+  next
+ end if
+
+ for i as Integer = 1 to total_monsters
+  if member(i) then
+   size = monsters(i).size
+   gfx_ptr = monsters(i).gfx_ptr1 + monsters(i).gfx_ptr2 * &h100
+   user_deep = MonsterIsDeep(gfx_ptr)
+   if MonsterLayout(size, monsters(i).pal, tiles_wide, tiles_high, palette_id, cell_count, problem) then
+    start = MonsterSpriteOffset(gfx_ptr)
+    bytes = MonsterTileBytes(user_deep)
+    for n as Integer = 0 to cell_count - 1
+     tile_number = boss_cells(n)
+     if tile_number >= 0 and tile_number < ms_max_cells and start + tile_number * bytes + bytes <= len(ff4rom) then
+      if ms_touched((start + tile_number * bytes) \ 8) = 0 then
+       ms_touched((start + tile_number * bytes) \ 8) = 1
+       for row as Integer = 0 to 7
+        for col as Integer = 0 to 7
+         c = MonsterTileColor(start, tile_number, row, col, user_deep)
+         if c = slot then
+          c = other
+         elseif c = other then
+          c = slot
+         end if
+         tile_px(row * 8 + col) = c
+        next
+       next
+       MonsterWriteTile(start, tile_number, tile_px(), user_deep)
+      end if
+     end if
+    next
+   end if
+  end if
+ next
+
+ 'the other palettes of the family swap the same two colors
+ for pid as Integer = 0 to total_monster_palettes - 1
+  if palette_in(pid) and pid <> ms_palette_id and not ms_deep then
+   v1 = ByteAt(monster_palette_table + pid * 16 + slot * 2) + ByteAt(monster_palette_table + pid * 16 + slot * 2 + 1) * &h100
+   v2 = ByteAt(monster_palette_table + pid * 16 + other * 2) + ByteAt(monster_palette_table + pid * 16 + other * 2 + 1) * &h100
+   WriteByte(monster_palette_table + pid * 16 + slot * 2, v2 mod &h100)
+   WriteByte(monster_palette_table + pid * 16 + slot * 2 + 1, v2 \ &h100)
+   WriteByte(monster_palette_table + pid * 16 + other * 2, v1 mod &h100)
+   WriteByte(monster_palette_table + pid * 16 + other * 2 + 1, v1 \ &h100)
+   monster_palettes(pid + 1, slot) = RGB((v2 mod 32) * 8, ((v2 \ 32) mod 32) * 8, ((v2 \ 1024) mod 32) * 8)
+   monster_palettes(pid + 1, other) = RGB((v1 mod 32) * 8, ((v1 \ 32) mod 32) * 8, ((v1 \ 1024) mod 32) * 8)
   end if
  next
 
@@ -236,6 +333,88 @@ sub MsMoveColor(slot as Integer, other as Integer)
  ms_pal_undo_count = 0
 
 end sub
+
+
+function MsDeepUser() as Integer
+
+ 'A monster with 16 color art that uses this palette as one of its two, or 0. Its tiles number the colors
+ ' of both palettes, so this palette cannot be reordered without that art.
+
+ dim tiles_wide as Integer
+ dim tiles_high as Integer
+ dim palette_id as Integer
+ dim cell_count as Integer
+ dim problem as String
+
+ for i as Integer = 1 to total_monsters
+  if (monsters(i).size < &h40 or monsters(i).size >= &h80) and MonsterIsDeep(monsters(i).gfx_ptr1 + monsters(i).gfx_ptr2 * &h100) then
+   if MonsterLayout(monsters(i).size, monsters(i).pal, tiles_wide, tiles_high, palette_id, cell_count, problem) then
+    if palette_id = ms_palette_id or palette_id + 1 = ms_palette_id then return i
+   end if
+  end if
+ next
+
+ return 0
+
+end function
+
+
+function MsSortPalette() as String
+
+ 'Puts the palette in the usual order for monsters: color 0 transparent, 1 the darkest (black), 2 the
+ ' lightest (white), and the rest from light to dark. Every monster that uses the palette is renumbered,
+ ' so none of them changes how it looks. Returns a message.
+
+ dim brightness(7) as Integer
+ dim wanted(7) as Integer 'the color now at each place that should end up there
+ dim current(7) as Integer 'which original color sits at each place now
+ dim used(7) as Boolean
+ dim best as Integer
+ dim found as Integer
+ dim swaps as Integer
+ dim q as Integer
+
+ if ms_deep then return "The 16 color art keeps its palette as it is."
+ if MsDeepUser() > 0 then return "Palette not sorted: monster " + str(MsDeepUser()) + " has 16 color art that uses it."
+
+ for i as Integer = 1 to 7
+  brightness(i) = 30 * (ms_pal(i) mod 32) + 59 * ((ms_pal(i) \ 32) mod 32) + 11 * ((ms_pal(i) \ 1024) mod 32)
+  current(i) = i
+ next
+
+ 'place 1 takes the darkest, place 2 the lightest, the others the lightest left over
+ for place as Integer = 1 to 7
+  found = 0
+  for i as Integer = 1 to 7
+   if not used(i) then
+    if found = 0 then
+     found = i
+    elseif place = 1 and brightness(i) < brightness(found) then
+     found = i
+    elseif place >= 2 and brightness(i) > brightness(found) then
+     found = i
+    end if
+   end if
+  next
+  wanted(place) = found
+  used(found) = true
+ next
+
+ for place as Integer = 1 to 7
+  if current(place) <> wanted(place) then
+   for q = place + 1 to 7
+    if current(q) = wanted(place) then exit for
+   next
+   MsMoveColor(place, q)
+   swap current(place), current(q)
+   swaps += 1
+  end if
+ next
+
+ if swaps = 0 then return "The palette was already in the usual order."
+ return "Palette sorted: 1 black, 2 white, the rest from light to dark."
+
+end function
 
 
 sub MsSaveUndo()
@@ -423,7 +602,7 @@ sub MsDrawScreen(index as Integer, mode as Integer, zoom as Integer, cx as Integ
   WriteText(FF4Text("Arrows move   0-9 paint a color   Space paints with the brush   F fill"), 2, 48, 15)
   WriteText(FF4Text("Minus Plus pick the brush   P edit the palette colors   Ctrl-Z undo"), 2, 50, 15)
   WriteText(FF4Text("X Y flip a plain monster   Ctrl-R revert   PgUp PgDn other monster"), 2, 52, 15)
-  WriteText(FF4Text("E export a BMP   I import a BMP   exports\monster_sprites"), 2, 54, 15)
+  WriteText(FF4Text("E export a BMP   I import a BMP   O sort the palette"), 2, 54, 15)
   WriteText(FF4Text("Mouse: click and drag paint, right click picks a color, click a swatch"), 2, 55, 15)
  end if
  if len(message) > 0 then WriteText(FF4Text(message), 2, 56, 12)
@@ -614,8 +793,15 @@ sub EditMonsterSprite(index_start as Integer)
       InfoBox(ExportMonsterImage(index) + "||Press any key", 4, 20)
      case asc("i"), asc("I")
       if ConfirmBox("Import replaces this monster's tiles and palette. Continue?") then
-       InfoBox(ImportMonsterImage(index) + "||Press any key", 4, 20)
+       message = ImportMonsterImage(index)
        loaded = MsLoad(index, problem)
+       if loaded then message += "||" + MsSortPalette()
+       InfoBox(message + "||Press any key", 4, 20)
+       message = ""
+      end if
+     case asc("o"), asc("O")
+      if ConfirmBox("Sort the palette: 1 black, 2 white, the rest light to dark?") then
+       message = MsSortPalette()
       end if
      case asc("p"), asc("P")
       mode = 1

@@ -509,7 +509,15 @@ does not undo it, but Ctrl-R in the sprite editor does.
                     W S green, E D blue, Ctrl-Z undo, Ctrl-R revert, Esc back).
                     Bracket keys move the color left or right in the palette
                     and renumber the pixels of every monster that uses the
-                    palette, so they all look the same.
+                    palette, so they all look the same. Recolors (monsters
+                    that draw the same tiles with another palette) get the
+                    same two colors swapped in their palettes.
+    O:              Sort the palette the usual way for monsters: color 0
+                    transparent, 1 black (the darkest), 2 white (the lightest)
+                    and the rest from light to dark. All monsters that use the
+                    palette, and their recolors, are renumbered so none of
+                    them changes. Not done for 16 color art, nor for a palette
+                    that 16 color art uses.
     E / I:          Export / import the picture as a BMP, see below
     PgUp / PgDn:    Previous / next monster
     Mouse:          Click and drag paint, right click picks the color under the
@@ -526,7 +534,10 @@ images one pixel wider, with the palette as pixels in the top right corner, are
 still read. Bosses export their tile map cells (empty cells stay blank); if one
 tile appears in several cells and they were edited differently, the first cell
 wins and the import says so. Importing also changes every monster that shares
-the graphics or palette. Zeromus's last form and the Dummy have 16 color art
+the graphics or palette. After an import the palette is sorted the usual way
+(the same as the O key: 1 black, 2 white, the rest from light to dark), so the
+color numbers in your image do not have to follow that order; the message says
+if the palette was sorted or left alone. Zeromus's last form and the Dummy have 16 color art
 (the game checks the graphics pointer: below 8000h means 4 bits per pixel, using
 the palette and the one after it): their images have 16 colors and importing
 also rewrites the following palette.
