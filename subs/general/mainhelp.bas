@@ -9,6 +9,8 @@ sub HelpLine(lines() as String, byref n as Integer, s as String)
 end sub
 
 
+dim shared last_help_rows as Integer 'height of the help box drawn last time
+
 sub DrawMainHelp(selected as Integer)
 
  dim x as Integer = 28
@@ -127,9 +129,14 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "if there are unsaved edits.")
  end select
 
+ 'The box is as tall as its text, so wipe whatever the previous (taller) box left below it
+ screenlock
+ if last_help_rows > n + 2 then line (x * 8, (y + n + 2) * 8)-((x + w + 2) * 8 - 1, (y + last_help_rows) * 8 - 1), RGB(0, 0, 0), bf
  BlueBox(x, y, w, n)
  for i as Integer = 1 to n
   WriteText(FF4Text(left(lines(i), w - 1)), x + 1, y + i, iif(lines(i) = "KEYS IN EVERY MENU" or lines(i) = "THIS ENTRY", 14, 15))
  next
+ screenunlock
+ last_help_rows = n + 2
 
 end sub

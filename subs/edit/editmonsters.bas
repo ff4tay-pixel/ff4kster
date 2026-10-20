@@ -51,7 +51,6 @@ sub EditMonsters()
  edit_monster.AddOption(FF4Text("Edit Stats"))
  edit_monster.AddOption(FF4Text("Edit Drops"))
  edit_monster.AddOption(FF4Text("Edit Extras"))
- edit_monster.AddOption(FF4Text("View Sprite"))
  
  do
  
@@ -295,9 +294,6 @@ sub EditMonsters()
 
       loop until monster_flags.cancelled
       monster_flags.cancelled = false
-
-     case 7 'View Sprite
-      ShowMonsterSprite(monsters(select_monster.selected).gfx_ptr1 + monsters(select_monster.selected).gfx_ptr2 * &h100, monsters(select_monster.selected).size, monsters(select_monster.selected).pal, monsters(select_monster.selected).name)
 
     end select
    
