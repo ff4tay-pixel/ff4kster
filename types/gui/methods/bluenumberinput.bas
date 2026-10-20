@@ -33,13 +33,27 @@ function BlueNumberInput.UserInput() as Boolean
   case END_KEY
    number = max_value
   case BACKSPACE_KEY
-   number = number \ 10
+   if number_hex_mode then number = number \ 16 else number = number \ 10
    if number < min_value then number = min_value
+  case asc("x"), asc("X") 'switch between decimal and hexadecimal entry
+   number_hex_mode = not number_hex_mode
+   input_started = false
   case asc("0") to asc("9")
+   if number_hex_mode then
+    if input_started then number *= 16 else number = 0
+   else
     if input_started then number *= 10 else number = 0
+   end if
    number += a - 48
    if number > max_value then number = max_value
+   input_started = true
+  case asc("a") to asc("f"), asc("A") to asc("F")
+   if number_hex_mode then
+    if input_started then number *= 16 else number = 0
+    number += (a and 7) + 9 '"A" and "a" both give 10
+    if number > max_value then number = max_value
     input_started = true
+   end if
  end select
  
  return result
@@ -49,8 +63,18 @@ end function
 
 sub BlueNumberInput.Display()
 
- BlueBox(x, y, len(str(max_value)), 1)
- WriteText(FF4Text(Pad(str(number), len(str(max_value)), true)), x + 1, y + 1)
+ dim shown as String
+ dim w as Integer = len(str(max_value))
+
+ BlueBox(x, y, w, 1)
+ if number_hex_mode then
+  shown = hex(number, len(hex(max_value)))
+  if len(shown) + 1 <= w then shown = "$" + shown
+  shown = Pad(shown, w, true)
+ else
+  shown = Pad(str(number), w, true)
+ end if
+ WriteText(FF4Text(shown), x + 1, y + 1)
 
 end sub
 

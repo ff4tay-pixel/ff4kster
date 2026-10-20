@@ -28,6 +28,7 @@ sub DrawMainHelp(selected as Integer)
  HelpLine(lines(), n, "Ctrl-N        Find next match")
  HelpLine(lines(), n, "Ctrl-G        Go to entry number")
  HelpLine(lines(), n, "F1            Key help in any menu")
+ HelpLine(lines(), n, "X            Hex or decimal in number boxes")
  HelpLine(lines(), n, "Tab           Switch panel two-pane editors")
  HelpLine(lines(), n, "")
  HelpLine(lines(), n, "THIS ENTRY")
@@ -99,8 +100,8 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "Autobattle scripts: Insert / Delete edit")
    HelpLine(lines(), n, "commands.")
   case 26
-   HelpLine(lines(), n, "Writes spells, items and monsters to")
-   HelpLine(lines(), n, "exports/NAME.csv for a spreadsheet.")
+   HelpLine(lines(), n, "Writes spells, items, monsters, shops and")
+   HelpLine(lines(), n, "formations to exports/NAME.csv.")
   case 27
    HelpLine(lines(), n, "Reads exports/NAME.csv back in. Only")
    HelpLine(lines(), n, "the columns in the file are changed.")
@@ -114,6 +115,13 @@ sub DrawMainHelp(selected as Integer)
   case 30
    HelpLine(lines(), n, "Type part of a spell, item or monster name,")
    HelpLine(lines(), n, "pick a match, and its editor opens on it.")
+  case 31
+   HelpLine(lines(), n, "Shows how full each fixed ROM area is")
+   HelpLine(lines(), n, "events, triggers, text, descriptions.")
+   HelpLine(lines(), n, "Over 100% means Save ROM will refuse.")
+  case 32
+   HelpLine(lines(), n, "Lists every spell, item and monster you")
+   HelpLine(lines(), n, "changed since loading; pick one to open it.")
   case else
    HelpLine(lines(), n, "Leave the editor. You are asked to save")
    HelpLine(lines(), n, "if there are unsaved edits.")

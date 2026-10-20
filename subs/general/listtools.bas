@@ -64,6 +64,22 @@ sub RefreshEntryColor(list_menu as BlueMenu, kind as String, i as Integer)
 end sub
 
 
+function KindTitle(kind as String) as String
+
+ select case kind
+  case "spells": return "Spells"
+  case "weapons": return "Weapons"
+  case "armors": return "Armors"
+  case "medicines": return "Medicines"
+  case "tools": return "Tools"
+  case "monsters": return "Monsters"
+ end select
+
+ return kind
+
+end function
+
+
 function EntryName(kind as String, i as Integer) as String
 
  select case kind
@@ -344,6 +360,7 @@ function ListInput(list_menu as BlueMenu, kind as String) as Boolean
   RefreshEntryColor(list_menu, kind, i)
  next
 
+ DrawBreadcrumb("Main menu > " + KindTitle(kind) + " > " + FF4Name(EntryName(kind, list_menu.selected)))
  result = list_menu.UserInput()
  if result then
   if not list_menu.cancelled then last_list_pos(k) = list_menu.selected

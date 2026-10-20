@@ -1,3 +1,27 @@
+dim shared disk_rom as String 'what the ROM file contained when last read or written
+
+function SafeToSave(filename as String) as Boolean
+
+ 'Returns false if the ROM file changed on disk since this editor loaded or
+ ' last saved it and the user chooses not to overwrite it.
+
+ dim a as Integer = freefile
+ dim raw as String
+ dim current as String
+
+ if open(filename for binary access read as #a) <> 0 then return true
+ raw = string(lof(a), 0)
+ if lof(a) > 0 then get #a, , raw
+ close #a
+
+ if len(raw) = 1048576 then current = string(&h200, 0) + raw else current = raw
+ if current = disk_rom then return true
+
+ return ConfirmBox("The ROM file changed on disk. Overwrite it?")
+
+end function
+
+
 function CopyFile(source as String, destination as String) as Boolean
 
  'Copies a file byte for byte. Returns true on success.
@@ -218,6 +242,7 @@ sub SaveData(filename as String)
    if unheadered then temp = mid(ff4rom, &h200 + 1)
    put #1, , temp
    close #1
+   disk_rom = ff4rom
   end if
  end if
  

@@ -7,6 +7,7 @@ dim shared warning as Boolean
 dim shared modified as Boolean
 dim shared keyboard_sidebar_enabled as Boolean
 dim shared unheadered as Boolean
+dim shared number_hex_mode as Boolean 'X toggles hex entry in number boxes
 dim shared backup_done as Boolean
 dim shared last_backup_name as String
 dim shared ifpatch as Boolean

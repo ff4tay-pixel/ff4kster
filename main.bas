@@ -52,6 +52,7 @@ screen 18, 32
 ' Only these temporary memory objects will be affected by the editor directly.
 ' It will not write anything to the actual ROM until you explicitly tell it to save.
 ReadData(filename)
+disk_rom = original_rom
 BuildBaselineROM()
 SnapshotOriginalRows()
 
@@ -113,6 +114,8 @@ editor_menu.AddOption(FF4Text("Import CSV"))
 editor_menu.AddOption(FF4Text("Compare to Original ROM"))
 editor_menu.AddOption(FF4Text("Compare with ROM File"))
 editor_menu.AddOption(FF4Text("Search Everywhere"))
+editor_menu.AddOption(FF4Text("Space Usage"))
+editor_menu.AddOption(FF4Text("Changed Entries"))
 editor_menu.AddOption(FF4Text("Quit"))
 
 save_prompt.x = 24
@@ -133,18 +136,19 @@ do
 
  if not editor_menu.cancelled then
 
-  if (editor_menu.selected >= 2 and editor_menu.selected <= 25) or editor_menu.selected = 30 then
+  if (editor_menu.selected >= 2 and editor_menu.selected <= 25) or editor_menu.selected = 30 or editor_menu.selected = 32 then
    modified = true
    editor_menu.ChangeOption(1, FF4Text("Save ROM *"))
   end if
 
   'Start every editor on a black screen so nothing from the main menu is left behind.
-  if editor_menu.selected >= 2 and editor_menu.selected <= 30 then cls
+  if editor_menu.selected >= 2 and editor_menu.selected <= 32 then cls
+  if editor_menu.selected >= 2 and editor_menu.selected <= 32 then DrawBreadcrumb("Main menu > " + FF4Name(editor_menu.options.ItemAt(editor_menu.selected)))
 
   select case editor_menu.selected
 
    case 1 'Save
-    SaveData(filename)
+    if SafeToSave(filename) then SaveData(filename) else warning = true
     editor_menu.Display()
     if warning then
      warning = false
@@ -190,6 +194,8 @@ do
    case 28: CompareWithOriginal()
    case 29: CompareWithFile()
    case 30: SearchEverywhere()
+   case 31: ShowSpaceUsage()
+   case 32: ChangedEntries()
 
    case else
     if not modified then
@@ -200,7 +206,7 @@ do
     if not save_prompt.cancelled then
      select case save_prompt.selected
       case 1
-       SaveData(filename)
+       if SafeToSave(filename) then SaveData(filename) else warning = true
        if warning then
         warning = false
         BlueBox(20, 1, 11, 1)

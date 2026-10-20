@@ -40,6 +40,8 @@ function CsvTableSize(kind as String) as Integer
   case "medicines": return total_medicines
   case "tools": return total_tools
   case "monsters": return total_monsters
+  case "shops": return total_shops
+  case "formations": return total_formations
  end select
 
  return 0
@@ -60,6 +62,12 @@ function CsvHeader(kind as String) as String
    return "id,name,price_code,casting_time,target,power,boss,hit,impact,damage,effect,element_code,mp_cost,reflectable,visual"
   case "tools"
    return "id,name,price_code"
+  case "shops"
+   return "id,item1,item2,item3,item4,item5,item6,item7,item8"
+  case "formations"
+   return "id,mystery_flag1,mystery_flag2,mystery_flag3,back_attack,boss_death,egg1,egg2,egg3,monster_type1,monster_type2,monster_type3," + _
+    "mystery_qty,monster_qty1,monster_qty2,monster_qty3,arrangement,no_flee,no_gameover,battle_music,character_battle,auto_battle," + _
+    "floating,transparent,mystery_byte,rewards"
   case "monsters"
    return "id,name,boss,level,hp,gil,xp,physical_attack_index,physical_defense_index,magical_defense_index,speed_index,drop_rate,drop_index," + _
     "attack_sequence_group,lunar,has_attack_element,has_resistances,has_weaknesses,has_spell_power,has_race,has_reaction," + _
@@ -134,6 +142,22 @@ function CsvRow(kind as String, i as Integer) as String
 
   case "tools"
    result = str(i) + "," + CsvQuote(FF4Name(tools(i).name)) + "," + str(tools(i).price_code)
+
+  case "shops"
+   result = str(i)
+   for j as Integer = 1 to 8
+    result += "," + str(shops(i).wares(j))
+   next
+
+  case "formations"
+   with formations(i)
+    result = str(i) + "," + str(BoolInt(.mystery_flag1)) + "," + str(BoolInt(.mystery_flag2)) + "," + str(BoolInt(.mystery_flag3)) + "," + _
+     str(BoolInt(.back_attack)) + "," + str(BoolInt(.boss_death)) + "," + str(BoolInt(.egg(1))) + "," + str(BoolInt(.egg(2))) + "," + str(BoolInt(.egg(3))) + "," + _
+     str(.monster_type(1)) + "," + str(.monster_type(2)) + "," + str(.monster_type(3)) + "," + str(.mystery_qty) + "," + _
+     str(.monster_qty(1)) + "," + str(.monster_qty(2)) + "," + str(.monster_qty(3)) + "," + str(.arrangement) + "," + _
+     str(BoolInt(.no_flee)) + "," + str(BoolInt(.no_gameover)) + "," + str(.battle_music) + "," + str(BoolInt(.character_battle)) + "," + _
+     str(BoolInt(.auto_battle)) + "," + str(BoolInt(.floating)) + "," + str(BoolInt(.transparent)) + "," + str(.mystery_byte) + "," + str(BoolInt(.rewards))
+   end with
 
   case "monsters"
    with monsters(i)

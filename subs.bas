@@ -105,4 +105,5 @@
 #include once "subs/edit/editsolobattles.bas"
 #include once "subs/edit/exportimport.bas"
 #include once "subs/general/globalsearch.bas"
+#include once "subs/general/spaceusage.bas"
 #include once "subs/general/lastrom.bas"

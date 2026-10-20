@@ -128,6 +128,36 @@ sub ImportRow(kind as String, id as Integer)
     .price_code = CsvVal("price_code", .price_code)
    end with
 
+  case "shops"
+   for j as Integer = 1 to 8
+    shops(id).wares(j) = CsvVal("item" + str(j), shops(id).wares(j))
+   next
+
+  case "formations"
+   with formations(id)
+    .mystery_flag1 = CsvBool("mystery_flag1", .mystery_flag1)
+    .mystery_flag2 = CsvBool("mystery_flag2", .mystery_flag2)
+    .mystery_flag3 = CsvBool("mystery_flag3", .mystery_flag3)
+    .back_attack = CsvBool("back_attack", .back_attack)
+    .boss_death = CsvBool("boss_death", .boss_death)
+    for j as Integer = 1 to 3
+     .egg(j) = CsvBool("egg" + str(j), .egg(j))
+     .monster_type(j) = CsvVal("monster_type" + str(j), .monster_type(j))
+     .monster_qty(j) = CsvVal("monster_qty" + str(j), .monster_qty(j))
+    next
+    .mystery_qty = CsvVal("mystery_qty", .mystery_qty)
+    .arrangement = CsvVal("arrangement", .arrangement)
+    .no_flee = CsvBool("no_flee", .no_flee)
+    .no_gameover = CsvBool("no_gameover", .no_gameover)
+    .battle_music = CsvVal("battle_music", .battle_music)
+    .character_battle = CsvBool("character_battle", .character_battle)
+    .auto_battle = CsvBool("auto_battle", .auto_battle)
+    .floating = CsvBool("floating", .floating)
+    .transparent = CsvBool("transparent", .transparent)
+    .mystery_byte = CsvVal("mystery_byte", .mystery_byte)
+    .rewards = CsvBool("rewards", .rewards)
+   end with
+
   case "monsters"
    with monsters(id)
     if CsvHas("name") then .name = PadFF4Name(CsvStr("name", ""), 8)

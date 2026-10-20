@@ -3,7 +3,7 @@ sub ExportImportTables(importing as Boolean)
  'Menu for choosing which tables to export to / import from CSV.
 
  dim table_menu as BlueMenu
- dim kinds(1 to 6) as String = {"spells", "weapons", "armors", "medicines", "tools", "monsters"}
+ dim kinds(1 to 8) as String = {"spells", "weapons", "armors", "medicines", "tools", "monsters", "shops", "formations"}
  dim count as Integer
  dim errors as Integer
  dim first_error as String
@@ -13,14 +13,14 @@ sub ExportImportTables(importing as Boolean)
  table_menu.x = 24
  table_menu.y = 10
  table_menu.AddOption(FF4Text("All tables"))
- for i as Integer = 1 to 6
+ for i as Integer = 1 to 8
   table_menu.AddOption(FF4Text(kinds(i)))
  next
 
  table_menu.UserSelect()
  if table_menu.cancelled then exit sub
 
- for i as Integer = 1 to 6
+ for i as Integer = 1 to 8
   if table_menu.selected = 1 or table_menu.selected = i + 1 then
    if importing then
     count = ImportCsv(kinds(i), errors, first_error)
