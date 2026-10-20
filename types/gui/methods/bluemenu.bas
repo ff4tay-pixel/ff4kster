@@ -99,6 +99,12 @@ function BlueMenu.ProcessKey(key_code as UInteger) as Boolean
     selected += temp * columns
    end if
   end if
+ case 6 'Ctrl+F: find an entry by name
+  FindNext(true)
+ case 14 'Ctrl+N: find the next match
+  FindNext(false)
+ case 7 'Ctrl+G: go to an entry by number
+  GoToIndex()
  case asc("/")
   indexed_mode = not indexed_mode
   RestoreSnapshot()
@@ -115,17 +121,10 @@ function BlueMenu.UserInput() as Boolean
  dim result as Boolean
  dim key_code as UInteger
  dim key as String
- dim sidebar_state as Boolean
  
  Display()
  ShowCursor()
- sidebar_state = keyboard_sidebar_enabled
  do
-  if multikey(SC_H) <> sidebar_state then
-   Display()
-   ShowCursor()
-   sidebar_state = keyboard_sidebar_enabled
-  end if
   key = inkey
   if key = "" then sleep 10
  loop while key = ""
@@ -207,6 +206,43 @@ sub BlueMenu.ClearAll()
 end sub
 
 
+sub BlueMenu.FindNext(new_search as Boolean)
+
+ 'Jumps to the next entry (after the cursor, wrapping around) whose name
+ ' contains the search text. A new search prompts for the text first.
+
+ dim n as Integer = options.Length()
+ dim i as Integer
+
+ if new_search then
+  menu_search_text = lcase(PromptLine("Find (ESC cancels):", 20))
+ end if
+ if menu_search_text = "" or n = 0 then exit sub
+
+ for offset as Integer = 1 to n
+  i = (selected - 1 + offset) mod n + 1
+  if instr(lcase(FF4Name(options.ItemAt(i))), menu_search_text) > 0 then
+   ChangeSelected(i)
+   exit sub
+  end if
+ next
+
+end sub
+
+
+sub BlueMenu.GoToIndex()
+
+ 'Jumps to an entry by its number (the numbers shown with "/").
+
+ dim typed as String
+
+ if options.Length() = 0 then exit sub
+ typed = PromptLine("Go to number, 1 to " + str(options.Length()) + ":", 6)
+ if typed <> "" then ChangeSelected(Max(1, Min(options.Length(), val(typed))))
+
+end sub
+
+
 sub BlueMenu.Display()
  
  dim temp as String
@@ -217,9 +253,6 @@ sub BlueMenu.Display()
  dim text_width as Integer
  dim item_width as Integer
 
- keyboard_sidebar_enabled = multikey(SC_H)
-
- HideKeyboardSidebar()
  
  if max_rows = 0 then top_row = 1
  
@@ -246,45 +279,8 @@ sub BlueMenu.Display()
  
  put (x * 8, y * 8), menu_image, trans
  ImageDestroy(menu_image)
- if keyboard_sidebar_enabled then DisplayKeyboardSidebar() else HideKeyboardSidebar()
 
   
-end sub
-
-
-sub BlueMenu.DisplayKeyboardSidebar()
-
- if keyboard_visible then
-    if keyboard_snapshot = 0 then
-     keyboard_snapshot = ImageCreate(20 * 8, 15 * 8, RGB(0, 0, 0))
-     get (60 * 8, 42 * 8)-(80 * 8 - 1, 57 * 8 - 1), keyboard_snapshot
-    end if
-  BlueBox(60, 42, 19, 14)
-  WriteText(FF4Text("KEYBOARD"), 61, 43, 15)
-  WriteText(FF4Text("ARROWS  Move"), 61, 44, 15)
-  WriteText(FF4Text("ENTER   Select"), 61, 45, 15)
-  WriteText(FF4Text("ESC     Back"), 61, 46, 15)
-  WriteText(FF4Text("HOME    Top"), 61, 47, 15)
-  WriteText(FF4Text("END     Bottom"), 61, 48, 15)
-  WriteText(FF4Text("PGUP/DN Page"), 61, 49, 15)
-  WriteText(FF4Text("/       Index"), 61, 50, 15)
-  if swap_enabled then WriteText(FF4Text("SHIFT+ENTER Swap"), 61, 51, 15)
-   WriteText(FF4Text("HOLD H  Show"), 61, 52, 15)
- else
-    HideKeyboardSidebar()
- end if
-
-end sub
-
-
-sub BlueMenu.HideKeyboardSidebar()
-
- if keyboard_snapshot <> 0 then
-    put (60 * 8, 42 * 8), keyboard_snapshot, pset
-    ImageDestroy(keyboard_snapshot)
-    keyboard_snapshot = 0
- end if
-
 end sub
 
 
@@ -355,6 +351,5 @@ sub BlueMenu.UserSelect()
  RestoreSnapshot()
  ImageDestroy(snapshot)
  snapshot = 0
- HideKeyboardSidebar()
  
 end sub

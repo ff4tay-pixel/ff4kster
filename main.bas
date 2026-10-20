@@ -41,6 +41,7 @@ screen 18, 32
 ' Only these temporary memory objects will be affected by the editor directly.
 ' It will not write anything to the actual ROM until you explicitly tell it to save.
 ReadData(filename)
+BuildBaselineROM()
 
 'Draw the tile overlays
 warp_overlay = ImageCreate(16, 16, RGB(255, 0, 255))
@@ -95,6 +96,9 @@ editor_menu.AddOption(FF4Text("Edit Formations"))
 editor_menu.AddOption(FF4Text("Edit Encounters"))
 editor_menu.AddOption(FF4Text("Edit Autobattles"))
 editor_menu.AddOption(FF4Text("Edit Solobattles"))
+editor_menu.AddOption(FF4Text("Export CSV"))
+editor_menu.AddOption(FF4Text("Import CSV"))
+editor_menu.AddOption(FF4Text("Compare to Original ROM"))
 editor_menu.AddOption(FF4Text("Quit"))
 
 save_prompt.x = 24
@@ -107,7 +111,10 @@ save_prompt.AddOption(FF4Text("Cancel"))
 do
 
  cls
- editor_menu.UserSelect()
+ editor_menu.cancelled = false
+ do
+  DrawMainHelp(editor_menu.selected)
+ loop until editor_menu.UserInput()
 
  if not editor_menu.cancelled then
 
@@ -157,6 +164,9 @@ do
    case 23: EditEncounters()
    case 24: EditAutoBattles()
    case 25: EditSoloBattles()
+   case 26: ExportImportTables(false)
+   case 27: ExportImportTables(true)
+   case 28: CompareWithOriginal()
 
    case else
     if not modified then

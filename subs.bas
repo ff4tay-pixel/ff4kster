@@ -8,6 +8,7 @@
 #include once "subs/graphics/setpalette.bas"
 #include once "subs/graphics/showpalette.bas"
 #include once "subs/graphics/drawbmp.bas"
+#include once "subs/graphics/infobox.bas"
 
 'Config reading
 #include once "subs/config/elementcfg.bas"
@@ -70,6 +71,12 @@
 #include once "subs/write/savemapgrids.bas"
 #include once "subs/write/savedata.bas"
 
+'CSV export/import and ROM comparison
+#include once "subs/csv/exportcsv.bas"
+#include once "subs/csv/importcsv.bas"
+#include once "subs/general/romdiff.bas"
+#include once "subs/general/mainhelp.bas"
+
 'Editing
 #include once "subs/edit/editspells.bas"
 #include once "subs/edit/editspellsets.bas"
@@ -95,3 +102,4 @@
 #include once "subs/edit/editencounters.bas"
 #include once "subs/edit/editautobattles.bas"
 #include once "subs/edit/editsolobattles.bas"
+#include once "subs/edit/exportimport.bas"

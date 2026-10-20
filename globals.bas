@@ -1,4 +1,6 @@
 dim shared ff4rom as String
+dim shared original_rom as String 'ROM file as loaded this session
+dim shared baseline_rom as String 'what Save ROM would write with no edits
 dim shared font(&hFF) as Any ptr
 dim shared asc2ff4 as String
 dim shared warning as Boolean
@@ -7,6 +9,7 @@ dim shared keyboard_sidebar_enabled as Boolean
 dim shared unheadered as Boolean
 dim shared ifpatch as Boolean
 dim shared system_path as String
+dim shared menu_search_text as String 'last Ctrl+F search in any menu
 
 'dim shared sprite(255, 7, 7) as UByte
 dim shared warp_overlay as Any ptr

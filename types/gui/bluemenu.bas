@@ -15,7 +15,6 @@ type BlueMenu
  snapshot as Any ptr
  debug as Boolean = false
  keyboard_visible as Boolean = true
- keyboard_snapshot as Any ptr
  
  declare constructor(starting_x as UInteger = 0, starting_y as UInteger = 0)
  
@@ -30,9 +29,9 @@ type BlueMenu
  declare sub ChangeOption(index as UInteger, s as String = "", c as Integer = -1)
  declare sub ChangeSelected(index as UInteger)
  declare sub ClearAll()
+ declare sub FindNext(new_search as Boolean)
+ declare sub GoToIndex()
  declare sub Display()
- declare sub DisplayKeyboardSidebar()
- declare sub HideKeyboardSidebar()
  declare sub Hide()
  declare sub Remove(index as UInteger = 0)
  declare sub RestoreSnapshot()

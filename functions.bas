@@ -2,6 +2,8 @@
 #include once "functions/byteat.bas"
 #include once "functions/asciitext.bas"
 #include once "functions/ff4text.bas"
+#include once "functions/ff4ascii.bas"
+#include once "functions/csv.bas"
 #include once "functions/dte.bas"
 #include once "functions/parsedte.bas"
 #include once "functions/listitem.bas"

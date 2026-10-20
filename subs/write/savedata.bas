@@ -1,4 +1,4 @@
-sub SaveData(filename as String)
+sub ApplyDataToROM()
 
  dim start as UInteger
  dim temp as UByte
@@ -167,7 +167,15 @@ sub SaveData(filename as String)
  SaveAIs()
  
  SaveSpellColorNames()
- 
+
+end sub
+
+
+sub SaveData(filename as String)
+
+ 'Write the memory objects to the ROM image
+ ApplyDataToROM()
+
  'Write the ROM image to the actual file.
  if not warning then
   open filename for binary access write as #1

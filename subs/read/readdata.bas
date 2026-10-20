@@ -31,6 +31,7 @@ sub ReadData(filename as String)
    end
   end if
  close
+ original_rom = ff4rom
  
  old_path = curdir
  chdir(system_path)
