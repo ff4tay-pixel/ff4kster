@@ -71,5 +71,5 @@ config/           30 `.dat` label/config files (elements.dat, spells.dat, shops.
   5. Add an editor entry point under `subs/edit/edit<name>.bas`, included in `subs.bas`
   6. Add a menu option + `case` dispatch in `main.bas`
 - ROM offsets are hard-coded throughout. They are specific to FF2US v1.1. Changing them without corresponding ROM research will break the editor.
-- Some editors do **not** guard against overflow (events, triggers, map data) — the README warns the user to back up their ROM. Others (NPC placements) do check available space.
+- Variable-size data is checked when saving (events, triggers, map data, text banks, spell lists): an overflow shows a warning and the ROM file is not written. NPC placements check available space when you add one. The README still tells the user to back up their ROM.
 - The `common/` directory contains old/experimental versions of data structures (`old/`, `new/`). Prefer the canonical `list.bas`, `dictionary.bas`, `table.bas` over those.

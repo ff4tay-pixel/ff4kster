@@ -60,6 +60,7 @@ function SpaceUsageText() as String
  lines += SpaceLine("Battle alerts", ListBytes(dialogues_alerts, total_dialogues_alerts), &h7B5FF - &h7B276) + "|"
  lines += SpaceLine("Status names", ListBytes(dialogues_status, total_dialogues_status), &h7B6FF - &h7B640) + "|"
  lines += SpaceLine("Map labels", ListBytes(map_labels, total_map_labels), &hA9E7F - &hA9820) + "|"
+ lines += SpaceLine("Map data", MapDataBytes(), map_data_end - map_data_start) + "|"
 
  for i as Integer = 1 to total_weapons
   if i >= descriptions_start and i < descriptions_end then described += 1

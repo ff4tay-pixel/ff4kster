@@ -22,16 +22,13 @@ IMPORTANT NOTES
   on in case it gets horribly messed up.
   
 * There are some areas of memory to which this editor allows you to add or
-  append data. Most of them are checked when you save: events, triggers,
+  append data. They are checked when you save: events, triggers, map data,
   every bank of messages, item descriptions, map labels and the spell lists
   show an overflow warning and the ROM is not written if there is too much
   data (the Space Usage entry on the main menu shows how full each one is),
-  and NPC placements cannot be added once their area is full. Map data is
-  the exception: the map editor shows how much room is left, but saving does
-  not stop you if the maps take up too much space. Extra map data is written
-  over whatever comes after it in the rom, which can break your game in a way
-  that may be difficult to repair, so watch the "Over" counter in the map
-  editor and keep a backup.
+  and NPC placements cannot be added once their area is full. If you see an
+  overflow warning, shorten or remove some of that kind of data and save
+  again. Even so, always keep a backup of your rom.
 
 ABOUT
 -----
@@ -914,10 +911,9 @@ with the locations of other things such as triggers and npcs. It also
 displays the amount of space remaining for map data in total. If this
 number is displayed in red, it means there is more map data to store than
 room to store it in the rom, so you must delete or simplify some maps to
-reduce it down before saving. The editor does NOT stop you from saving while
-it is red: the extra data would be written over whatever follows the map data
-in the rom and can break the game, so always fix it first. This number is not updated as you
-edit; it is only updated when you go back to the map selection menu.
+reduce it down before saving. If you try to save while it is red, the editor
+shows "Map data overflow!" and does not write the rom. This number is not
+updated as you edit; it is only updated when you go back to the map selection menu.
 
 
 MONSTERS
@@ -1199,6 +1195,8 @@ VERSION HISTORY
     - CSV export/import and the two ROM comparisons are hidden from the menu
     - Removed the breadcrumb line
     - Help text no longer uses symbols the font cannot draw
+    - Save ROM now refuses to write map data that does not fit (the check
+      had been switched off), and Space Usage shows the map data
     - README documents the config files, the fields of each editor, the
       overview maps, the shared keys and which areas are checked for space
 
@@ -1333,7 +1331,7 @@ VERSION HISTORY
 - **Search Everywhere** (main menu) finds a spell, item or monster by name and opens its editor on it.
 - **Compare with ROM File** (currently hidden from the main menu) diffs your current work against another ROM file.
 - **F1** shows key help in any menu. Deleting triggers, NPCs and messages asks for confirmation.
-- **Space Usage** (main menu) shows how full each fixed ROM area is (events, triggers, text banks, item descriptions); over 100% means Save ROM will refuse.
+- **Space Usage** (main menu) shows how full each fixed ROM area is (events, triggers, map data, text banks, item descriptions); over 100% means Save ROM will refuse.
 - **Changed Entries** (main menu) lists every spell, item and monster changed since loading and opens the one you pick.
 - **Number boxes:** press X to switch between decimal and hexadecimal entry (A-F are accepted in hex mode).
 - **Saving** asks before overwriting a ROM file that changed on disk since it was loaded or last saved.
