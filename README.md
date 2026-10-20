@@ -66,7 +66,8 @@ description it has there right now).
 It already draws the map tiles and tilesets, monster sprites (while editing a
 monster's graphics), the characters' battle sprites (in the Battle Sprites
 editor) and the animation sequence of a spell (in the Spells editor), all read
-from the ROM you are editing. Weapon and item graphics are not drawn yet.
+from the ROM you are editing, plus a weapon's sprite (in the Weapons editor).
+Armor, item icons and the weapon hit ("slash") graphics are not drawn yet.
 
 
 INSTALLATION INSTRUCTIONS
@@ -359,6 +360,14 @@ hit percentage, description), Element/Status, Stat Bonuses, Races, Properties (l
 so on; the names come from config/weaponproperties.dat), Equip (who can equip
 it), Visuals (palette, sprite, swing and slash used when it attacks) and Casts
 (the spell it casts when used, with its power and visual).
+
+A "Weapon sprite" panel at the bottom right of the Weapons screen draws the
+weapon's sprite twice, enlarged: as it is held and as it looks at the other end
+of its swing. It uses the weapon's own palette and sprite, so it changes as you
+move through the weapon list and as you change the Palette or Sprite in the
+Visuals menu (the Swing and Slash choices do not change the picture). Sprites
+are numbered 0 to 25; a sprite or palette number outside that range shows "No
+preview" in the panel.
 
 
 ARMOR
@@ -1184,6 +1193,7 @@ VERSION HISTORY
          with the palette stored in the image
     - Spell editor plays the spell's animation sequence in a preview panel
     - Monster editor shows a live sprite preview while editing graphics
+    - Weapon editor shows the weapon's sprite in its palette
     - Monsters screen reorganized: aligned, titled boxes and a clearer AI
       column with a bank header
     - Level up editor rewritten as a full screen table with free cell

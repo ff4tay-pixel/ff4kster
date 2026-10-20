@@ -20,6 +20,7 @@ sub WeaponAnimationMenu.Display()
  main_menu.ChangeOption(3, FF4Text("Swing:   ") + Pad(swing_names.ItemAt(swing), swing_names.Width(),, FF4Text(" ")), 15)
  main_menu.ChangeOption(4, FF4Text("Slash:   ") + Pad(slash_names.ItemAt(slash), slash_names.Width(),, FF4Text(" ")), 15)
  main_menu.Display()
+ WeaponSpritePanel(colors - 1, sprite - 1)
  
 end sub
 

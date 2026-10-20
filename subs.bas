@@ -82,6 +82,7 @@
 
 'Editing
 #include once "subs/general/spellanim.bas"
+#include once "subs/general/weaponsprite.bas"
 #include once "subs/edit/editspells.bas"
 #include once "subs/edit/editspellsets.bas"
 #include once "subs/edit/edititemranges.bas"

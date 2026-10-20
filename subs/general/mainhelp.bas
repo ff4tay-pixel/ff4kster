@@ -51,6 +51,7 @@ sub DrawMainHelp(selected as Integer)
    HelpLine(lines(), n, "spells, weapons, armors.")
    HelpLine(lines(), n, "Enter opens the entry's editor.")
    HelpLine(lines(), n, "Spells: the panel plays the animation sequence.")
+   HelpLine(lines(), n, "Weapons: the panel shows the weapon sprite.")
   case 4
    HelpLine(lines(), n, "Enter opens the entry's editor.")
   case 9
