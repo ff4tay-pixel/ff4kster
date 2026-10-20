@@ -64,9 +64,10 @@ weapon you're editing, with the correct palette (as opposed to the text
 description it has there right now).
 
 It already draws the map tiles and tilesets, monster sprites (while editing a
-monster's graphics), the characters' battle sprites (in the Battle Sprites
-editor) and the animation sequence of a spell (in the Spells editor), all read
-from the ROM you are editing, plus a weapon's sprite (in the Weapons editor).
+monster's graphics, and in the Formations editor), the characters' battle
+sprites (in the Battle Sprites editor) and the animation sequence of a spell
+(in the Spells editor), all read from the ROM you are editing, plus a weapon's
+sprite (in the Weapons editor).
 Armor, item icons and the weapon hit ("slash") graphics are not drawn yet.
 
 
@@ -952,11 +953,11 @@ little explanation.
               
 * Graphics: "Edit Graphics" shows a live preview of the monster's sprite in
             the monster's palette that updates as you change the pointer, size
-            or palette. The sprite data is 3 bits per pixel; sizes 0 to 16 are
-            drawn as a block of tiles in the usual size, and the larger "special"
-            sizes (bosses and a few others) are shown as a raw sheet of their
-            tiles because their tile arrangements are not decoded yet. Pointers
-            below 8000h have no preview.
+            or palette. It draws all three kinds of monster: ordinary monsters
+            (a block of tiles, sized from the size list), bosses (the "special
+            sizes", which have their own tile layout, palette and position, so
+            the preview follows the special size menu as you edit it) and party
+            members used as enemies (drawn from their battle sprite).
 
 * Flags: There are certain kinds of data which some monsters have and others do
          not. You can change which "extra bits" of information a given monster
@@ -1028,6 +1029,20 @@ specified, but on "underground/moon" maps it will be that index + 256.
 Since there is no way for an event to "know" the nature of the map the
 player is on when it executes, the formation display in the event editor
 previews both formations.
+
+The editor draws the formation on a battlefield (the 256x224 pixel battle screen,
+with a faint grid every 16 pixels) below the formation's details, so you can see
+where each enemy stands. It updates as you change the monsters, quantities and
+arrangement. Each monster is numbered with its slot, and a list beside the
+battlefield gives every slot's monster and grid position. The game fills the
+slots in order: all the monsters of the first type, then the second, then the
+third, and if two types are the same monster their quantities are added. Slot
+number N takes position N of the formation's arrangement, which gives up to eight
+positions (a monster's top left corner is at x * 8 + 16, y * 8 pixels). Bosses
+ignore the arrangement and stand where their special size entry says. The
+picture shows the sprites and positions only: back attacks, floating monsters
+and the battle background are not drawn, and a monster flagged as being in an
+egg is drawn as itself and marked "egg" in the list.
 
 Fields. Each formation has its arrangement, battle music, whether it is an
 auto battle, a back attack, a "versus player" battle, whether the monsters are
@@ -1194,6 +1209,12 @@ VERSION HISTORY
     - Spell editor plays the spell's animation sequence in a preview panel
     - Monster editor shows a live sprite preview while editing graphics
     - Weapon editor shows the weapon's sprite in its palette
+    - Formation editor draws the battle formation: where each enemy stands,
+      with slot numbers and a position list
+    - The monster graphics preview now draws bosses and party-member enemies,
+      and pointers below 8000h
+    - Fixed a memory bug when marking lunar monsters (empty formation slots
+      wrote past the end of the monster list), which could crash the editor
     - Monsters screen reorganized: aligned, titled boxes and a clearer AI
       column with a bank header
     - Level up editor rewritten as a full screen table with free cell

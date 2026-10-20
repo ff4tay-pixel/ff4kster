@@ -2,7 +2,8 @@ sub SetMoonFlags(index as UInteger)
 
  for i as Integer = 1 to 8
   for j as Integer = 1 to 3
-   monsters(formations(encounters(encounter_tables(index) + 16 + 1, i) + &h100 + 1).monster_type(j) + 1).lunar = true
+   'An empty slot (type FF) is not a monster: indexing the monster list with it would write past its end
+   if formations(encounters(encounter_tables(index) + 16 + 1, i) + &h100 + 1).monster_type(j) < total_monsters then monsters(formations(encounters(encounter_tables(index) + 16 + 1, i) + &h100 + 1).monster_type(j) + 1).lunar = true
   next
  next
 

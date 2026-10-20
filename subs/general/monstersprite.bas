@@ -1,70 +1,243 @@
-'Monster sprite viewer.
-'Monster graphics are 3bpp SNES tiles (24 bytes each) stored in the banks starting at
-'09/8000. A graphics pointer P (>= &h8000) addresses tile data at &h48200 + (P - &h8000) * 8
-'(offsets include the 0x200 header that ff4rom always carries).
-'Normal sizes (0-16) are a width x height block of 8x8 tiles in row-major order.
-'Other sizes (bosses, party members) use arrangement tables that are not decoded yet,
-'so their tiles are shown as a raw sheet.
+'Monster sprite renderer, used by the Edit Graphics preview and the formation view.
+'
+'A monster's graphics are described by its size byte, palette and graphics pointer:
+'  size 00-3F   an ordinary monster: a block of 3 bits per pixel 8x8 tiles in row-major order. The
+'               size number picks the width and height (in tiles) from the game's size table.
+'  size 40-7F   a party member used as an enemy: the low 6 bits are the character's battle sprite
+'               sheet (the same sheets as the Battle Sprites editor) in its standing pose.
+'  size 80-BF   a boss: the low 6 bits pick an entry of the special size table (see
+'               SpecialSize). That entry gives the position, the palette, the size and the
+'               number of a tile map that says which tile goes in each cell; a cell is empty
+'               (FF), or a run of empty cells (FE then a count), or a tile number.
+'The graphics pointer P addresses the tile data at &h48200 + (P * 8 mod &h40000) (the offsets
+'include the 0x200 header that ff4rom always carries), so pointers below 8000h are valid too.
+'Pixel 0 is transparent: the images use RGB(255, 0, 255) for it.
+'
+'The pixels are written straight into the image's memory. Do not draw into these images with PSET or
+'LINE and then destroy them without drawing anything else in between: FreeBASIC keeps a pointer to the
+'last image drawn into, and destroying that image leaves it dangling, which crashed the program.
 
 const monster_sprite_base = &h48200
-const monster_sprite_sheet_width = 16
-const monster_sprite_sheet_rows = 8
+const monster_size_table = &h7015E 'MonsterGfxSize: 43 entries of width, height in tiles (0d/ff5e)
+const monster_size_count = 43
+const boss_tilemap_ptrs = &h75100 'BossTilemapPtrs: 57 pointers (0e/cf00)
+const boss_tilemap_count = 57
+const monster_transparent = &hFFFF00FF 'RGB(255, 0, 255)
+
+'Tile numbers of the boss being drawn
+dim shared boss_cells(1023) as Integer
+
+function MonsterNewImage(tiles_wide as Integer, tiles_high as Integer, byref pixels as Any ptr, byref pitch as Integer) as Any ptr
+
+ 'A transparent image of tiles_wide x tiles_high tiles, with the address and row size of its pixels
+
+ dim result as Any ptr = ImageCreate(tiles_wide * 8, tiles_high * 8, monster_transparent)
+
+ if result <> 0 then imageinfo result, , , , pitch, pixels
+ return result
+
+end function
+
+
+sub MonsterPutPixel(pixels as Any ptr, pitch as Integer, x as Integer, y as Integer, c as UInteger)
+
+ *cast(UInteger ptr, pixels + y * pitch + x * 4) = c
+
+end sub
+
 
 function MonsterSpriteOffset(gfx_ptr as UInteger) as Integer
 
- if gfx_ptr < &h8000 then return -1
- return monster_sprite_base + (gfx_ptr - &h8000) * 8
+ return monster_sprite_base + ((gfx_ptr * 8) mod &h40000)
+
+end function
+
+
+sub MonsterSizeTiles(size_id as Integer, byref tiles_wide as Integer, byref tiles_high as Integer)
+
+ 'Width and height in tiles of a size from the game's size table (0 if there is no such size)
+
+ if size_id >= 0 and size_id < monster_size_count then
+  tiles_wide = ByteAt(monster_size_table + size_id * 2)
+  tiles_high = ByteAt(monster_size_table + size_id * 2 + 1)
+ else
+  tiles_wide = 0
+  tiles_high = 0
+ end if
+
+end sub
+
+
+function MonsterTileColor(start as Integer, t as Integer, row as Integer, col as Integer) as Integer
+
+ 'The color number (0-7) of one pixel of tile t of the 3 bits per pixel data starting at start
+
+ dim tile_start as Integer = start + t * 24
+
+ return ((ByteAt(tile_start + row * 2) shr (7 - col)) and 1) or (((ByteAt(tile_start + row * 2 + 1) shr (7 - col)) and 1) shl 1) or (((ByteAt(tile_start + 16 + row) shr (7 - col)) and 1) shl 2)
+
+end function
+
+
+function MonsterRegularImage(gfx_ptr as UInteger, size_id as Integer, pal as Integer) as Any ptr
+
+ 'An ordinary monster: a block of tiles in order
+
+ dim tiles_wide as Integer
+ dim tiles_high as Integer
+ dim start as Integer
+ dim result as Any ptr
+ dim color_index as Integer
+ dim pixel_value as UInteger
+ dim pixels as Any ptr
+ dim pitch as Integer
+
+ start = MonsterSpriteOffset(gfx_ptr)
+ MonsterSizeTiles(size_id, tiles_wide, tiles_high)
+ if tiles_wide = 0 then return 0
+ if start + tiles_wide * tiles_high * 24 > len(ff4rom) then return 0
+ if pal < 0 or pal >= total_monster_palettes then return 0
+
+ result = MonsterNewImage(tiles_wide, tiles_high, pixels, pitch)
+ if result = 0 then return 0
+ for n as Integer = 0 to tiles_wide * tiles_high - 1
+  for row as Integer = 0 to 7
+   for col as Integer = 0 to 7
+    color_index = MonsterTileColor(start, n, row, col)
+    if color_index <> 0 then
+     pixel_value = monster_palettes(pal + 1, color_index)
+     MonsterPutPixel(pixels, pitch, (n mod tiles_wide) * 8 + col, (n \ tiles_wide) * 8 + row, pixel_value)
+    end if
+   next
+  next
+ next
+
+ return result
+
+end function
+
+
+function MonsterBossImage(gfx_ptr as UInteger, special_index as Integer) as Any ptr
+
+ 'A boss: the special size entry says which tile goes where, and which palette to use
+
+ dim tiles_wide as Integer
+ dim tiles_high as Integer
+ dim start as Integer
+ dim result as Any ptr
+ dim color_index as Integer
+ dim pixel_value as UInteger
+ dim cell_tile as Integer
+ dim palette_id as Integer
+ dim tilemap_id as Integer
+ dim ptr_value as Integer
+ dim position as Integer
+ dim value as Integer
+ dim cell_count as Integer
+ dim pixels as Any ptr
+ dim pitch as Integer
+
+ start = MonsterSpriteOffset(gfx_ptr)
+ palette_id = special_sizes(special_index).palette_index
+ tilemap_id = special_sizes(special_index).arrangement_pointer
+ MonsterSizeTiles(special_sizes(special_index).size_table_pointer, tiles_wide, tiles_high)
+ if tiles_wide = 0 or tiles_wide * tiles_high > 1024 or tilemap_id >= boss_tilemap_count then return 0
+ if palette_id >= total_monster_palettes then return 0
+
+ ptr_value = ByteAt(boss_tilemap_ptrs + tilemap_id * 2) + ByteAt(boss_tilemap_ptrs + tilemap_id * 2 + 1) * &h100
+ if ptr_value < &h8000 then return 0
+ position = ptr_value + &h68200 'bank 0e: ROM offset 0x70000 + (pointer - 0x8000), plus the header
+ do while cell_count < tiles_wide * tiles_high
+  if position >= len(ff4rom) then exit do
+  value = ByteAt(position)
+  if value = &hFF then
+   boss_cells(cell_count) = -1
+   cell_count += 1
+   position += 1
+  elseif value = &hFE then
+   for n as Integer = 1 to ByteAt(position + 1)
+    if cell_count < tiles_wide * tiles_high then
+     boss_cells(cell_count) = -1
+     cell_count += 1
+    end if
+   next
+   position += 2
+  else
+   boss_cells(cell_count) = value
+   cell_count += 1
+   position += 1
+  end if
+ loop
+
+ result = MonsterNewImage(tiles_wide, tiles_high, pixels, pitch)
+ if result = 0 then return 0
+ for n as Integer = 0 to cell_count - 1
+  cell_tile = boss_cells(n)
+  if cell_tile >= 0 and start + cell_tile * 24 + 24 <= len(ff4rom) then
+   for row as Integer = 0 to 7
+    for col as Integer = 0 to 7
+     color_index = MonsterTileColor(start, cell_tile, row, col)
+     if color_index <> 0 then
+      pixel_value = monster_palettes(palette_id + 1, color_index)
+      MonsterPutPixel(pixels, pitch, (n mod tiles_wide) * 8 + col, (n \ tiles_wide) * 8 + row, pixel_value)
+     end if
+    next
+   next
+  end if
+ next
+
+ return result
+
+end function
+
+
+function MonsterPartyImage(sheet as Integer, pal as Integer) as Any ptr
+
+ 'A party member used as an enemy: the standing pose of their battle sprite (2 tiles wide, 3 tall)
+
+ dim result as Any ptr
+ dim color_index as Integer
+ dim value as Integer
+ dim pixel_value as UInteger
+ dim palette_id as Integer
+ dim pixels as Any ptr
+ dim pitch as Integer
+
+ if sheet < 0 or sheet >= total_battle_char_sheets then return 0
+ palette_id = pal
+ if palette_id > 15 then palette_id = sheet
+
+ result = MonsterNewImage(2, 3, pixels, pitch)
+ if result = 0 then return 0
+ for n as Integer = 0 to 5
+  for row as Integer = 0 to 7
+   for col as Integer = 0 to 7
+    color_index = battle_char_gfx(sheet, n, row, col)
+    if color_index <> 0 then
+     value = battle_palette_raw(palette_id, color_index)
+     pixel_value = RGB((value mod 32) * 8, ((value \ 32) mod 32) * 8, ((value \ 1024) mod 32) * 8)
+     MonsterPutPixel(pixels, pitch, (n mod 2) * 8 + col, (n \ 2) * 8 + row, pixel_value)
+    end if
+   next
+  next
+ next
+
+ return result
 
 end function
 
 
 function MonsterSpriteImage(gfx_ptr as UInteger, size as UByte, pal as UByte, byref raw_sheet as Boolean) as Any ptr
 
- dim tiles_wide as Integer
- dim tiles_high as Integer
- dim widths(16) as Integer = {2, 4, 4, 6, 6, 6, 8, 8, 6, 12, 20, 10, 5, 2, 3, 4, 4}
- dim heights(16) as Integer = {2, 4, 6, 4, 6, 8, 6, 8, 12, 6, 18, 6, 3, 3, 3, 3, 2}
- dim start as Integer
- dim tile_start as Integer
- dim result as Any ptr
- dim p0 as UByte
- dim p1 as UByte
- dim p2 as UByte
- dim color_index as Integer
- dim pixel as UInteger
+ 'Builds the picture of a monster, or returns 0 if it can't be drawn. raw_sheet is no longer
+ ' used (every size can be drawn now) but is kept so the callers did not need to change.
 
- start = MonsterSpriteOffset(gfx_ptr)
- if start < 0 then return 0
+ raw_sheet = false
 
- if size <= 16 then
-  tiles_wide = widths(size)
-  tiles_high = heights(size)
-  raw_sheet = false
- else
-  tiles_wide = monster_sprite_sheet_width
-  tiles_high = monster_sprite_sheet_rows
-  raw_sheet = true
- end if
+ if size >= &h80 then return MonsterBossImage(gfx_ptr, (size and &h3F) + 1)
+ if size >= &h40 then return MonsterPartyImage(size and &h3F, pal)
 
- if start + tiles_wide * tiles_high * 24 > len(ff4rom) then return 0
-
- result = ImageCreate(tiles_wide * 8, tiles_high * 8, RGB(0, 0, 0))
-
- for t as Integer = 0 to tiles_wide * tiles_high - 1
-  tile_start = start + t * 24
-  for row as Integer = 0 to 7
-   p0 = ByteAt(tile_start + row * 2)
-   p1 = ByteAt(tile_start + row * 2 + 1)
-   p2 = ByteAt(tile_start + 16 + row)
-   for col as Integer = 0 to 7
-    color_index = ((p0 shr (7 - col)) and 1) or (((p1 shr (7 - col)) and 1) shl 1) or (((p2 shr (7 - col)) and 1) shl 2)
-    if color_index = 0 then pixel = RGB(0, 0, 0) else pixel = monster_palettes(pal + 1, color_index)
-    pset result, ((t mod tiles_wide) * 8 + col, (t \ tiles_wide) * 8 + row), pixel
-   next
-  next
- next
-
- return result
+ return MonsterRegularImage(gfx_ptr, size, pal)
 
 end function
 
@@ -89,6 +262,7 @@ sub MonsterSpritePanelShow(gfx_ptr as UInteger, size as UByte, pal as UByte, byr
  dim area_w as Integer = monster_panel_w * 8
  dim area_h as Integer = (monster_panel_h - 1) * 8
  dim info as String
+ dim pixel_color as UInteger
  
  if snapshot = 0 then
   snapshot = ImageCreate((monster_panel_w + 2) * 8, (monster_panel_h + 2) * 8, RGB(0, 0, 0))
@@ -99,15 +273,12 @@ sub MonsterSpritePanelShow(gfx_ptr as UInteger, size as UByte, pal as UByte, byr
  
  sprite = MonsterSpriteImage(gfx_ptr, size, pal, raw_sheet)
  
+ line ((monster_panel_x + 1) * 8, (monster_panel_y + 1) * 8)-((monster_panel_x + monster_panel_w + 1) * 8 - 1, (monster_panel_y + monster_panel_h + 1) * 8 - 1), RGB(16, 16, 32), bf
+ 
  if sprite = 0 then
-  if gfx_ptr < &h8000 then
-   WriteText(FF4Text("No preview: pointer below 8000h"), monster_panel_x + 1, monster_panel_y + 1, 12)
-  else
-   WriteText(FF4Text("No preview: data is past ROM end"), monster_panel_x + 1, monster_panel_y + 1, 12)
-  end if
+  WriteText(FF4Text("No preview for this monster"), monster_panel_x + 1, monster_panel_y + 1, 12)
  else
-  info = "Ptr " + str(gfx_ptr) + " Pal " + str(pal)
-  if raw_sheet then info += " Raw tiles"
+  if size >= &h80 then info = "Ptr " + str(gfx_ptr) + " Pal " + str(special_sizes((size and &h3F) + 1).palette_index) else info = "Ptr " + str(gfx_ptr) + " Pal " + str(pal)
   WriteText(FF4Text(left(info, monster_panel_w)), monster_panel_x + 1, monster_panel_y + 1, 15)
   imageinfo sprite, sprite_w, sprite_h
   zoom = 6
@@ -118,7 +289,8 @@ sub MonsterSpritePanelShow(gfx_ptr as UInteger, size as UByte, pal as UByte, byr
   area_y = (monster_panel_y + 2) * 8 + (area_h - sprite_h * zoom) \ 2
   for y as Integer = 0 to sprite_h - 1
    for x as Integer = 0 to sprite_w - 1
-    line (area_x + x * zoom, area_y + y * zoom)-step(zoom - 1, zoom - 1), point(x, y, sprite), bf
+    pixel_color = point(x, y, sprite)
+    if pixel_color <> monster_transparent then line (area_x + x * zoom, area_y + y * zoom)-step(zoom - 1, zoom - 1), pixel_color, bf
    next
   next
   ImageDestroy(sprite)

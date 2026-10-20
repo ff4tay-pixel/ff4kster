@@ -63,6 +63,10 @@ config/           30 `.dat` label/config files (elements.dat, spells.dat, shops.
 
 ## Notes for making changes
 
+- **Image buffers (FreeBASIC gotcha):** FreeBASIC remembers the last image you drew into with `PSET`/`LINE`/`PUT` as the current drawing target. If you draw into an image and then `ImageDestroy` it without drawing anything else in between, the pointer dangles and the program crashes unpredictably later. Drawing to the screen afterwards (as the menus do) is enough, but code that fills an image and destroys it right away should write the pixels through `ImageInfo`'s pixel pointer instead (see `MonsterPutPixel` in `subs/general/monstersprite.bas`).
+- **Reserved words:** names like `command`, `map`, `field`, `out` and `tile` are FreeBASIC keywords or types; using them as variable names causes confusing compile errors.
+- **ROM offsets:** `ff4rom` always carries a 0x200 byte header, so add 0x200 to a file offset (and double check the sum).
+
 - When adding a new game object type, you typically need to add:
   1. A type definition under `types/gameobjects/<name>.bas`
   2. A methods file under `types/gameobjects/methods/<name>.bas` (with `ReadFromROM`, `WriteToROM`, `Display`, `Edit`)

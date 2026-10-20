@@ -104,6 +104,7 @@
 #include once "subs/edit/editmapproperties.bas"
 #include once "subs/edit/editmaps.bas"
 #include once "subs/general/monstersprite.bas"
+#include once "subs/general/formationview.bas"
 #include once "subs/edit/editmonsters.bas"
 #include once "subs/edit/editformations.bas"
 #include once "subs/edit/editencounters.bas"

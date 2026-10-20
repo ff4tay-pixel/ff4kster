@@ -83,7 +83,7 @@ sub EncounterMenu.UserSelect()
  for i as Integer = 1 + underground to 256 + underground
   temp = formation_names.ItemAt(i) + FF4Text(" -- ")
   for j as Integer = 1 to 3
-   if formations(i).monster_type(j) <= total_monsters then
+   if formations(i).monster_type(j) < total_monsters then
     temp += FF4Text(str(formations(i).monster_qty(j)) + " ") + monsters(formations(i).monster_type(j) + 1).name + FF4Text("  ")
    else
     temp += space(12)

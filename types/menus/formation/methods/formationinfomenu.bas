@@ -50,6 +50,7 @@ sub FormationInfoMenu.Display()
  main_menu.ChangeOption(18, FF4Text("Mystery Flag 3: " + YesNo(formations(index).mystery_flag3)), 15)
  main_menu.ChangeOption(19, FF4Text("Gives rewards:  " + YesNo(formations(index).rewards)), 15)
  main_menu.Display()
+ FormationPreview(index)
  
 end sub
 
