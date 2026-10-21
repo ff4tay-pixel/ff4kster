@@ -100,6 +100,13 @@ How to use it: `git clone --depth 1` it into a **scratch directory** (not the pr
 | `battle/battle.asm`, `battle/win.asm` | Loading a formation, battle results, `LevelUp` (the exact stat/HP/MP rules) |
 | `tools/romtools/data-codec.js`, `gfx.js` | Data and graphics formats (tilemap flags, 3bpp/4bpp) |
 
+Two more places that answered questions: `notes/ff4j-sfc-ram-map.txt` (the battle RAM: a unit's 128 byte
+properties at 2000h, equipment properties at 2780h with the weapon flag bits, battle commands 00-24h) and the
+`weaponArmorProperties` / `itemProperties` tables in the rip JSON (equipment flags, types and stat bonuses).
+For "what does the game do with this byte" search the `.asm` for the RAM address (`$2683`, `$2050,x`) and for
+`ldy #$00NN` followed by `($80),y`, and say in the editor which names were read in the code and which only come
+from a table. The Commands editor's "If" lists are the offsets of that 128 byte block.
+
 The data tables themselves (`data/*.asm`) are **not** in the repo; they are generated from a ROM. Addresses in
 the rip JSON and in `.asm` comments are SNES `bank/address` or file offsets: use the conversion below.
 
@@ -205,7 +212,22 @@ decoding and crash problems without a keyboard. Other tricks used:
   an unedited game saves byte-identically.
 - `lu_script` in `subs/edit/editlevelups.bas` feeds scripted keystrokes to that editor for automated tests.
 - Stress loops (all monsters, all formations, all spells) to catch crashes; `fbc -exx` for bounds checks.
-- Build with `./build.ps1`; if the exe is locked because the editor is running, compile to another name to check.
+- Build with `./build.ps1`; if the exe is locked because the editor is running, compile to another name to check
+  (`fbc -x <other>.exe main.bas`; the user usually has the editor open).
+- A menu or dialog that waits on `getkey` cannot be screenshotted. In a scratchpad copy replace its `UserSelect()`
+  with `Display()` + `bsave` (that is how the actions menus were checked), or call the routine behind it directly.
+  `FormFields` takes scripted keys through `fm_script_keys`; the AI editor through `ai_script_keys`.
+- Copy the repo into the scratchpad before patching anything for a test, and never leave test code in the repo.
+
+## Releases
+
+- 0.9 is released; the version being built is **1.0** (README title and the 1.0 entry of the version history).
+  Changes go into the current entry, never into an entry that was released.
+- The release zip is `FF4kster-vX/` containing `README.md`, `ff4kster-console.exe` and `config/` (all `.dat`
+  files), written with Python's `zipfile` so the paths use forward slashes (PowerShell's `Compress-Archive` writes
+  backslashes). Build the exe from the committed source first; if `ff4kster-console.exe` is locked, compile to a
+  temp name and put that in the zip. Do not replace an older version's zip.
+- Release notes are plain GitHub markdown given in a code block (copying from the terminal loses formatting).
 
 ## Working agreements
 
