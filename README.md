@@ -1322,10 +1322,8 @@ selects it.
     DELETE:          Remove the condition or action (a pair keeps at least one
                      condition).
     D:               On a condition: delete the whole pair (an AI keeps at least one).
-    S:               On a condition: another condition set for the pair, from a list.
-    U:               Make private copies of what this line shares: the pair's
-                     conditions, or its script.
-    CTRL+U:          On a condition: a private copy of just this condition.
+    S:               On a condition: change the condition set of the pair (the
+                     "set N" on its first line), from a list.
     CTRL+C / CTRL+V: Copy a condition or an action and paste it after the
                      cursor line (a condition on a condition line, an action on an
                      action line). Copying works
@@ -1341,10 +1339,8 @@ selects it.
 Conditions, condition sets and scripts are shared in the ROM: one script can
 serve many pairs and many AIs. The number after "used" counts the places that
 use it (yellow when it is more than one), and a change to a shared item changes
-all of them. To change only this pair, press U first: it points the pair at a
-private copy in an unused slot (a ROM where all slots are taken says so and
-changes nothing). Adding a pair, a condition or an action also needs unused
-slots for the new parts.
+all of them. To make only this pair behave differently, point it at another
+condition set or script instead (S, or the Script line).
 
 The footer shows how full the four AI areas of the ROM are (groups, condition
 sets, regular scripts and lunar scripts). Over the limit, Save ROM refuses to
@@ -1584,7 +1580,7 @@ VERSION HISTORY
       column with a bank header
     - Enemy AI editor rewritten as a full screen editor with two panels
       (the AI script to look at or use, and all its pairs with their
-      conditions and actions in the style of the monster editor's AI box) with insert/delete, private copies on request,
+      conditions and actions in the style of the monster editor's AI box) with insert/delete,
       copy/paste, undo, a list of the monsters that use the AI and a
       room check (Save ROM refuses AI data that does not fit)
     - Monster editor: the cursor moves straight into the boxes (no Edit menu),

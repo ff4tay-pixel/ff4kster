@@ -138,7 +138,7 @@ sub MonDrawAIBox(x as Integer, y as Integer, inner_h as Integer, title as String
  BlueBox(x, y, 31, inner_h)
  LuText(title, x, y, 14)
  LuText("AI " + str(index), x + 1, y + 1, 15)
- LuText("Bank: " + iif(lunar_flag, "LUNAR", "Regular"), x + 1, y + 2, iif(lunar_flag, 12, 23))
+ LuText("Bank: " + iif(lunar_flag, "LUNAR (moon monster)", "Regular"), x + 1, y + 2, iif(lunar_flag, 12, 23))
 
  ai_index = index
  ai_lunar = lunar_flag
@@ -406,7 +406,7 @@ function MonHint(m as Integer) as String
    return "Enter or Space switches it on and edits it. Yellow is on."
   case else
    if mon_ai_row = 1 then return "Enter opens the AI editor for the attack AI of this monster."
-   if mon_ai_row = 2 then return "Enter or Space switches the AI bank, regular or lunar. L does it from any box."
+   if mon_ai_row = 2 then return "Enter or Space switches the AI bank. Moon monsters use LUNAR. L does it from any box."
    if monsters(m).has_reaction then return "Enter opens the AI editor on the reaction AI of this monster."
    return "No reaction AI. Switch Reaction on in box 5 to give this monster one."
  end select
