@@ -208,67 +208,97 @@ end sub
 sub DrawPortraitScreen(portrait as Integer, pal as Integer, mode as Integer, pixel_x as Integer, pixel_y as Integer, brush as Integer)
 
  'mode: 0 = pixel editor, 1 = palette editor (brush is then the selected color)
+ 'Windows like the rest of the editor: title, picture, preview, all portraits, palette, color details and the keys
 
  dim px as Integer
  dim py as Integer
  dim own_pal as Integer
  dim v as UInteger
+ dim role as String
 
  screenlock
  line (0, 0)-(639, 463), RGB(0, 0, 0), bf
 
- WriteText(FF4Text(PortraitName(portrait) + "   Palette " + str(pal) + "   Pixel " + str(pixel_x) + "," + str(pixel_y)), 2, 2, 15)
+ 'Title
+ BlueBox(0, 0, 78, 1)
+ WriteText(FF4Text(PortraitName(portrait) + "   Palette " + str(pal)), 2, 1, 15)
+ LuText("Pixel " + str(pixel_x) + "," + str(pixel_y), 66, 1, 14)
 
  'Large picture
- DrawPortraitImage(portrait, 16, 48, 8, pal)
+ BlueBox(0, 3, 34, 34)
+ LuText(" PICTURE ", 1, 3, 14)
+ DrawPortraitImage(portrait, 16, 40, 8, pal)
  if mode = 0 then
   px = 16 + pixel_x * 8
-  py = 48 + pixel_y * 8
+  py = 40 + pixel_y * 8
   line (px - 1, py - 1)-(px + 8, py + 8), RGB(255, 255, 0), b
   line (px, py)-(px + 7, py + 7), RGB(0, 0, 0), b
  end if
 
  'Actual size, double and triple size
- WriteText(FF4Text("Preview"), 40, 5, 14)
- DrawPortraitImage(portrait, 320, 48, 1, pal)
- DrawPortraitImage(portrait, 368, 48, 2, pal)
- DrawPortraitImage(portrait, 448, 48, 3, pal)
+ BlueBox(37, 3, 41, 15)
+ LuText(" PREVIEW ", 38, 3, 14)
+ DrawPortraitImage(portrait, 320, 40, 1, pal)
+ DrawPortraitImage(portrait, 368, 40, 2, pal)
+ DrawPortraitImage(portrait, 448, 40, 3, pal)
 
  'Every portrait
- WriteText(FF4Text("All portraits"), 40, 17, 14)
+ BlueBox(37, 20, 41, 16)
+ LuText(" ALL PORTRAITS ", 38, 20, 14)
  for p as Integer = 0 to total_portraits - 1
   px = 320 + (p mod 8) * 36
-  py = 152 + (p \ 8) * 36
+  py = 176 + (p \ 8) * 36
   if p = portrait then own_pal = pal else own_pal = PortraitDefaultPalette(p)
   DrawPortraitImage(p, px, py, 1, own_pal)
   if p = portrait then line (px - 2, py - 2)-(px + 33, py + 33), RGB(255, 255, 0), b
  next
 
  'Palette
+ BlueBox(0, 39, 34, 6)
+ LuText(" PALETTE " + str(pal) + " ", 1, 39, iif(mode = 1, 21, 14))
  for i as Integer = 0 to 7
-  px = 16 + i * 34
-  line (px, 320)-(px + 30, 340), PortraitColor(pal, i), bf
-  if i = brush then line (px - 2, 318)-(px + 32, 342), RGB(255, 255, 0), b
-  WriteText(FF4Text(str(i)), (px + 12) \ 8, 43, 15)
-  if len(PortraitColorTag(i)) > 0 then WriteText(FF4Text(PortraitColorTag(i)), (px + 4) \ 8, 44, 14)
+  px = 16 + i * 32
+  line (px, 328)-(px + 28, 348), PortraitColor(pal, i), bf
+  if i = brush then line (px - 2, 326)-(px + 30, 350), RGB(255, 255, 0), b
+  LuText(str(i), (px + 12) \ 8, 44, 15)
+  if len(PortraitColorTag(i)) > 0 then LuText(PortraitColorTag(i), (px + 4) \ 8, 45, 14)
  next
 
- if mode = 1 then
-  v = portrait_palette_raw(pal, brush)
-  WriteText(FF4Text("Editing palette " + str(pal) + ", color " + str(brush) + IIf(brush = 0, ", transparent, not editable", IIf(len(PortraitColorRole(brush)) > 0, ", " + PortraitColorRole(brush), "") + "   R " + str(v mod 32) + "  G " + str((v \ 32) mod 32) + "  B " + str((v \ 1024) mod 32))), 2, 46, 14)
-  WriteText(FF4Text("Left Right pick a color. Q A red, W S green, E D blue: up and down"), 2, 48, 15)
-  WriteText(FF4Text("Palette " + str(pal) + " is also used by the Pig, Small and Toad pictures"), 2, 50, 15)
-  WriteText(FF4Text("Bracket keys move this color left or right in the palette, the pixels follow"), 2, 52, 15)
-  WriteText(FF4Text("Ctrl-Z undo   Ctrl-R revert this palette   Esc back to the picture"), 2, 54, 15)
+ 'The color the brush is on
+ BlueBox(37, 38, 41, 7)
+ LuText(" COLOR ", 38, 38, iif(mode = 1, 21, 14))
+ v = portrait_palette_raw(pal, brush)
+ role = PortraitColorRole(brush)
+ LuText("Color " + str(brush) + iif(len(role) > 0, ", " + role, ""), 39, 40, 15)
+ if brush = 0 then
+  LuText("Transparent, not editable", 39, 41, 23)
  else
-  WriteText(FF4Text("Arrows move   0-7 paint a color   Space paint with brush   F fill"), 2, 48, 15)
-  WriteText(FF4Text("Comma Period change palette   P edit the palette colors"), 2, 50, 15)
-  WriteText(FF4Text("X Y flip   Ctrl-C Ctrl-V copy picture   Ctrl-Z undo   R revert"), 2, 52, 15)
-  WriteText(FF4Text("PgUp PgDn other portrait   Home End first last row   Esc back"), 2, 54, 15)
+  LuText("R " + str(v mod 32) + "   G " + str((v \ 32) mod 32) + "   B " + str((v \ 1024) mod 32), 39, 41, 23)
+ end if
+ if mode = 1 then LuText("Palette " + str(pal) + " is also used by the Pig, Small and Toad pictures", 39, 43, 14)
+
+ 'Keys
+ BlueBox(0, 47, 78, 6)
+ if mode = 1 then
+  LuText(" KEYS, PALETTE ", 1, 47, 21)
+  LuText("Left Right pick a color. Q A red, W S green, E D blue: up and down", 2, 49, 15)
+  LuText("Bracket keys move this color left or right in the palette, the pixels follow", 2, 50, 15)
+  LuText("Ctrl-Z undo   Ctrl-R revert this palette   Esc back to the picture", 2, 51, 15)
+ else
+  LuText(" KEYS, PICTURE ", 1, 47, 14)
+  LuText("Arrows move   0-7 paint a color   Space paint with brush   F fill", 2, 49, 15)
+  LuText("Comma Period change palette   P edit the palette colors", 2, 50, 15)
+  LuText("X Y flip   Ctrl-C Ctrl-V copy picture   Ctrl-Z undo   R revert", 2, 51, 15)
+  LuText("PgUp PgDn other portrait   Home End first last row   Esc back", 2, 52, 15)
+  LuText("E export this portrait as a BMP   I import it from the BMP", 2, 53, 15)
  end if
  screenunlock
 
 end sub
+
+
+declare function ExportPortrait(p as Integer, pal as Integer) as String
+declare function ImportOnePortrait(p as Integer) as String
 
 
 sub EditPortrait(portrait_start as Integer)
@@ -326,6 +356,14 @@ sub EditPortrait(portrait_start as Integer)
      PortraitPaint(portrait, pixel_x, pixel_y, brush)
     case asc("f"), asc("F")
      PortraitFill(portrait, pixel_x, pixel_y, brush)
+    case asc("e"), asc("E")
+     InfoBox(ExportPortrait(portrait, pal) + "||Press any key", 4, 20)
+    case asc("i"), asc("I")
+     if ConfirmBox("Import replaces this portrait and its palette. Continue?") then
+      InfoBox(ImportOnePortrait(portrait) + "||Press any key", 4, 20)
+      pt_undo_count = 0
+      pt_pal_undo_count = 0
+     end if
     case asc("["), asc("-")
      brush = (brush + 7) mod 8
     case asc("]")
@@ -506,6 +544,17 @@ function ReadPortraitBMP(path as String, portrait as Integer, pal as Integer, by
 end function
 
 
+function ExportPortrait(p as Integer, pal as Integer) as String
+
+ 'One portrait, with the palette the editor is showing. Returns a message for the user
+
+ if WritePortraitBMP(PortraitPath(PortraitFileName(p, pal)), p, pal) then return "Wrote " + PortraitFileName(p, pal) + "|to exports\portraits"
+
+ return "Export failed|Check that exports\portraits can be written"
+
+end function
+
+
 function ExportPortraits() as String
 
  dim written as Integer
@@ -521,30 +570,54 @@ function ExportPortraits() as String
 end function
 
 
-function ImportPortraits() as String
+function ImportPortraitImage(p as Integer, byref report as String) as Integer
+
+ 'Reads portrait_NN_pal_*.bmp of portrait p. Returns 1 if it was read, 0 if there is no such file, -1 if it
+ ' could not be read. Problems are added to report.
 
  dim number as Integer
- dim images_read as Integer
  dim name_found as String
- dim pal as Integer
+ dim pal as Integer = PortraitDefaultPalette(p)
  dim problem as String
+
+ name_found = dir(PortraitPath("portrait_" + Pad(str(p), 2, true, "0") + "_pal_*.bmp"))
+ if len(name_found) = 0 then return 0
+
+ if len(name_found) >= 18 then
+  number = val(mid(name_found, 16, 2))
+  if number >= 0 and number <= 15 and mid(name_found, 16, 2) = Pad(str(number), 2, true, "0") then pal = number
+ end if
+ if ReadPortraitBMP(PortraitPath(name_found), p, pal, problem) then return 1
+ report += "|" + name_found + ": " + problem
+
+ return -1
+
+end function
+
+
+function ImportOnePortrait(p as Integer) as String
+
+ dim report as String
+
+ select case ImportPortraitImage(p, report)
+  case 0
+   return "No portrait_" + Pad(str(p), 2, true, "0") + "_pal_PP.bmp found|in exports\portraits"
+  case 1
+   return "Read the portrait image" + report
+ end select
+
+ return "Import failed" + report
+
+end function
+
+
+function ImportPortraits() as String
+
+ dim images_read as Integer
  dim report as String
 
  for p as Integer = 0 to total_portraits - 1
-  name_found = dir(PortraitPath("portrait_" + Pad(str(p), 2, true, "0") + "_pal_*.bmp"))
-  if len(name_found) > 0 then
-   pal = PortraitDefaultPalette(p)
-   if len(name_found) >= 18 then
-    number = val(mid(name_found, 16, 2))
-    if number >= 0 and number <= 15 and mid(name_found, 16, 2) = Pad(str(number), 2, true, "0") then pal = number
-   end if
-   problem = ""
-   if ReadPortraitBMP(PortraitPath(name_found), p, pal, problem) then
-    images_read += 1
-   else
-    report += "|" + name_found + ": " + problem
-   end if
-  end if
+  if ImportPortraitImage(p, report) = 1 then images_read += 1
  next
 
  if images_read = 0 and len(report) = 0 then return "No portrait_NN_pal_PP.bmp files found|in exports\portraits"
@@ -553,9 +626,31 @@ function ImportPortraits() as String
 end function
 
 
+function PickPortrait(title as String) as Integer
+
+ 'All portraits (0) or one of them (its number plus 1). Returns -1 if cancelled.
+
+ dim m as BlueMenu
+
+ m = BlueMenu(4, 6)
+ m.max_rows = 20
+ m.title = title
+ m.AddOption(FF4Text("All portraits"))
+ for i as Integer = 0 to total_portraits - 1
+  m.AddOption(FF4Text(PortraitName(i)))
+ next
+ m.UserSelect()
+ if m.cancelled then return -1
+
+ return m.selected - 1
+
+end function
+
+
 sub EditPortraits()
 
  dim select_portrait as BlueMenu
+ dim which as Integer
 
  select_portrait.max_rows = total_portraits + 2
  for i as Integer = 0 to total_portraits - 1
@@ -577,11 +672,13 @@ sub EditPortraits()
    else
     select case select_portrait.selected - total_portraits
      case 1
+      WriteText(FF4Text("Enter asks for all portraits or just one."), 37, 7, 15)
       WriteText(FF4Text("Writes one BMP per portrait, portrait_NN_pal_PP.bmp,"), 37, 8, 15)
       WriteText(FF4Text("32x32. The palette is the BMP's own color table,"), 37, 9, 15)
       WriteText(FF4Text("colors 0 to 7."), 37, 10, 15)
      case else
-      WriteText(FF4Text("Reads every portrait_NN_pal_PP.bmp. Its color table"), 37, 8, 15)
+      WriteText(FF4Text("Enter asks for all portraits or just one."), 37, 7, 15)
+      WriteText(FF4Text("Reads portrait_NN_pal_PP.bmp. Its color table"), 37, 8, 15)
       WriteText(FF4Text("sets the colors of palette PP, which other"), 37, 9, 15)
       WriteText(FF4Text("portraits of the same character share."), 37, 10, 15)
     end select
@@ -593,10 +690,22 @@ sub EditPortraits()
    if select_portrait.selected <= total_portraits then
     EditPortrait(select_portrait.selected - 1)
    elseif select_portrait.selected = total_portraits + 1 then
-    InfoBox(ExportPortraits() + "||Press any key", 4, 20)
+    which = PickPortrait("Export which portrait?")
+    if which = 0 then
+     InfoBox(ExportPortraits() + "||Press any key", 4, 20)
+    elseif which > 0 then
+     InfoBox(ExportPortrait(which - 1, PortraitDefaultPalette(which - 1)) + "||Press any key", 4, 20)
+    end if
    else
-    if ConfirmBox("Import replaces the current portraits and palettes. Continue?") then
-     InfoBox(ImportPortraits() + "||Press any key", 4, 20)
+    which = PickPortrait("Import which portrait?")
+    if which >= 0 then
+     if ConfirmBox("Import replaces the current portraits and palettes. Continue?") then
+      if which = 0 then
+       InfoBox(ImportPortraits() + "||Press any key", 4, 20)
+      else
+       InfoBox(ImportOnePortrait(which - 1) + "||Press any key", 4, 20)
+      end if
+     end if
     end if
    end if
   end if

@@ -550,6 +550,7 @@ end sub
 sub MsDrawScreen(index as Integer, mode as Integer, zoom as Integer, cx as Integer, cy as Integer, brush as Integer, picture_x as Integer, picture_y as Integer, message as String)
 
  'mode 0 = pixels, 1 = palette colors
+ 'Windows like the rest of the editor: title, picture, preview, palette, brush details and the keys
 
  dim sx as Integer
  dim sy as Integer
@@ -559,11 +560,16 @@ sub MsDrawScreen(index as Integer, mode as Integer, zoom as Integer, cx as Integ
  screenlock
  line (0, 0)-(639, 463), RGB(0, 0, 0), bf
 
- WriteText(FF4Text(FF4Name(monsters(index).name) + "   monster " + str(index) + "   " + str(ms_tiles_wide * 8) + "x" + str(ms_tiles_high * 8) + "   palette " + str(ms_palette_id) + iif(ms_deep, " and the next", "") + "   pixel " + str(cx) + "," + str(cy)), 2, 1, 15)
+ 'Title
+ BlueBox(0, 0, 78, 2)
+ WriteText(FF4Text(FF4Name(monsters(index).name) + "   monster " + str(index) + "   " + str(ms_tiles_wide * 8) + "x" + str(ms_tiles_high * 8) + "   palette " + str(ms_palette_id) + iif(ms_deep, " and the next", "")), 2, 1, 15)
  if shared_count > 0 then
-  WriteText(FF4Text("Shared with " + str(shared_count) + " other monsters, they change too"), 2, 3, 14)
+  WriteText(FF4Text("Shared with " + str(shared_count) + " other monsters, they change too"), 2, 2, 14)
  end if
 
+ 'Picture
+ BlueBox(0, 4, 53, 40)
+ LuText(" PICTURE ", 1, 4, iif(mode = 0, 14, 23))
  MsDrawPicture(picture_x, picture_y, zoom)
  if mode = 0 then
   sx = picture_x + cx * zoom
@@ -571,8 +577,9 @@ sub MsDrawScreen(index as Integer, mode as Integer, zoom as Integer, cx as Integ
   line (sx - 1, sy - 1)-(sx + zoom, sy + zoom), RGB(255, 255, 0), b
  end if
 
- 'Preview at actual size and double
- WriteText(FF4Text("Preview"), 56, 1, 14)
+ 'Preview at actual size
+ BlueBox(54, 4, 24, 20)
+ LuText(" PREVIEW ", 55, 4, 14)
  line (440, 40)-(631, 195), RGB(16, 16, 32), bf
  for y as Integer = 0 to ms_tiles_high * 8 - 1
   for x as Integer = 0 to ms_tiles_wide * 8 - 1
@@ -581,32 +588,44 @@ sub MsDrawScreen(index as Integer, mode as Integer, zoom as Integer, cx as Integ
  next
 
  'Palette
- WriteText(FF4Text("Palette"), 56, 26, 14)
+ BlueBox(54, 26, 24, 11)
+ LuText(" PALETTE " + str(ms_palette_id) + " ", 55, 26, iif(mode = 1, 21, 14))
  for i as Integer = 0 to ms_color_count - 1
   sx = 440 + (i mod 8) * 24
   sy = 224 + (i \ 8) * 40
   line (sx, sy)-(sx + 20, sy + 20), iif(i = 0, RGB(40, 40, 40), MsColor(i)), bf
   line (sx - 1, sy - 1)-(sx + 21, sy + 21), RGB(100, 100, 100), b
   if i = brush then line (sx - 2, sy - 2)-(sx + 22, sy + 22), RGB(255, 255, 0), b
-  WriteText(FF4Text(str(i)), (sx + 6) \ 8, (sy + 24) \ 8, 15)
+  LuText(str(i), (sx + 6) \ 8, (sy + 24) \ 8, 15)
  next
 
+ 'The pixel and the color the brush is on
+ BlueBox(54, 39, 24, 4)
+ LuText(" BRUSH ", 55, 39, iif(mode = 1, 21, 14))
+ v = ms_pal(brush)
+ LuText("Pixel " + str(cx) + "," + str(cy), 55, 40, 15)
+ LuText("Color " + str(brush) + iif(brush = 0, ", transparent", ""), 55, 41, 15)
+ if brush > 0 then LuText("R " + str(v mod 32) + "  G " + str((v \ 32) mod 32) + "  B " + str((v \ 1024) mod 32), 55, 42, 23)
+
+ 'Keys
+ BlueBox(0, 46, 78, 10)
  if mode = 1 then
-  v = ms_pal(brush)
-  WriteText(FF4Text("Editing color " + str(brush) + iif(brush = 0, ", transparent, not editable", "   R " + str(v mod 32) + "  G " + str((v \ 32) mod 32) + "  B " + str((v \ 1024) mod 32))), 2, 47, 14)
-  WriteText(FF4Text("Left Right pick a color. Q A red, W S green, E D blue: up and down"), 2, 50, 15)
-  WriteText(FF4Text("Ctrl-Z undo   Ctrl-R revert this palette   Esc back to the picture"), 2, 52, 15)
-  WriteText(FF4Text("Bracket keys move this color left or right in the palette, the pixels of"), 2, 54, 15)
-  WriteText(FF4Text("every monster that uses the palette follow"), 2, 55, 15)
+  LuText(" KEYS, PALETTE ", 1, 46, 21)
+  LuText("Editing color " + str(brush) + iif(brush = 0, ", transparent, not editable", ""), 2, 48, 14)
+  LuText("Left Right pick a color. Q A red, W S green, E D blue: up and down", 2, 49, 15)
+  LuText("Ctrl-Z undo   Ctrl-R revert this palette   Esc back to the picture", 2, 50, 15)
+  LuText("Bracket keys move this color left or right in the palette, the pixels of", 2, 51, 15)
+  LuText("every monster that uses the palette follow", 2, 52, 15)
  else
-  WriteText(FF4Text("Arrows move   0-9 paint a color   Space paints with the brush   F fill"), 2, 48, 15)
-  WriteText(FF4Text("Minus Plus pick the brush   P edit the palette colors   Ctrl-Z undo"), 2, 50, 15)
-  WriteText(FF4Text("X Y flip a plain monster   Ctrl-R revert   PgUp PgDn other monster"), 2, 52, 15)
-  WriteText(FF4Text("E export a BMP   I import a BMP   O sort the palette"), 2, 54, 15)
-  WriteText(FF4Text("Mouse: click and drag paint, right click picks a color, click a swatch"), 2, 55, 15)
+  LuText(" KEYS, PICTURE ", 1, 46, 14)
+  LuText("Arrows move   0-9 paint a color   Space paints with the brush   F fill", 2, 48, 15)
+  LuText("Minus Plus pick the brush   P edit the palette colors   Ctrl-Z undo", 2, 49, 15)
+  LuText("X Y flip a plain monster   Ctrl-R revert   PgUp PgDn other monster", 2, 50, 15)
+  LuText("E export a BMP   I import a BMP   O sort the palette", 2, 51, 15)
+  LuText("Mouse: click and drag paint, right click picks a color, click a swatch", 2, 52, 15)
  end if
- if len(message) > 0 then WriteText(FF4Text(message), 2, 56, 12)
- WriteText(FF4Text("Esc stores the changes and leaves"), 2, 57, 15)
+ if len(message) > 0 then LuText(message, 2, 54, 12)
+ LuText("Esc stores the changes and leaves", 2, 55, 23)
  screenunlock
 
 end sub

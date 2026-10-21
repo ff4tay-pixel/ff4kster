@@ -583,8 +583,10 @@ named on the "Editing palette" line. Portraits: 0 transparent, 1 white, 2 skin,
 numbers when you recolor or reorder, because the game does not care but your
 own images, and the next person using the palette, will.
 
-The last two list entries export and import one BMP per portrait,
-portrait_NN_pal_PP.bmp in exports\portraits. They are 32x32 indexed images
+The last two list entries export and import portraits as BMP files,
+portrait_NN_pal_PP.bmp in exports\portraits, one per portrait. Each asks for
+all portraits or just one. While editing a portrait, E exports it and I imports
+it (with the palette shown, and PP in the file name tells which palette to set). They are 32x32 indexed images
 whose own color table is the palette: entry N is color N and a pixel's value is
 its color number, so your image editor must not renumber the colors (move a
 color with the bracket keys in the palette editor instead). A pixel above color
@@ -644,7 +646,8 @@ other colors are free (hair, armor, ...). Keep these numbers when you recolor,
 reorder colors or import an image, so that the characters stay consistent.
 
 Export and import. The last two entries of the character list write and read
-one BMP per character in the `exports/battle_sprites` folder next to the editor,
+one BMP per character (each asks for all characters or just one; in the tile
+sheet, E exports the character being edited and I imports it) in the `exports/battle_sprites` folder next to the editor,
 named `poses_NN_pal_PP.bmp` (NN is the character sheet, PP the palette). Each is
 a 112x48 image with 4 bits per pixel, so it opens in any editor that supports
 indexed color (Aseprite, GIMP, GraphicsGale, ...). The poses are packed together
@@ -1583,6 +1586,11 @@ VERSION HISTORY
       conditions and actions in the style of the monster editor's AI box) with insert/delete,
       copy/paste, undo, a list of the monsters that use the AI and a
       room check (Save ROM refuses AI data that does not fit)
+    - Battle sprites and portraits: export and import can be done for one
+      character or portrait (the list asks, and E / I work while editing)
+    - Battle Sprites, Portraits and Monster Sprites screens redrawn in blue
+      windows like the rest of the editor (picture, preview, palette, color
+      details and a keys window)
     - Monster editor: the cursor moves straight into the boxes (no Edit menu),
       every value is edited in place, extras are switched on and off with
       Space, a hint line says what Enter does, the AI is summed up pair by pair

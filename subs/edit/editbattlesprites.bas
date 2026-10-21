@@ -233,79 +233,99 @@ end sub
 sub DrawBattleSpriteScreen(sheet as Integer, tile_id as Integer, pose as Integer, pal as Integer, mode as Integer, pixel_x as Integer, pixel_y as Integer, brush as Integer)
 
  'mode: 0 = tile sheet, 1 = pixel editor, 2 = palette editor (brush is then the selected color)
+ 'Windows like the rest of the editor: title, tiles, pose, tile, every pose, palette and the keys
 
  dim tx as Integer
  dim ty as Integer
  dim px as Integer
  dim py as Integer
  dim c as UInteger
+ dim v as UInteger
 
  screenlock
  line (0, 0)-(639, 463), RGB(0, 0, 0), bf
 
- WriteText(BattleSheetName(sheet) + FF4Text("   Palette " + str(pal)), 2, 2, 15)
- WriteText(FF4Text("Tiles"), 2, 6, 14)
- WriteText(FF4Text("Pose: " + BattlePoseName(pose)), 37, 6, 14)
- WriteText(FF4Text("Tile " + str(tile_id)), 57, 6, 14)
+ 'Title
+ BlueBox(0, 0, 78, 1)
+ WriteText(BattleSheetName(sheet) + FF4Text("   Palette " + str(pal)), 2, 1, 15)
+ WriteText(FF4Text("Pose: " + BattlePoseName(pose) + "   Tile " + str(tile_id)), 50, 1, 14)
 
  'Tile sheet
+ BlueBox(0, 3, 34, 34)
+ LuText(" TILES ", 1, 3, iif(mode = 0, 14, 23))
  for t as Integer = 0 to 63
-  DrawBattleTile(sheet, t, 16 + (t mod 8) * 33, 64 + (t \ 8) * 33, 4, pal)
+  DrawBattleTile(sheet, t, 16 + (t mod 8) * 33, 36 + (t \ 8) * 33, 4, pal)
  next
  tx = 16 + (tile_id mod 8) * 33
- ty = 64 + (tile_id \ 8) * 33
+ ty = 36 + (tile_id \ 8) * 33
  if mode <> 0 then c = RGB(160, 160, 160) else c = RGB(255, 255, 0)
  line (tx - 2, ty - 2)-(tx + 33, ty + 33), c, b
  line (tx - 1, ty - 1)-(tx + 32, ty + 32), c, b
 
  'Current pose, large
- DrawBattlePose(sheet, pose, 300, 64, 6, pal)
+ BlueBox(36, 3, 20, 20)
+ LuText(" POSE ", 37, 3, 14)
+ DrawBattlePose(sheet, pose, 304, 36, 6, pal)
 
  'Tile being edited, large
+ BlueBox(58, 3, 20, 20)
+ LuText(" TILE " + str(tile_id) + " ", 59, 3, iif(mode = 1, 21, 14))
  for row as Integer = 0 to 7
   for col as Integer = 0 to 7
-   line (460 + col * 20, 64 + row * 20)-step(18, 18), BattleColor(pal, battle_char_gfx(sheet, tile_id, row, col)), bf
+   line (488 + col * 16, 36 + row * 16)-step(14, 14), BattleColor(pal, battle_char_gfx(sheet, tile_id, row, col)), bf
   next
  next
  if mode = 1 then
-  px = 460 + pixel_x * 20
-  py = 64 + pixel_y * 20
-  line (px - 1, py - 1)-(px + 19, py + 19), RGB(255, 255, 0), b
-  line (px, py)-(px + 18, py + 18), RGB(0, 0, 0), b
+  px = 488 + pixel_x * 16
+  py = 36 + pixel_y * 16
+  line (px - 1, py - 1)-(px + 15, py + 15), RGB(255, 255, 0), b
+  line (px, py)-(px + 14, py + 14), RGB(0, 0, 0), b
  end if
+ LuText("Pixel " + str(pixel_x) + "," + str(pixel_y), 60, 21, 23)
 
  'Every pose, small
+ BlueBox(36, 24, 42, 16)
+ LuText(" ALL POSES ", 37, 24, 14)
  for img as Integer = 0 to image_pose_count - 1
-  px = 300 + (img mod 7) * 48
-  py = 232 + (img \ 7) * 52
+  px = 298 + (img mod 7) * 47
+  py = 212 + (img \ 7) * 52
   DrawBattlePose(sheet, ImagePoseId(img), px, py, 2, pal)
   if ImagePoseId(img) = pose then line (px - 1, py - 1)-(px + 48, py + 48), RGB(255, 255, 0), b
  next
 
  'Palette
+ BlueBox(0, 42, 78, 5)
+ LuText(" PALETTE " + str(pal) + " ", 1, 42, iif(mode = 2, 21, 14))
  for i as Integer = 0 to 15
-  px = 16 + i * 30
-  line (px, 344)-(px + 27, 364), BattleColor(pal, i), bf
+  px = 16 + i * 36
+  line (px, 348)-(px + 32, 364), BattleColor(pal, i), bf
   if mode <> 0 and i = brush then
-   line (px - 2, 342)-(px + 29, 366), RGB(255, 255, 0), b
+   line (px - 2, 346)-(px + 34, 366), RGB(255, 255, 0), b
   end if
-  WriteText(FF4Text(hex(i)), (px + 10) \ 8, 47, 15)
-  if len(BattleColorTag(i)) > 0 then WriteText(FF4Text(BattleColorTag(i)), (px + 7) \ 8, 48, 14)
+  LuText(hex(i), (px + 14) \ 8, 46, 15)
+  if len(BattleColorTag(i)) > 0 then LuText(BattleColorTag(i), (px + 10) \ 8, 47, 14)
  next
 
+ 'Keys
+ BlueBox(0, 49, 78, 7)
  if mode = 2 then
-  WriteText(FF4Text("Editing palette " + str(pal) + ", color " + hex(brush) + IIf(brush = 0, ", transparent, not editable", IIf(len(BattleColorRole(brush)) > 0, ", " + BattleColorRole(brush), "") + "   R " + str((battle_palette_raw(pal, brush) mod 32)) + "  G " + str((battle_palette_raw(pal, brush) \ 32) mod 32) + "  B " + str((battle_palette_raw(pal, brush) \ 1024) mod 32))), 2, 50, 14)
-  WriteText(FF4Text("Left Right pick a color. Q A red, W S green, E D blue: up and down"), 2, 52, 15)
-  WriteText(FF4Text("Bracket keys move this color left or right, the sprite pixels follow"), 2, 54, 15)
-  WriteText(FF4Text("Ctrl-Z undo   Ctrl-R revert this palette   Esc back to the tile sheet"), 2, 56, 15)
+  v = battle_palette_raw(pal, brush)
+  LuText(" KEYS, PALETTE ", 1, 49, 21)
+  LuText("Color " + hex(brush) + iif(brush = 0, ", transparent, not editable", iif(len(BattleColorRole(brush)) > 0, ", " + BattleColorRole(brush), "") + "   R " + str(v mod 32) + "  G " + str((v \ 32) mod 32) + "  B " + str((v \ 1024) mod 32)), 2, 51, 14)
+  LuText("Left Right pick a color. Q A red, W S green, E D blue: up and down", 2, 52, 15)
+  LuText("Bracket keys move this color left or right, the sprite pixels follow", 2, 53, 15)
+  LuText("Ctrl-Z undo   Ctrl-R revert this palette   Esc back to the tile sheet", 2, 54, 15)
  elseif mode = 1 then
-  WriteText(FF4Text("Arrows move   0-9 A-F paint a color   Space paint with brush"), 2, 51, 15)
-  WriteText(FF4Text("Brackets change the brush. X Y flip. Ctrl-Z undo. Ctrl-C Ctrl-V copy tile"), 2, 53, 15)
-  WriteText(FF4Text("Esc back to the tile sheet"), 2, 55, 15)
+  LuText(" KEYS, PIXELS ", 1, 49, 21)
+  LuText("Arrows move   0-9 A-F paint a color   Space paint with brush", 2, 51, 15)
+  LuText("Brackets change the brush. X Y flip. Ctrl-Z undo. Ctrl-C Ctrl-V copy tile", 2, 52, 15)
+  LuText("Esc back to the tile sheet", 2, 53, 15)
  else
-  WriteText(FF4Text("Arrows move   Enter edit tile   PgUp / PgDn change pose"), 2, 51, 15)
-  WriteText(FF4Text(", . change palette   P edit palette colors   Ctrl-C / V copy / paste tile"), 2, 53, 15)
-  WriteText(FF4Text("Ctrl-Z undo   R revert this sheet to the loaded ROM   Esc back"), 2, 55, 15)
+  LuText(" KEYS, TILES ", 1, 49, 14)
+  LuText("Arrows move   Enter edit tile   PgUp PgDn change pose", 2, 51, 15)
+  LuText("Comma Period palette   P edit colors   Ctrl-C Ctrl-V copy tile", 2, 52, 15)
+  LuText("Ctrl-Z undo   R revert this sheet to the loaded ROM   Esc back", 2, 53, 15)
+  LuText("E export this character as a BMP   I import it from the BMP", 2, 54, 15)
  end if
  screenunlock
 
@@ -474,6 +494,15 @@ sub EditBattleSheet(sheet as Integer)
      done = true
     case asc("p"), asc("P")
      mode = 2
+    case asc("e"), asc("E")
+     InfoBox(ExportBattleSheet(sheet, pal) + "||Press any key", 4, 20)
+    case asc("i"), asc("I")
+     if ConfirmBox("Import replaces the sprites and palette of this character. Continue?") then
+      InfoBox(ImportOneBattleSheet(sheet) + "||Press any key", 4, 20)
+      RefreshBattlePalettes()
+      bs_undo_count = 0
+      bs_pal_undo_count = 0
+     end if
     case LEFT_KEY
      if tile_id mod 8 > 0 then tile_id -= 1
     case RIGHT_KEY
@@ -508,9 +537,31 @@ sub EditBattleSheet(sheet as Integer)
 end sub
 
 
+function PickBattleSheet(title as String) as Integer
+
+ 'All characters (0) or one of them (its number plus 1). Returns -1 if cancelled.
+
+ dim m as BlueMenu
+
+ m = BlueMenu(4, 6)
+ m.max_rows = 20
+ m.title = title
+ m.AddOption(FF4Text("All characters"))
+ for i as Integer = 0 to total_battle_char_sheets - 1
+  m.AddOption(BattleSheetName(i))
+ next
+ m.UserSelect()
+ if m.cancelled then return -1
+
+ return m.selected - 1
+
+end function
+
+
 sub EditBattleSprites()
 
  dim select_sheet as BlueMenu
+ dim which as Integer
 
  RefreshBattlePalettes()
 
@@ -534,11 +585,13 @@ sub EditBattleSprites()
    else
     select case select_sheet.selected - total_battle_char_sheets
      case 1
-      WriteText(FF4Text("Writes one BMP per character with all the poses packed"), 37, 8, 15)
-      WriteText(FF4Text("together, poses_NN_pal_PP.bmp, 112x48. The palette"), 37, 9, 15)
-      WriteText(FF4Text("is the BMP's own color table."), 37, 10, 15)
+      WriteText(FF4Text("Enter asks for all characters or just one. Writes a BMP"), 37, 8, 15)
+      WriteText(FF4Text("per character with all the poses packed together,"), 37, 9, 15)
+      WriteText(FF4Text("poses_NN_pal_PP.bmp, 112x48. The palette is the BMP's"), 37, 10, 15)
+      WriteText(FF4Text("own color table."), 37, 11, 15)
      case else
-      WriteText(FF4Text("Reads every poses_NN_pal_PP.bmp and splits the poses"), 37, 8, 15)
+      WriteText(FF4Text("Enter asks for all characters or just one. Reads"), 37, 7, 15)
+      WriteText(FF4Text("poses_NN_pal_PP.bmp and splits the poses"), 37, 8, 15)
       WriteText(FF4Text("back into tiles. Tiles shared by several poses take"), 37, 9, 15)
       WriteText(FF4Text("the pose you changed. If two differ, the first pose"), 37, 10, 15)
       WriteText(FF4Text("wins and you are told. The color table sets the palette."), 37, 11, 15)
@@ -551,11 +604,23 @@ sub EditBattleSprites()
    if select_sheet.selected <= total_battle_char_sheets then
     EditBattleSheet(select_sheet.selected - 1)
    elseif select_sheet.selected = total_battle_char_sheets + 1 then
-    InfoBox(ExportBattleSprites() + "||Press any key", 4, 20)
+    which = PickBattleSheet("Export which character?")
+    if which = 0 then
+     InfoBox(ExportBattleSprites() + "||Press any key", 4, 20)
+    elseif which > 0 then
+     InfoBox(ExportBattleSheet(which - 1, which - 1) + "||Press any key", 4, 20)
+    end if
    else
-    if ConfirmBox("Import replaces the current sprites and palettes. Continue?") then
-     InfoBox(ImportBattleSprites() + "||Press any key", 4, 20)
-     RefreshBattlePalettes()
+    which = PickBattleSheet("Import which character?")
+    if which >= 0 then
+     if ConfirmBox("Import replaces the current sprites and palettes. Continue?") then
+      if which = 0 then
+       InfoBox(ImportBattleSprites() + "||Press any key", 4, 20)
+      else
+       InfoBox(ImportOneBattleSheet(which - 1) + "||Press any key", 4, 20)
+      end if
+      RefreshBattlePalettes()
+     end if
     end if
    end if
   end if

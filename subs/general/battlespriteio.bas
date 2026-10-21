@@ -643,9 +643,22 @@ function ReadBattlePosesBMP(path as String, sheet as Integer, pal as Integer, by
 end function
 
 
+function ExportBattleSheet(s as Integer, pal as Integer) as String
+
+ 'One character, with the palette the editor is showing. Returns a message for the user
+
+ dim file_name as String = "poses_" + Pad(str(s), 2, true, "0") + "_pal_" + Pad(str(pal), 2, true, "0") + ".bmp"
+
+ if WriteBattlePosesBMP(BattleSpritePath(file_name), s, pal) then return "Wrote " + file_name + "|to exports\battle_sprites"
+
+ return "Export failed|Check that exports\battle_sprites can be written"
+
+end function
+
+
 function ExportBattleSprites() as String
 
- 'Returns a message for the user
+ 'Every character. Returns a message for the user
 
  dim written as Integer
  dim failed as Integer
@@ -661,34 +674,64 @@ function ExportBattleSprites() as String
 end function
 
 
-function ImportBattleSprites() as String
+function ImportBattleSheet(s as Integer, byref report as String) as Integer
 
- 'Returns a message for the user
+ 'Reads poses_NN_pal_*.bmp of character s. Returns 1 if it was read, 0 if there is no such file, -1 if it
+ ' could not be read. Problems and warnings are added to report.
 
  dim number as Integer
- dim sheets_read as Integer
  dim name_found as String
- dim pal as Integer
+ dim pal as Integer = s
  dim problem as String
+
+ name_found = dir(BattleSpritePath("poses_" + Pad(str(s), 2, true, "0") + "_pal_*.bmp"))
+ if len(name_found) = 0 then return 0
+
+ if len(name_found) >= 15 then
+  number = val(mid(name_found, 14, 2))
+  if number >= 0 and number <= 15 and mid(name_found, 14, 2) = Pad(str(number), 2, true, "0") then pal = number
+ end if
+ if ReadBattlePosesBMP(BattleSpritePath(name_found), s, pal, problem) then
+  if len(problem) > 0 then report += "|" + name_found + ":" + problem
+  return 1
+ end if
+ report += "|" + name_found + ": " + problem
+
+ return -1
+
+end function
+
+
+function ImportOneBattleSheet(s as Integer) as String
+
+ 'One character. Returns a message for the user
+
  dim report as String
- dim ok as Boolean
+
+ select case ImportBattleSheet(s, report)
+  case 0
+   return "No poses_" + Pad(str(s), 2, true, "0") + "_pal_PP.bmp found|in exports\battle_sprites"
+  case 1
+   return "Imported the pose image (sprites and palette)" + report
+ end select
+
+ return "Import failed" + report
+
+end function
+
+
+function ImportBattleSprites() as String
+
+ 'Every character. Returns a message for the user
+
+ dim sheets_read as Integer
+ dim report as String
+ dim found as Boolean
 
  for s as Integer = 0 to total_battle_char_sheets - 1
-  name_found = dir(BattleSpritePath("poses_" + Pad(str(s), 2, true, "0") + "_pal_*.bmp"))
-  if len(name_found) > 0 then
-   pal = s
-   if len(name_found) >= 15 then
-    number = val(mid(name_found, 14, 2))
-    if number >= 0 and number <= 15 and mid(name_found, 14, 2) = Pad(str(number), 2, true, "0") then pal = number
-   end if
-   problem = ""
-   if ReadBattlePosesBMP(BattleSpritePath(name_found), s, pal, problem) then
-    sheets_read += 1
-    if len(problem) > 0 then report += "|" + name_found + ":" + problem
-   else
-    report += "|" + name_found + ": " + problem
-   end if
-  end if
+  select case ImportBattleSheet(s, report)
+   case 1: sheets_read += 1
+  end select
  next
 
  if sheets_read = 0 and report = "" then return "Nothing to import|Looked in exports\battle_sprites"
