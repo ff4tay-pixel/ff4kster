@@ -144,6 +144,19 @@ constructor CommandParametersMenu(starting_x as UByte = 0, starting_y as UByte =
  for i as Integer = 4 to 15
   stat_menu.AddOption(FF4Text("Unknown"))
  next 
+ 'The rows are the bytes of a unit's battle properties (128 bytes each, row N is byte N). The names that were
+ ' "Unknown" come from the disassembly (everything8215/ff4, battle/ and notes/ff4j-sfc-ram-map.txt): the
+ ' bytes the game code reads are named after what it does with them, the others are listed as unused there.
+ stat_menu.ChangeOption(&h2F + 1, FF4Text("Monster level plus 10"))
+ stat_menu.ChangeOption(&h41 + 1, FF4Text("Base critical hit rate"))
+ stat_menu.ChangeOption(&h42 + 1, FF4Text("Base critical hit bonus"))
+ stat_menu.ChangeOption(&h50 + 1, FF4Text("Action type flags"))
+ stat_menu.ChangeOption(&h55 + 1, FF4Text("Action data pointer - low byte"))
+ stat_menu.ChangeOption(&h56 + 1, FF4Text("Action data pointer - high byte"))
+ stat_menu.ChangeOption(&h73 + 1, FF4Text("Item drop rate and set"))
+ for i as Integer = 0 to 127
+  if stat_menu.options.ItemAt(i + 1) = FF4Text("Unknown") then stat_menu.ChangeOption(i + 1, FF4Text("Unused byte " + hex(i, 2) + "h"))
+ next
  
  message_menu = BlueMenu(x + 9, y + 1)
  message_menu.max_rows = 1

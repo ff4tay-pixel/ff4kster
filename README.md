@@ -835,6 +835,14 @@ Parameters shows the details that go with the command if it has any that can
 be edited (for example base values, multipliers and the stats and elements
 involved).
 
+Commands such as Sing and Fight have "If" lines that test one byte of the
+battle properties of the unit that uses the command (128 bytes each, the list
+is in the order of those bytes). Their names come from the disassembly
+(everything8215/ff4, the battle code and its RAM map): bytes the game reads are
+named after what it does with them ("Base critical hit rate", "Action type
+flags", "Action data pointer", ...), and the others are listed as "Unused byte
+NNh" because nothing in the game uses them.
+
 
 ACTORS
 ------
@@ -1691,6 +1699,8 @@ VERSION HISTORY
       conditions and actions in the style of the monster editor's AI box) with insert/delete,
       copy/paste, undo, a list of the monsters that use the AI and a
       room check (Save ROM refuses AI data that does not fit)
+    - Commands: the unknown bytes in the If lists are named from the disassembly
+      (or shown as unused bytes)
     - Messages editor: the list shows the start of each message, changed ones
       are yellow, the space of the bank is always shown, a menu (Space) has
       find text, add, insert, delete, move, copy, revert, undo and where used,
