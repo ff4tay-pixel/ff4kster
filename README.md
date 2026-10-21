@@ -1,4 +1,4 @@
-# FF4kster v0.9
+# FF4kster v1.0
 
 IMPORTANT NOTES
 ---------------
@@ -1645,6 +1645,30 @@ Zyrthofar
 
 VERSION HISTORY
 ---------------
+* 1.0
+    - Enemy AI editor: one list of pairs in the style of the monster editor's AI box (WHEN, AND and
+      THEN lines, a blank line between pairs, the set and condition numbers and how many places use them),
+      Enter on a condition opens a menu (change the condition set, edit the condition, insert a pair, move the
+      pair), pairs can be added and moved, a new pair starts as set 1 and script 1, and the sharing of sets
+      and scripts is said on screen (private copies were removed)
+    - Commands: the unknown bytes in the If lists are named from the disassembly (or shown as unused bytes)
+    - Messages editor: the list shows the start of each message, changed ones are yellow, the space of the
+      bank is always shown, a menu (Space) has find text, add, insert, delete, move, copy, revert, undo and
+      where used, inserting, deleting and moving bank 2 messages renumbers the NPCs and events that use
+      them, Esc in the text window has a menu (done, insert a code, discard), and Search Everywhere finds
+      messages by text
+    - Menus instead of shortcuts: every action of the sprite editors has an actions menu (Enter, Space on
+      the battle sprite tile sheet), the entry lists have one too (Space: revert, copy, paste, undo, where
+      used), and the Spell Sets editor opens a menu on a spell; the keys still work
+    - Spells, Weapons, Armors and Medicines editors: every box of the entry is on the screen and the cursor
+      moves straight into them (Enter, Space, Tab, 1 2 3, PgUp PgDn) instead of the pick a category menus;
+      weapon properties named from the disassembly
+    - Spell Sets editor: one screen with the starting and learned lists side by side, edited in place
+      instead of the Add / Edit / Delete / Clear menus
+    - Battle sprites and portraits: export and import can be done for one character or portrait (the list
+      asks, and E / I work while editing)
+    - Battle Sprites, Portraits and Monster Sprites screens redrawn in blue windows like the rest of the
+      editor (picture, preview, palette, color details and an actions window)
 * 0.9
     - Edit Monster Sprites: pixel and palette editor for the monsters' pictures, colors can be moved with their pixels,
       BMP export / import moved there from the monster editor, which shows the picture of the selected monster
@@ -1694,35 +1718,11 @@ VERSION HISTORY
       wrote past the end of the monster list), which could crash the editor
     - Monsters screen reorganized: aligned, titled boxes and a clearer AI
       column with a bank header
-    - Enemy AI editor rewritten as a full screen editor with two panels
-      (the AI script to look at or use, and all its pairs with their
-      conditions and actions in the style of the monster editor's AI box) with insert/delete,
+    - Enemy AI editor rewritten as a full screen editor with three panels
+      (the AI script to look at or use, the conditions of its pairs, the
+      actions under them) with insert/delete, private copies on request,
       copy/paste, undo, a list of the monsters that use the AI and a
       room check (Save ROM refuses AI data that does not fit)
-    - Commands: the unknown bytes in the If lists are named from the disassembly
-      (or shown as unused bytes)
-    - Messages editor: the list shows the start of each message, changed ones
-      are yellow, the space of the bank is always shown, a menu (Space) has
-      find text, add, insert, delete, move, copy, revert, undo and where used,
-      inserting, deleting and moving bank 2 messages renumbers the NPCs and
-      events that use them, Esc in the text window has a menu (done, insert
-      a code, discard), and Search Everywhere finds messages by text
-    - Menus instead of shortcuts: every action of the sprite editors has an
-      actions menu (Enter, Space on the battle sprite tile sheet), the entry
-      lists have one too (Space: revert, copy, paste, undo, where used), and
-      the Spell Sets editor opens a menu on a spell; the keys still work
-    - Spells, Weapons, Armors and Medicines editors: every box of the entry is
-      on the screen and the cursor moves straight into them (Enter, Space,
-      Tab, 1 2 3, PgUp PgDn) instead of the pick a category menus; weapon
-      properties named from the disassembly
-    - Spell Sets editor: one screen with the starting and learned lists side
-      by side, edited in place (Enter, Insert, Delete, C, Ctrl-Z) instead of
-      the Add / Edit / Delete / Clear menus
-    - Battle sprites and portraits: export and import can be done for one
-      character or portrait (the list asks, and E / I work while editing)
-    - Battle Sprites, Portraits and Monster Sprites screens redrawn in blue
-      windows like the rest of the editor (picture, preview, palette, color
-      details and a keys window)
     - Monster editor: the cursor moves straight into the boxes (no Edit menu),
       every value is edited in place, extras are switched on and off with
       Space, a hint line says what Enter does, the AI is summed up pair by pair
