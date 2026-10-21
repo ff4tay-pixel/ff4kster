@@ -1269,37 +1269,41 @@ An AI (1 to 254) is a list of pairs. The game goes through the pairs in order
 and carries out the actions of the first pair whose conditions are all true.
 Each pair is a condition set (all of its conditions must hold) and a script (the
 actions to carry out). Enter on the AI box of the monster editor opens a full
-screen editor with three panels, one under the other, that each do one job:
+screen editor with two panels, one under the other:
 
     1 AI SCRIPT     The AI this monster uses, and a way to look at any other
                     AI. Looking does not change the monster: it keeps its AI
                     until you choose "Use AI N for this monster". Enter on
                     the first line lists all 254 AIs (it shows which monsters
                     use each one, and yellow ones are unused).
-    2 CONDITIONS    The conditions of the pairs of the AI, one pair per line.
-                    The selected pair opens up and shows all of its conditions
-                    (WHEN, AND); the others stay on one line in grey.
-    3 ACTIONS       The actions under the conditions of the selected pair
-                    (THEN): the part that matters most, so it has the most
-                    room. The first line says which script it is and how many
-                    places use it; Enter on it picks another script.
+    2 PAIRS         Every pair of the AI in full, in the same style as the AI
+                    box of the monster editor, with a blank line between pairs:
+                    WHEN and AND lines for its conditions, indented THEN
+                    lines for its actions. The selected pair
+                    also has an "Add a condition" line, a "Script N" line
+                    (how many places use it; Enter on it picks another script)
+                    and an "Add an action" line.
 
 The title shows the monster, the AI it uses and the bank. Monsters that appear
 on the moon use a different bank of scripts (shown as LUNAR). The panel you
 work in has the bright title and cursor, and a line below the panels says what
-the keys do on the line the cursor is on.
+the keys do on the line the cursor is on. Moving the cursor onto another pair
+selects it.
 
-    TAB, 1 2 3:      Switch to the next panel / to panel 1, 2, 3.
+    TAB, 1 2:        Switch between the panels. Up at the top of the list also
+                     goes to panel 1, Down at its end goes to the list.
     UP, DOWN, PAGE UP/DOWN, HOME, END: Move in the panel.
-    LEFT, RIGHT:     In panel 1 look at the previous / next AI. In panels 2
-                     and 3 go to the previous / next pair.
+    LEFT, RIGHT:     In panel 1 look at the previous / next AI. In the list
+                     go to the previous / next pair.
     N / P, G:        Look at the next / previous AI, or at an AI by number.
     A:               Make the monster use the AI that is shown (the same as
                      Enter on the "Use AI" line of panel 1).
-    ENTER:           Change the line: a condition or an action (its kind and
-                     parameters, in a list of all kinds). On an Add line it
+    ENTER:           Change the line. On a condition a small menu offers
+                     "Edit Condition" (its kind and parameters) or "Choose a
+                     condition" (another existing one from a list). On an
+                     action it opens the action (its kind and parameters). On an Add line it
                      adds a new part and opens it at once (ESC in its first
-                     menu takes it away again). In panel 3 the first line
+                     menu takes it away again). On the Script line it
                      picks another script from a list.
     INSERT:          Add after this line: a condition or an action. On the
                      "Add a new pair" line it adds a pair, with its own
@@ -1308,14 +1312,15 @@ the keys do on the line the cursor is on.
                      "Do nothing"), so changing it touches nothing else.
     DELETE:          Remove the condition or action (a pair keeps at least one
                      condition).
-    D:               Panel 2: delete the whole pair (an AI keeps at least one).
-    S:               Panel 2: another condition set for the pair, from a list.
-    C:               Panel 2: another existing condition in place of this one.
+    D:               On a condition: delete the whole pair (an AI keeps at least one).
+    S:               On a condition: another condition set for the pair, from a list.
+    C:               On a condition: another existing condition in place of this one.
     U:               Make private copies of what this line shares: the pair's
-                     conditions in panel 2, its script in panel 3.
-    CTRL+U:          Panel 2: a private copy of just this condition.
+                     conditions, or its script.
+    CTRL+U:          On a condition: a private copy of just this condition.
     CTRL+C / CTRL+V: Copy a condition or an action and paste it after the
-                     cursor line, in the panel of its kind. Copying works
+                     cursor line (a condition on a condition line, an action on an
+                     action line). Copying works
                      across AIs.
     CTRL+Z:          Undo the last action (kept until you change AI or bank).
     CTRL+R:          Put the AI shown, and the condition sets, conditions and
@@ -1569,9 +1574,9 @@ VERSION HISTORY
       wrote past the end of the monster list), which could crash the editor
     - Monsters screen reorganized: aligned, titled boxes and a clearer AI
       column with a bank header
-    - Enemy AI editor rewritten as a full screen editor with three panels
-      (the AI script to look at or use, the conditions of its pairs, the
-      actions under them) with insert/delete, private copies on request,
+    - Enemy AI editor rewritten as a full screen editor with two panels
+      (the AI script to look at or use, and all its pairs with their
+      conditions and actions in the style of the monster editor's AI box) with insert/delete, private copies on request,
       copy/paste, undo, a list of the monsters that use the AI and a
       room check (Save ROM refuses AI data that does not fit)
     - Monster editor: the cursor moves straight into the boxes (no Edit menu),
