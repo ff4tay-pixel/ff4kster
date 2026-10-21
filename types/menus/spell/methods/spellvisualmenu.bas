@@ -41,62 +41,62 @@ sub SpellVisualMenu.SetTo(index as UByte)
 end sub
 
 
-sub SpellVisualMenu.UserSelect()
- 
+sub SpellVisualMenu.EditField(row as Integer)
+
+ 'Edits one row of the box (1 sound, 2 palette, 3 sprites, 4 sequence, 5 effect) and shows the box again
+
  dim sequences_menu as BlueMenu
  dim effects_menu as BlueMenu
- 
- sequences_menu = BlueMenu(x + 10, y + 3)
- sequences_menu.max_rows = 1
- for i as Integer = 1 to total_sequences
-  sequences_menu.AddOption(sequence_names.ItemAt(i))
- next
 
- effects_menu = BlueMenu(x + 10, y + 4)
- effects_menu.max_rows = 1
- for i as Integer = 1 to total_effects
-  effects_menu.AddOption(effect_names.ItemAt(i))
- next
- 
+ select case row
+
+  case 1 'Sound
+   sound = ListItem(x + 10, y, sound_effects, sound)
+
+  case 2 'Palette
+   colors = ListItem(x + 10, y + 1, palette_names, colors)
+
+  case 3 'Sprites
+   dim n as BlueNumberInput
+   n = BlueNumberInput(x + 10, y + 2)
+   n.starting_number = sprites
+   n.UserSelect()
+   sprites = n.number
+
+  case 4 'Sequence
+   sequences_menu = BlueMenu(x + 10, y + 3)
+   sequences_menu.max_rows = 1
+   for i as Integer = 1 to total_sequences
+    sequences_menu.AddOption(sequence_names.ItemAt(i))
+   next
+   sequences_menu.ChangeSelected(visual1 + 1)
+   sequences_menu.UserSelect()
+   if not sequences_menu.cancelled then visual1 = sequences_menu.selected - 1
+
+  case 5 'Effect
+   effects_menu = BlueMenu(x + 10, y + 4)
+   effects_menu.max_rows = 1
+   for i as Integer = 1 to total_effects
+    effects_menu.AddOption(effect_names.ItemAt(i))
+   next
+   effects_menu.ChangeSelected(visual2 + 1)
+   effects_menu.UserSelect()
+   if not effects_menu.cancelled then visual2 = effects_menu.selected - 1
+
+ end select
+
+ Display()
+
+end sub
+
+
+sub SpellVisualMenu.UserSelect()
+
  main_menu.cancelled = false
- 
+
  do until main_menu.cancelled
- 
   main_menu.UserSelect()
-  
-  if not main_menu.cancelled then
-  
-   select case main_menu.selected
-   
-    case 1 'Sound
-     sound = ListItem(x + 10, y, sound_effects, sound)
-    
-    case 2 'Palette
-     colors = ListItem(x + 10, y + 1, palette_names, colors)
-    
-    case 3 'Sprites
-     dim n as BlueNumberInput
-     n = BlueNumberInput(x + 10, y + 2)
-     n.starting_number = sprites
-     n.UserSelect()
-     sprites = n.number
-    
-    case 4 'Sequence
-     sequences_menu.ChangeSelected(visual1 + 1)
-     sequences_menu.UserSelect()
-     if not sequences_menu.cancelled then visual1 = sequences_menu.selected - 1
-    
-    case 5 'Effect
-     effects_menu.ChangeSelected(visual2 + 1)
-     effects_menu.UserSelect()
-     if not effects_menu.cancelled then visual2 = effects_menu.selected - 1
-   
-   end select
-   
-   Display()
-  
-  end if
- 
+  if not main_menu.cancelled then EditField(main_menu.selected)
  loop
 
 end sub

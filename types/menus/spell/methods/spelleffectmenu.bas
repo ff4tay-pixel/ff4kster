@@ -52,73 +52,79 @@ sub SpellEffectMenu.SetTo(index as UByte)
 end sub
 
 
+sub SpellEffectMenu.EditField(row as Integer)
+
+ 'Edits one row of the box and shows the box again
+
+ select case row
+
+ 
+ case 1 'Effect
+  effect = ListItem(x + 11, y, spell_effects, effect + 1) - 1
+ 
+ case 2 'Target
+  target = ListItem(x + 11, y + 1, targets, target + 1) - 1
+ 
+ case 3 'Power
+  dim n as BlueNumberInput
+  n = BlueNumberInput(x + 11, y + 2)
+  n.starting_number = power
+  n.UserSelect()
+  power = n.number
+ 
+ case 4 'Hit
+  dim n as BlueNumberInput
+  n = BlueNumberInput(x + 11, y + 3)
+  n.starting_number = hit
+  n.max_value = 127
+  n.UserSelect()
+  hit = n.number
+  
+ case 5 'Delay
+  dim n as BlueNumberInput
+  n = BlueNumberInput(x + 11, y + 4)
+  n.starting_number = casting_time
+  n.max_value = 31
+  n.UserSelect()
+  casting_time = n.number
+  
+ case 6 'MP Cost
+  dim n as BlueNumberInput
+  n = BlueNumberInput(x + 11, y + 5)
+  n.starting_number = mp_cost
+  n.max_value = 99
+  n.UserSelect()
+  mp_cost = n.number
+ 
+ case 7 'Reflects
+  reflectable = not reflectable
+ 
+ case 8 'Hits Boss
+  boss = not boss
+  
+ case 9 'Impact
+  impact = not impact
+  
+ case 10 'Damage
+  damage = not damage
+ 
+ end select
+
+ Display()
+
+end sub
+
+
 sub SpellEffectMenu.UserSelect()
 
  main_menu.cancelled = false
- 
+
  do until main_menu.cancelled
- 
+
   main_menu.UserSelect()
-  
-  if not main_menu.cancelled then
-  
-   select case main_menu.selected
-    
-    case 1 'Effect
-     effect = ListItem(x + 11, y, spell_effects, effect + 1) - 1
-    
-    case 2 'Target
-     target = ListItem(x + 11, y + 1, targets, target + 1) - 1
-    
-    case 3 'Power
-     dim n as BlueNumberInput
-     n = BlueNumberInput(x + 11, y + 2)
-     n.starting_number = power
-     n.UserSelect()
-     power = n.number
-    
-    case 4 'Hit
-     dim n as BlueNumberInput
-     n = BlueNumberInput(x + 11, y + 3)
-     n.starting_number = hit
-     n.max_value = 127
-     n.UserSelect()
-     hit = n.number
-     
-    case 5 'Delay
-     dim n as BlueNumberInput
-     n = BlueNumberInput(x + 11, y + 4)
-     n.starting_number = casting_time
-     n.max_value = 31
-     n.UserSelect()
-     casting_time = n.number
-     
-    case 6 'MP Cost
-     dim n as BlueNumberInput
-     n = BlueNumberInput(x + 11, y + 5)
-     n.starting_number = mp_cost
-     n.max_value = 99
-     n.UserSelect()
-     mp_cost = n.number
-    
-    case 7 'Reflects
-     reflectable = not reflectable
-    
-    case 8 'Hits Boss
-     boss = not boss
-     
-    case 9 'Impact
-     impact = not impact
-     
-    case 10 'Damage
-     damage = not damage
-    
-   end select
-   
-   Display()
-   
-  end if
- 
+
+  if not main_menu.cancelled then EditField(main_menu.selected)
+
  loop
 
 end sub

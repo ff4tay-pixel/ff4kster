@@ -5,7 +5,7 @@ constructor WeaponPropertiesMenu(starting_x as UByte = 0, starting_y as UByte = 
  
  flag_menu = BlueMenu(x, y)
  for i as Integer = 1 to total_weapon_properties
-  flag_menu.AddOption(weapon_property_names.ItemAt(i), 0)
+  flag_menu.AddOption(weapon_property_names.ItemAt(i), 23)
  next
 
 end constructor
@@ -17,7 +17,7 @@ sub WeaponPropertiesMenu.Display()
   if flags(i) then
    flag_menu.ChangeOption(i,, 14)
   else
-   flag_menu.ChangeOption(i,, 0)
+   flag_menu.ChangeOption(i,, 23)
   end if
  next
  

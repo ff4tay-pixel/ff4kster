@@ -90,3 +90,15 @@ sub StatMenu.UserSelect()
  loop  
 
 end sub
+
+
+sub StatMenu.EditModIndex()
+
+ 'Picks the bonus and penalty pair from its list
+
+ index_menu.cancelled = false
+ index_menu.UserSelect()
+ if not index_menu.cancelled then mod_index = index_menu.selected - 1
+ Display()
+
+end sub

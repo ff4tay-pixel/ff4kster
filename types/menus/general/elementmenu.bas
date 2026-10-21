@@ -10,6 +10,7 @@ type ElementMenu
  'declare function UserInput() as Boolean
  
  declare sub Display()
+ declare sub EditIndex()
  declare sub UserSelect()
  
 end type

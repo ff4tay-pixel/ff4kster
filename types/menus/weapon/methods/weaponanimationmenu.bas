@@ -35,26 +35,37 @@ sub WeaponAnimationMenu.SetTo(index as UInteger)
 end sub
 
 
+sub WeaponAnimationMenu.EditField(row as Integer)
+
+ 'Edits one row of the box and shows the box again
+
+ select case row
+
+ case 1 'Palette
+  colors = ListItem(x + 9, y, palette_names, colors)
+ case 2 'Sprite
+  sprite = ListItem(x + 9, y + 1, weapon_sprite_names, sprite)
+ case 3 'Swing
+  swing = ListItem(x + 9, y + 2, swing_names, swing)
+ case 4 'Slash
+  slash = ListItem(x + 9, y + 3, slash_names, slash)
+ end select
+
+ Display()
+
+end sub
+
+
 sub WeaponAnimationMenu.UserSelect()
 
  main_menu.cancelled = false
+
  do until main_menu.cancelled
- 
+
   main_menu.UserSelect()
-  if not main_menu.cancelled then
-   select case main_menu.selected
-    case 1 'Palette
-     colors = ListItem(x + 9, y, palette_names, colors)
-    case 2 'Sprite
-     sprite = ListItem(x + 9, y + 1, weapon_sprite_names, sprite)
-    case 3 'Swing
-     swing = ListItem(x + 9, y + 2, swing_names, swing)
-    case 4 'Slash
-     slash = ListItem(x + 9, y + 3, slash_names, slash)
-   end select
-   Display()
-  end if
- 
+
+  if not main_menu.cancelled then EditField(main_menu.selected)
+
  loop
 
 end sub

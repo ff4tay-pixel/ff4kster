@@ -16,6 +16,7 @@ type ArmorInformationMenu
  declare constructor(starting_x as UByte = 0, starting_y as UByte = 0)
  
  declare sub Display()
+ declare sub EditField(row as Integer)
  declare sub SetTo(index as UByte)
  declare sub UserSelect()
 

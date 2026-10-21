@@ -340,13 +340,32 @@ index will likewise be affected. Note also that for "status healing" effects,
 the statuses that are lit up are the ones that the effect DOES NOT remove.
 The darkened/disabled statuses are the ones it will remove.
 
-Fields. "Information" has the spell's effect (what it does), target, power,
-hit chance, delay (casting time), MP cost, whether it can be reflected, whether
-it can hit bosses, impact and damage flags. "Animation" has the sound effect,
-the palette, the sprites, the sequence and the effect (see above for what the
-last four do). "Elements" picks the element/status chart entry. "Name" is the
-spell's name (6 letters for the player spells, 8 for monster techniques).
+How the Spells, Weapons, Armor and Medicines editors work. The list is on the
+left and every box of the selected entry is on the screen at once. Enter on the
+list moves the cursor straight into the boxes (there is no "pick a category"
+menu), and a hint line at the bottom says what Enter does on the line you are
+on. The boxes have a number in their title:
 
+    UP, DOWN, LEFT, RIGHT: Move in the box; at its edge the cursor goes on to
+                     the next or previous box.
+    TAB, 1 2 3 ...:  Next box / jump to the box with that number.
+    ENTER, SPACE:    Change the line: a flag is switched on and off (yellow
+                     is on), a number or name is typed, anything else is
+                     picked from a list. Changes are stored at once.
+    LEFT, RIGHT on a set number: step the number of the element/status or
+                     equip set (or the stat bonus pair).
+    PAGE UP/DOWN:    The same line of the previous / next entry.
+    ESC:             Back to the list.
+
+A "set number" (element/status, equip) is shared by everything that has the
+same number, so changing the flags under it changes all of them.
+
+Spell boxes. 1 Name (6 letters for the player spells, 8 for monster
+techniques). 2 Information: the effect (what it does), target, power, hit
+chance, delay (casting time), MP cost, whether it can be reflected, whether it
+can hit bosses, and the impact and damage switches. 3 Animation: the sound
+effect, the palette, the sprites, the sequence and the effect (see above for
+what the last four do). 4 Element/status: the chart entry and its flags.
 
 SPELL SETS
 ----------
@@ -354,6 +373,29 @@ SPELL SETS
 Each spell set has associated with it a set of starting spells and a set of
 learned spells. The starting spells are simply a list of spells, but the
 learned spells have both a spell and a level at which it is learned.
+
+The list of spell sets shows the starting and learned spells of the selected
+set beside it. Enter opens the set in one screen with the two lists side by
+side (up to 24 spells each), and everything is done on the line the cursor is
+on:
+
+    TAB, 1 2:        Switch between the starting and the learned list.
+    UP, DOWN, PAGE UP/DOWN, HOME, END: Move in the list.
+    ENTER:           Change the line: another spell, or for a learned spell
+                     its level and then its spell (Esc in the spell list
+                     leaves it as it was).
+                     Each list ends with a green "Add a spell" line: Enter
+                     on it adds a spell at the end, no Insert needed.
+    INSERT, A:       Add a spell after the cursor line (a learned spell asks
+                     for the level first). Learned spells stay in level order.
+    DELETE, D:       Remove the line.
+    C:               Clear the whole list (asks first).
+    LEFT, RIGHT, MINUS, PLUS: Learned list: level down or up by one.
+    CTRL+Z:          Undo (kept until you leave the set).
+    ESC:             Back to the list of sets.
+
+The ROM has a fixed amount of room for the lists of all spell sets together;
+when it is used up, adding says so until you remove a spell from any set.
 
 If you mix spell "colors" (black, white, summon, etc) of learned spells in the
 same spell set, it may not work the way you're expecting. Each character can
@@ -404,17 +446,27 @@ When editing stat bonuses, you can set which stats will get a bonus and which
 will get a penalty. Then you can select from a chart of possible
 bonus/penalty pairs.
 
-Fields. A weapon's editor is split into: Information (name, price, attack,
-hit percentage, description), Element/Status, Stat Bonuses, Races, Properties (long range, throwable, magnetic and
-so on; the names come from config/weaponproperties.dat), Equip (who can equip
-it), Visuals (palette, sprite, swing and slash used when it attacks) and Casts
-(the spell it casts when used, with its power and visual).
+Weapon boxes (keys as in the Spells editor). 1 Information (name, price,
+attack, hit percentage, description), 2 Element/status, 3 Stats (the bonus and
+penalty pair and the stats it applies to), 4 Races, 5 Properties, 6 Equip (the
+set number and who can equip it), 7 Visuals (palette, sprite, swing and slash
+used when it attacks) and 8 Casts (the spell it casts when used, with its
+power and visual).
+
+The eight properties are the flags of the weapon's first data byte. Their names
+come from the disassembly (everything8215/ff4) and are kept in
+config/weaponproperties.dat: 1 No Critical, 2 Unknown, 3 Hammer, 4 Unknown, 5
+Lit Arrow, 6 No Back Row Penalty, 7 Can Throw, 8 Magnetic. Only two were
+checked in the game code: No Back Row Penalty (the damage is not halved from
+the back row) and Magnetic (the weapon counts as metal for the Magnet effect).
+The disassembly itself calls flags 2 and 4 "Unknown". The hint line says this
+when the cursor is on a flag.
 
 A "Weapon sprite" panel at the bottom right of the Weapons screen draws the
 weapon's sprite twice, enlarged: as it is held and as it looks at the other end
 of its swing. It uses the weapon's own palette and sprite, so it changes as you
 move through the weapon list and as you change the Palette or Sprite in the
-Visuals menu (the Swing and Slash choices do not change the picture). Sprites
+Visuals box (the Swing and Slash choices do not change the picture). Sprites
 are numbered 0 to 25; a sprite or palette number outside that range shows "No
 preview" in the panel.
 
@@ -426,9 +478,9 @@ The armor fields are more or less the same as the weapons, but with fewer
 properties to edit. Which armors go in which equip slots (Head, Body, etc)
 can be changed in the Features Editor.
 
-Fields. Information (name, price, defense, evade, magic defense, magic
-evade, whether it is metallic, description), Element/Status, Races, Equip (who
-can equip it) and Stat Bonuses.
+Boxes (keys as in the Spells editor). 1 Information (name, price, defense,
+evade, magic defense, magic evade, whether it is metallic, description), 2
+Element/status, 3 Stats, 4 Races and 5 Equip (who can equip it).
 
 
 MEDICINES
@@ -437,8 +489,9 @@ MEDICINES
 Medicines are the name I've given to items that cannot be equipped but can be
 used in battle for some kind of effect.
 
-Fields. Information (name, price, visual and description), Effect and
-Element/Status.
+Boxes (keys as in the Spells editor). 1 Information (name, price, visual and
+description), 2 Effect (the same lines as a spell's Information) and 3
+Element/status.
 
 
 TOOLS
@@ -1586,6 +1639,13 @@ VERSION HISTORY
       conditions and actions in the style of the monster editor's AI box) with insert/delete,
       copy/paste, undo, a list of the monsters that use the AI and a
       room check (Save ROM refuses AI data that does not fit)
+    - Spells, Weapons, Armors and Medicines editors: every box of the entry is
+      on the screen and the cursor moves straight into them (Enter, Space,
+      Tab, 1 2 3, PgUp PgDn) instead of the pick a category menus; weapon
+      properties named from the disassembly
+    - Spell Sets editor: one screen with the starting and learned lists side
+      by side, edited in place (Enter, Insert, Delete, C, Ctrl-Z) instead of
+      the Add / Edit / Delete / Clear menus
     - Battle sprites and portraits: export and import can be done for one
       character or portrait (the list asks, and E / I work while editing)
     - Battle Sprites, Portraits and Monster Sprites screens redrawn in blue

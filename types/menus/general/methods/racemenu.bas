@@ -5,7 +5,7 @@ constructor RaceMenu(starting_x as UByte = 0, starting_y as UByte = 0)
  
  flag_menu = BlueMenu(x, y)
  for i as Integer = 1 to total_races
-  flag_menu.AddOption(race_names.ItemAt(i), 0)
+  flag_menu.AddOption(race_names.ItemAt(i), 23)
  next
 
 end constructor
@@ -17,7 +17,7 @@ sub RaceMenu.Display()
   if flags(i) then
    flag_menu.ChangeOption(i,, 14)
   else
-   flag_menu.ChangeOption(i,, 0)
+   flag_menu.ChangeOption(i,, 23)
   end if
  next
  

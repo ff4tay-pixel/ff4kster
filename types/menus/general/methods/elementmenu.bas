@@ -7,7 +7,7 @@ constructor ElementMenu(starting_x as UByte = 0, starting_y as UByte = 0)
  flag_menu.columns = 3
  for i as Byte = 1 to 8
   for j as Byte = 0 to 2
-   flag_menu.AddOption(element_names.ItemAt(j * 8 + i), 0)
+   flag_menu.AddOption(element_names.ItemAt(j * 8 + i), 23)
   next
  next
 
@@ -22,7 +22,7 @@ sub ElementMenu.Display()
   if elementgrids(index).flags(i) then
    flag_menu.ChangeOption(i, flag_menu.options.ItemAt(i), 14)
   else
-   flag_menu.ChangeOption(i, flag_menu.options.ItemAt(i), 0)
+   flag_menu.ChangeOption(i, flag_menu.options.ItemAt(i), 23)
   end if
  next
  
@@ -60,5 +60,22 @@ sub ElementMenu.UserSelect()
     flag_menu.cancelled = false
   end select
  loop
+
+end sub
+
+
+sub ElementMenu.EditIndex()
+
+ 'Types the number of the element set this box shows
+
+ dim n as BlueNumberInput
+
+ n = BlueNumberInput(x + 8, y)
+ n.min_value = 0
+ n.max_value = total_element_grids - 1
+ n.starting_number = index
+ n.number = index
+ n.UserSelect()
+ index = n.number
 
 end sub

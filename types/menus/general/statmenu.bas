@@ -13,6 +13,7 @@ type StatMenu
  declare function Penalty(index as UByte) as String
  
  declare sub Display()
+ declare sub EditModIndex()
  declare sub UserSelect()
  
 end type

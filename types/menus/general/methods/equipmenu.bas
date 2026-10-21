@@ -7,7 +7,7 @@ constructor EquipMenu(starting_x as UByte = 0, starting_y as UByte = 0)
  flag_menu = BlueMenu(x, y + 3)
  flag_menu.columns = 2
  for i as Integer = 1 to total_jobs
-  flag_menu.AddOption(jobs(i).name, 0)
+  flag_menu.AddOption(jobs(i).name, 23)
  next
 
 end constructor
@@ -22,7 +22,7 @@ sub EquipMenu.Display()
   if equipcharts(index + 1).flags(i) then
    flag_menu.ChangeOption(i, jobs(i).name, 14)
   else
-   flag_menu.ChangeOption(i, jobs(i).name, 0)
+   flag_menu.ChangeOption(i, jobs(i).name, 23)
   end if
  next
  flag_menu.Display()
@@ -59,5 +59,22 @@ sub EquipMenu.UserSelect()
     flag_menu.cancelled = false
   end select
  loop
+
+end sub
+
+
+sub EquipMenu.EditIndex()
+
+ 'Types the number of the equip set this box shows
+
+ dim n as BlueNumberInput
+
+ n = BlueNumberInput(x + 8, y)
+ n.min_value = 0
+ n.max_value = total_equip_charts - 1
+ n.starting_number = index
+ n.number = index
+ n.UserSelect()
+ index = n.number
 
 end sub

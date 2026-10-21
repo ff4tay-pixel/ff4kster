@@ -12,7 +12,7 @@
 const ws_gfx = &hE5B00 'WeaponGfx (1c/d900)
 const ws_sprite_count = 26
 const ws_box_x = 50
-const ws_box_y = 42
+const ws_box_y = 36
 const ws_box_w = 27
 const ws_box_h = 14
 const ws_zoom = 6

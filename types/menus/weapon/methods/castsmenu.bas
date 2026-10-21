@@ -32,46 +32,52 @@ sub CastsMenu.SetTo(index as UInteger)
 end sub
 
 
-sub CastsMenu.UserSelect()
+sub CastsMenu.EditField(row as Integer)
+
+ 'Edits one row of the box (1 casts, 2 visual, 3 power) and shows the box again
 
  dim spellmenu as BlueMenu
- 
+
  spellmenu.max_rows = 1
  for i as Integer = 1 to total_spells
   spellmenu.AddOption(spells(i - 1).name)
  next
 
+ select case row
+  case 1 'Casts
+   spellmenu.x = x + 8
+   spellmenu.y = y
+   spellmenu.ChangeSelected(casts + 1)
+   spellmenu.UserSelect()
+   if not spellmenu.cancelled then
+    casts = spellmenu.selected - 1
+    visual = casts
+   end if
+  case 2 'Visual
+   spellmenu.x = x + 8
+   spellmenu.y = y + 1
+   spellmenu.ChangeSelected(visual + 1)
+   spellmenu.UserSelect()
+   if not spellmenu.cancelled then visual = spellmenu.selected - 1
+  case 3 'Power
+   dim n as BlueNumberInput
+   n = BlueNumberInput(x + 8, y + 2)
+   n.starting_number = power
+   n.UserSelect()
+   power = n.number
+ end select
+
+ Display()
+
+end sub
+
+
+sub CastsMenu.UserSelect()
+
  main_menu.cancelled = false
  do until main_menu.cancelled
   main_menu.UserSelect()
-  if not main_menu.cancelled then
-   select case main_menu.selected
-    case 1 'Casts
-     spellmenu.x = x + 8
-     spellmenu.y = y
-     spellmenu.ChangeSelected(casts + 1)
-     spellmenu.UserSelect()
-     if not spellmenu.cancelled then casts = spellmenu.selected - 1
-     'casts = ListItem(x + 8, y, spell_names, casts + 1) - 1
-     visual = casts
-    case 2 'Visual
-     spellmenu.x = x + 8
-     spellmenu.y = y + 1
-     spellmenu.ChangeSelected(visual + 1)
-     spellmenu.UserSelect()
-     if not spellmenu.cancelled then
-      visual = spellmenu.selected - 1
-     end if
-     'visual = ListItem(x + 8, y + 1, spell_names, visual + 1) - 1
-    case 3 'Power
-     dim n as BlueNumberInput
-     n = BlueNumberInput(x + 8, y + 2)
-     n.starting_number = power
-     n.UserSelect()
-     power = n.number
-   end select
-   Display()
-  end if
+  if not main_menu.cancelled then EditField(main_menu.selected)
  loop
 
 end sub
