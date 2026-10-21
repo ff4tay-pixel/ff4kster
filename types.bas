@@ -52,8 +52,6 @@
 #include once "types/menus/spell/spelleffectmenu.bas"
 #include once "types/menus/spell/spellvisualmenu.bas"
 
-#include once "types/menus/spellset/spellsetstartingmenu.bas"
-#include once "types/menus/spellset/spellsetlearningmenu.bas"
 
 #include once "types/menus/weapon/weaponanimationmenu.bas"
 #include once "types/menus/weapon/castsmenu.bas"
