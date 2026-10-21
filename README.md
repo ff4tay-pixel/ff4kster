@@ -1299,22 +1299,30 @@ selects it.
     A:               Make the monster use the AI that is shown (the same as
                      Enter on the "Use AI" line of panel 1).
     ENTER:           Change the line. On a condition a small menu offers
-                     "Edit Condition" (its kind and parameters) or "Choose a
-                     condition" (another existing one from a list). On an
+                     "Change condition set" (the set number
+                     is shown as "set N" on the pair's first line, and every
+                     condition line shows its condition number as "cond N"),
+                     "Edit current condition" (its kind and parameters),
+                     "Insert a pair after this one", "Move pair up" and
+                     "Move pair down". On an
                      action it opens the action (its kind and parameters). On an Add line it
                      adds a new part and opens it at once (ESC in its first
                      menu takes it away again). On the Script line it
                      picks another script from a list.
-    INSERT:          Add after this line: a condition or an action. On the
-                     "Add a new pair" line it adds a pair, with its own
-                     unused condition set, condition and script (a condition
-                     of "no condition", which is always true, and the action
-                     "Do nothing"), so changing it touches nothing else.
+    INSERT:          Add after this line: a condition or an action. When no
+                     unused condition is left a new one is picked from the
+                     existing ones. On the "Add a pair" line it adds a pair
+                     to the AI that starts as condition set 1 and script 1
+                     (nothing new is created; change them afterwards with S
+                     and the Script line, which reaches everything that uses
+                     them). The Enter menu of a condition can insert a pair
+                     after the selected one in the same way.
+    COMMA, PERIOD:   Move the pair (on a condition line) or the action (on
+                     an action line) up or down. Pairs run in this order.
     DELETE:          Remove the condition or action (a pair keeps at least one
                      condition).
     D:               On a condition: delete the whole pair (an AI keeps at least one).
     S:               On a condition: another condition set for the pair, from a list.
-    C:               On a condition: another existing condition in place of this one.
     U:               Make private copies of what this line shares: the pair's
                      conditions, or its script.
     CTRL+U:          On a condition: a private copy of just this condition.
