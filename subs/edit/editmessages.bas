@@ -141,7 +141,8 @@ sub MsgEdit(lm as BlueMenu ptr, bank as Integer, mp as Integer, i as Integer)
  dim baseline as String
 
  if MsgIsLarge(bank) then
-  big = BlueMessageInput(x0, 3, before)
+  'at the left edge, over the list: the preview of the message is drawn at the right edge and must not cover it
+  big = BlueMessageInput(1, 3, before)
   big.h = 44
   baseline = big.Message()
   big.UserType()
