@@ -861,6 +861,36 @@ function UndoPop(kind as String, byref i as Integer) as Boolean
 end function
 
 
+function EntryActionKey() as UInteger
+
+ 'Space in a list opens a menu of the actions on the entry, so none of them needs a key to be learned. Returns the
+ ' key the chosen entry stands for (the list handles it as if it had been pressed), 0 if cancelled.
+
+ dim m as BlueMenu
+ dim labels(1 to 5) as String = {"Revert to the loaded ROM", "Copy this entry", "Paste over this entry", "Undo the last change", "Show where it is used"}
+ dim hints(1 to 5) as String = {"Ctrl-R", "Ctrl-C", "Ctrl-V", "Ctrl-Z", "Ctrl-U"}
+ dim keys(1 to 5) as UInteger = {18, 3, 22, 26, 21}
+ dim label_width as Integer
+ dim text_width as Integer
+
+ for i as Integer = 1 to 5
+  label_width = Max(label_width, len(labels(i)))
+ next
+ text_width = label_width + 2 + 6
+ m = BlueMenu(78 - (text_width + 2), 3)
+ m.title = "This entry"
+ m.min_width = text_width
+ for i as Integer = 1 to 5
+  m.AddOption(FF4Text(labels(i) + space(label_width - len(labels(i)) + 2) + hints(i)))
+ next
+ m.UserSelect()
+ if m.cancelled then return 0
+
+ return keys(m.selected)
+
+end function
+
+
 function ListInput(list_menu as BlueMenu, kind as String) as Boolean
 
  'Drop-in replacement for list_menu.UserInput() in the list editors. Adds modified
@@ -870,6 +900,7 @@ function ListInput(list_menu as BlueMenu, kind as String) as Boolean
  dim k as Integer = KindIndex(kind)
  dim result as Boolean
  dim undone as Integer
+ dim key as UInteger
 
  if not list_menu.marked then
   list_menu.marked = true
@@ -899,7 +930,10 @@ function ListInput(list_menu as BlueMenu, kind as String) as Boolean
  end if
  last_list_pos(k) = list_menu.selected
 
- select case list_menu.last_key
+ key = list_menu.last_key
+ if key = SPACE_KEY then key = EntryActionKey()
+
+ select case key
   case 18 'Ctrl+R
    if EntryModified(kind, list_menu.selected) then
     if ConfirmBox("Revert this entry to the loaded ROM?") then

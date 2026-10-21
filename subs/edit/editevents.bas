@@ -46,7 +46,7 @@ sub EditEvents()
        events(select_event.selected).else_script.Join(events(select_event.highlighted).else_script)
        select_event.highlighted = 0
       end if
-     case 3, 18, 21, 22, 26, 6, 14, 7, F1_KEY
+     case 3, 18, 21, 22, 26, 6, 14, 7, F1_KEY, SPACE_KEY
       'list tools and help: nothing else to do
      case else
       edit_event.edit_event.ChangeSelected(1)

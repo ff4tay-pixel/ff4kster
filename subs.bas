@@ -88,6 +88,7 @@ declare function ChestFormation(m as Integer, chest_byte as Integer) as Integer
 #include once "subs/general/spellanim.bas"
 #include once "subs/general/weaponsprite.bas"
 #include once "subs/edit/itemforms.bas"
+#include once "subs/edit/spritemenu.bas"
 #include once "subs/edit/editspells.bas"
 #include once "subs/edit/editspellsets.bas"
 #include once "subs/edit/edititemranges.bas"

@@ -162,6 +162,8 @@ CONTROLS
   in the encounter list copy and paste copy an area's table choice and its
   formations, and revert / undo restore them):
 
+    Space:       Open a menu of all of the actions below, with the key of each
+                 one beside it, so none of the keys has to be learned
     Ctrl-R:      Revert the entry to how it was when the ROM was loaded
     Ctrl-C / V:  Copy and paste an entry (the target keeps its name)
     Ctrl-Z:      Undo the last change made to an entry in this list (up to 40
@@ -379,20 +381,20 @@ set beside it. Enter opens the set in one screen with the two lists side by
 side (up to 24 spells each), and everything is done on the line the cursor is
 on:
 
-    TAB, 1 2:        Switch between the starting and the learned list.
-    UP, DOWN, PAGE UP/DOWN, HOME, END: Move in the list.
-    ENTER:           Change the line: another spell, or for a learned spell
-                     its level and then its spell (Esc in the spell list
-                     leaves it as it was).
-                     Each list ends with a green "Add a spell" line: Enter
-                     on it adds a spell at the end, no Insert needed.
-    INSERT, A:       Add a spell after the cursor line (a learned spell asks
-                     for the level first). Learned spells stay in level order.
-    DELETE, D:       Remove the line.
-    C:               Clear the whole list (asks first).
-    LEFT, RIGHT, MINUS, PLUS: Learned list: level down or up by one.
-    CTRL+Z:          Undo (kept until you leave the set).
+    ENTER:           On a spell: the menu of that line (change the spell, for a
+                     learned spell change the level, add a spell after it,
+                     remove it, clear the list, undo). On the green "Add a
+                     spell" line at the end of each list: add a spell there
+                     (a learned spell asks for the level first and then goes
+                     in level order).
+    TAB:             Switch between the starting and the learned list.
+    ARROWS, PAGE UP/DOWN, HOME, END: Move in the list.
     ESC:             Back to the list of sets.
+
+The menu shows a shortcut beside each action, and the shortcuts work on their
+own: INSERT or A add, DELETE or D remove, C clear the list (asks first), LEFT
+and RIGHT (or MINUS, PLUS) change a learned spell's level by one, CTRL+Z undo
+(kept until you leave the set), 1 2 jump to a list.
 
 The ROM has a fixed amount of room for the lists of all spell sets together;
 when it is used up, adding says so until you remove a spell from any set.
@@ -551,9 +553,14 @@ image, like the BMP import, so every monster sharing the graphics or palette
 changes too (the screen says how many) and Ctrl-R revert in the monster list
 does not undo it, but Ctrl-R in the sprite editor does.
 
+Every action has a menu, so no key has to be learned: Enter opens a menu of all the actions with the key of
+each one beside it, and Space paints. The keys below are shortcuts for the same
+actions.
+
     Arrows:         Move the cursor      Home / End: first / last row
+    ENTER:          The menu of every action
     0 - 9:          Paint with that color (and make it the brush)
-    SPACE / ENTER:  Paint with the brush
+    SPACE:          Paint with the brush
     Minus / Plus:   Previous / next brush color
     F:              Fill
     X / Y:          Flip horizontally / vertically (plain monsters only)
@@ -605,9 +612,14 @@ and press Enter. Each portrait is 32x32 pixels with 8 colors (color 0 is
 transparent). The screen shows the picture large with a cursor, the picture at
 three sizes, every portrait small, and the palette.
 
+Every action has a menu, so no key has to be learned: Enter opens a menu of all the actions with the key of
+each one beside it, and Space paints. The keys below are shortcuts for the same
+actions.
+
     Arrows:         Move the cursor
     0 - 7:          Paint with that color (and make it the brush)
-    SPACE / ENTER:  Paint with the brush
+    ENTER:          The menu of every action
+    SPACE:          Paint with the brush
     [ and ]:        Previous / next brush color
     F:              Fill the area of the cursor's color with the brush
     X / Y:          Flip horizontally / vertically
@@ -660,10 +672,16 @@ so you can see every pose change as you edit. A tile can be shared by several
 poses (the head and body tiles are used by up to five), so changing one tile
 changes each pose that uses it.
 
+Every action has a menu, so no key has to be learned: Space on the tile sheet,
+and Enter while editing a tile or the palette, opens a menu of all the actions
+with the key of each one beside it. The keys below are shortcuts for the same
+actions.
+
 On the tile sheet:
 
     ARROWS:        Move among the tiles.
     ENTER:         Edit the selected tile pixel by pixel.
+    SPACE:         The menu of every action.
     PAGE UP/DOWN:  Change the pose shown in the middle.
     , and .:       Change which palette is used to display the sprite.
     P:             Edit the palette's colors.
@@ -678,12 +696,14 @@ Editing a tile:
 
     ARROWS:        Move.
     0-9, A-F:      Paint with that palette color.
-    SPACE / ENTER: Paint with the current brush.
+    SPACE:         Paint with the current brush.
+    ENTER:         The menu of every action.
     [ and ]:       Change the brush color.
     X / Y:         Flip the tile horizontally / vertically.
     CTRL+C / V / Z: Copy, paste, undo.
 
-Editing the palette: LEFT/RIGHT pick a color, Q/A raise/lower red, W/S green and
+Editing the palette: ENTER opens the menu (choose the color, change its red,
+green or blue, move it, undo, revert). LEFT/RIGHT pick a color, Q/A raise/lower red, W/S green and
 E/D blue (each channel has 32 levels, as on the SNES), CTRL+Z undoes and CTRL+R
 reverts the palette. Color 0 is transparent in the game and cannot be edited.
 The battle sprite graphics are stored uncompressed in fixed-size blocks, so
@@ -1639,6 +1659,10 @@ VERSION HISTORY
       conditions and actions in the style of the monster editor's AI box) with insert/delete,
       copy/paste, undo, a list of the monsters that use the AI and a
       room check (Save ROM refuses AI data that does not fit)
+    - Menus instead of shortcuts: every action of the sprite editors has an
+      actions menu (Enter, Space on the battle sprite tile sheet), the entry
+      lists have one too (Space: revert, copy, paste, undo, where used), and
+      the Spell Sets editor opens a menu on a spell; the keys still work
     - Spells, Weapons, Armors and Medicines editors: every box of the entry is
       on the screen and the cursor moves straight into them (Enter, Space,
       Tab, 1 2 3, PgUp PgDn) instead of the pick a category menus; weapon

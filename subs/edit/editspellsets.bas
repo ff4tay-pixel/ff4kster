@@ -4,9 +4,10 @@
 '  1 STARTING SPELLS  The spells a character with this set has from the start (up to 24).
 '  2 LEARNED SPELLS   The spells it learns, each at a level (up to 24, kept in level order).
 '
-'Everything is done on the line the cursor is on: Enter changes it (on the "Add a spell" line at the bottom of
-'each list it adds one), Insert (or A) adds, Delete (or D) removes,
-'C clears the list, Left and Right change a learned spell's level by one, Ctrl-Z undoes. The ROM has a limited
+'Everything is done on the line the cursor is on: Enter on a spell opens a menu of that line (change the spell
+'or the level, add, remove, clear the list, undo) and Enter on the "Add a spell" line at the bottom of each list
+'adds one. The keys are only shortcuts for the menu: Insert (or A) adds, Delete (or D) removes, C clears the
+'list, Left and Right change a learned spell's level by one, Ctrl-Z undoes. The ROM has a limited
 'amount of room for the lists of all spell sets together, so adding can be refused.
 '
 'The font has no + = ( ) [ ] < > characters, so the help text is written around that.
@@ -309,10 +310,10 @@ function SsHint() as String
 
  if ss_box = 1 then
   if ss_cur(1) > ss_start_n then return "Enter adds a starting spell at the end of the list."
-  return "Enter: other spell. Insert: add after. Delete: remove. C: clear list."
+  return "Enter opens a menu: change the spell, add, remove, clear the list, undo."
  end if
  if ss_cur(2) > ss_learn_n then return "Enter adds a learned spell. It goes in level order."
- return "Enter: level and spell. Left Right: level. Insert: add. Delete: remove."
+ return "Enter opens a menu: change the level or the spell, add, remove, clear, undo."
 
 end function
 
@@ -342,11 +343,11 @@ sub SsDrawEdit(message as String)
  end if
 
  BlueBox(0, 32, 78, 6)
- SsText(" KEYS ", 1, 32, 14)
- SsText("Tab or 1 2: other list.  Arrows PgUp PgDn Home End: move.  Esc: back.", 2, 34, 15)
- SsText("Enter: change or add.  Insert or A: add.  Delete or D: remove.  C: clear.", 2, 35, 15)
- SsText("Learned: Left Right or Minus Plus change the level. Kept in level order.", 2, 36, 15)
- SsText("Ctrl-Z: undo.  All spell sets share limited room in the ROM.", 2, 37, 15)
+ SsText(" ACTIONS ", 1, 32, 14)
+ SsText("Arrows: move.   Tab: the other list.   Esc: back to the list of sets.", 2, 34, 15)
+ SsText("Enter: the menu of the line: change, add, remove, clear the list, undo.", 2, 35, 15)
+ SsText("Shortcuts: Insert or A add, Delete or D remove, C clear, Ctrl-Z undo.", 2, 36, 15)
+ SsText("Learned list: Left Right change the level. All sets share limited ROM room.", 2, 37, 15)
  screenunlock
 
 end sub
@@ -418,48 +419,106 @@ sub SsAddLearned(byref message as String)
 end sub
 
 
-sub SsEditStarting(byref message as String)
+function SsLineMenu() as Integer
+
+ 'The menu of the line the cursor is on. Returns what was chosen: 1 change the spell, 2 change the level, 3 add
+ ' a spell after it, 4 remove it, 5 clear the list, 6 undo; 0 if cancelled.
+
+ dim m as BlueMenu
+ dim ids(1 to 8) as Integer
+ dim labels(1 to 8) as String
+ dim hints(1 to 8) as String
+ dim n as Integer
+ dim label_width as Integer
+ dim hint_width as Integer
+ dim text_width as Integer
+
+ n += 1: ids(n) = 1: labels(n) = "Change the spell": hints(n) = "Enter"
+ if ss_box = 2 then
+  n += 1: ids(n) = 2: labels(n) = "Change the level": hints(n) = "Left Right"
+ end if
+ n += 1: ids(n) = 3: labels(n) = "Add a spell after this one": hints(n) = "Insert or A"
+ n += 1: ids(n) = 4: labels(n) = "Remove this spell": hints(n) = "Delete or D"
+ n += 1: ids(n) = 5: labels(n) = "Clear the whole list": hints(n) = "C"
+ n += 1: ids(n) = 6: labels(n) = "Undo the last change": hints(n) = "Ctrl-Z"
+
+ for i as Integer = 1 to n
+  label_width = Max(label_width, len(labels(i)))
+  hint_width = Max(hint_width, len(hints(i)))
+ next
+ text_width = label_width + 2 + hint_width
+ m = BlueMenu(iif(ss_box = 1, 24, 78 - (text_width + 2)), Min(3 + ss_cur(ss_box), 24))
+ m.title = iif(ss_box = 1, "Starting spell", "Learned spell")
+ m.min_width = text_width
+ for i as Integer = 1 to n
+  m.AddOption(FF4Text(labels(i) + space(label_width - len(labels(i)) + 2) + hints(i)))
+ next
+ m.UserSelect()
+ if m.cancelled then return 0
+
+ return ids(m.selected)
+
+end function
+
+
+sub SsChangeSpell()
+
+ 'Another spell for the line the cursor is on
 
  dim v as Integer
+ dim current as Integer = iif(ss_box = 1, ss_start(ss_cur(1)), ss_spell(ss_cur(2)))
 
- if ss_cur(1) > ss_start_n then
-  SsAddStarting(message)
-  exit sub
- end if
-
- v = SsPickSpell(ss_start(ss_cur(1)), "Change starting spell " + str(ss_cur(1)))
- if v = 0 or v = ss_start(ss_cur(1)) then exit sub
+ v = SsPickSpell(current, "Change the spell")
+ if v = 0 or v = current then exit sub
 
  SsPush()
- ss_start(ss_cur(1)) = v
+ if ss_box = 1 then ss_start(ss_cur(1)) = v else ss_spell(ss_cur(2)) = v
  SsStore()
 
 end sub
 
 
-sub SsEditLearned(byref message as String)
+sub SsChangeLevelBox()
+
+ 'Another level for the learned spell the cursor is on
 
  dim lv as Integer
- dim v as Integer
  dim place as Integer
 
- if ss_cur(2) > ss_learn_n then
-  SsAddLearned(message)
-  exit sub
- end if
-
  lv = SsPickLevel(ss_level(ss_cur(2)), 3 + ss_cur(2))
- v = SsPickSpell(ss_spell(ss_cur(2)), "Learned at level " + str(lv))
- if v = 0 then exit sub
- if lv = ss_level(ss_cur(2)) and v = ss_spell(ss_cur(2)) then exit sub
+ if lv = ss_level(ss_cur(2)) then exit sub
 
  SsPush()
  place = ss_tag(ss_cur(2))
  ss_level(ss_cur(2)) = lv
- ss_spell(ss_cur(2)) = v
  SsSortLearned()
  ss_cur(2) = SsFindTag(place)
  SsStore()
+
+end sub
+
+
+declare sub SsDelete(byref message as String)
+declare sub SsClear()
+
+
+sub SsEnter(byref message as String)
+
+ 'Enter: on the Add a spell line it adds one, on a spell it opens the menu of that line
+
+ if ss_cur(ss_box) > iif(ss_box = 1, ss_start_n, ss_learn_n) then
+  if ss_box = 1 then SsAddStarting(message) else SsAddLearned(message)
+  exit sub
+ end if
+
+ select case SsLineMenu()
+  case 1: SsChangeSpell()
+  case 2: SsChangeLevelBox()
+  case 3: if ss_box = 1 then SsAddStarting(message) else SsAddLearned(message)
+  case 4: SsDelete(message)
+  case 5: SsClear()
+  case 6: if not SsUndo() then message = "Nothing to undo."
+ end select
 
 end sub
 
@@ -596,7 +655,7 @@ sub EditSpellSetEntries(index as Integer)
     end if
 
    case ENTER_KEY
-    if ss_box = 1 then SsEditStarting(message) else SsEditLearned(message)
+    SsEnter(message)
 
    case INSERT_KEY, asc("a"), asc("A")
     if ss_box = 1 then SsAddStarting(message) else SsAddLearned(message)

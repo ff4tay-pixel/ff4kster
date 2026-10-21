@@ -610,25 +610,116 @@ sub MsDrawScreen(index as Integer, mode as Integer, zoom as Integer, cx as Integ
  'Keys
  BlueBox(0, 46, 78, 10)
  if mode = 1 then
-  LuText(" KEYS, PALETTE ", 1, 46, 21)
+  LuText(" ACTIONS, PALETTE ", 1, 46, 21)
   LuText("Editing color " + str(brush) + iif(brush = 0, ", transparent, not editable", ""), 2, 48, 14)
-  LuText("Left Right pick a color. Q A red, W S green, E D blue: up and down", 2, 49, 15)
-  LuText("Ctrl-Z undo   Ctrl-R revert this palette   Esc back to the picture", 2, 50, 15)
-  LuText("Bracket keys move this color left or right in the palette, the pixels of", 2, 51, 15)
-  LuText("every monster that uses the palette follow", 2, 52, 15)
+  LuText("Left Right: pick the color to change.", 2, 49, 15)
+  LuText("Enter: the menu to change its red, green and blue, move it, undo and more.", 2, 50, 15)
+  LuText("Moving a color moves the pixels of every monster that uses the palette.", 2, 51, 15)
+  LuText("Esc: back to the picture.", 2, 52, 15)
  else
-  LuText(" KEYS, PICTURE ", 1, 46, 14)
-  LuText("Arrows move   0-9 paint a color   Space paints with the brush   F fill", 2, 48, 15)
-  LuText("Minus Plus pick the brush   P edit the palette colors   Ctrl-Z undo", 2, 49, 15)
-  LuText("X Y flip a plain monster   Ctrl-R revert   PgUp PgDn other monster", 2, 50, 15)
-  LuText("E export a BMP   I import a BMP   O sort the palette", 2, 51, 15)
-  LuText("Mouse: click and drag paint, right click picks a color, click a swatch", 2, 52, 15)
+  LuText(" ACTIONS, PICTURE ", 1, 46, 14)
+  LuText("Arrows: move.  Space: paint with the brush color.  Mouse: drag to paint.", 2, 48, 15)
+  LuText("Enter: the menu of every action, like fill, flip, palette and export.", 2, 49, 15)
+  LuText("The menu shows each action's key, so the keys can be learned as you go.", 2, 50, 15)
+  LuText("PgUp PgDn: other monster.   Esc: store the changes and go back to the list.", 2, 51, 15)
  end if
  if len(message) > 0 then LuText(message, 2, 54, 12)
- LuText("Esc stores the changes and leaves", 2, 55, 23)
  screenunlock
 
 end sub
+
+
+sub MsSetChannel(slot as Integer, shift as Integer, value as Integer)
+
+ 'Sets the red (shift 0), green (5) or blue (10) of a palette color to 0 to 31, remembering the old color for undo
+
+ dim raw as Integer
+
+ if value < 0 or value > 31 then exit sub
+
+ if ms_pal_undo_count = ms_undo_depth then
+  for i as Integer = 1 to ms_undo_depth - 1
+   ms_pal_undo_slot(i - 1) = ms_pal_undo_slot(i)
+   ms_pal_undo_value(i - 1) = ms_pal_undo_value(i)
+  next
+  ms_pal_undo_count -= 1
+ end if
+ ms_pal_undo_slot(ms_pal_undo_count) = slot
+ ms_pal_undo_value(ms_pal_undo_count) = ms_pal(slot)
+ ms_pal_undo_count += 1
+ raw = ms_pal(slot) and not (31 shl shift)
+ ms_pal(slot) = raw or (value shl shift)
+
+end sub
+
+
+function MonsterSpriteActions(mode as Integer, byref brush as Integer) as UInteger
+
+ 'The menu of every action of the monster sprite editor. Returns the key the chosen entry stands for, or 0 if
+ ' the editor handled it here (or the menu was cancelled).
+
+ dim choice as Integer
+ dim picked as Integer
+ dim names(1 to 32) as String
+ dim shift as Integer
+
+ SmReset()
+ if mode = 0 then
+  SmAdd("Fill with the brush color", "F", asc("f"))
+  SmAdd("Choose the brush color", "0 to 9", 0, 1)
+  SmAdd("Flip horizontally", "X", asc("x"))
+  SmAdd("Flip vertically", "Y", asc("y"))
+  SmAdd("Undo", "Ctrl-Z", 26)
+  SmAdd("Revert this picture", "Ctrl-R", 18)
+  SmAdd("Edit the palette colors", "P", asc("p"))
+  SmAdd("Sort the palette", "O", asc("o"))
+  SmAdd("Export this monster as BMP", "E", asc("e"))
+  SmAdd("Import this monster from BMP", "I", asc("i"))
+  SmAdd("Previous monster", "PgUp", PAGEUP_KEY)
+  SmAdd("Next monster", "PgDn", PAGEDOWN_KEY)
+  SmAdd("Back to the list", "Esc", ESC_KEY)
+  choice = SmRun("Monster sprite")
+ else
+  SmAdd("Choose the color", "Left Right", 0, 11)
+  SmAdd("Change its red", "Q A", 0, 12)
+  SmAdd("Change its green", "W S", 0, 13)
+  SmAdd("Change its blue", "E D", 0, 14)
+  SmAdd("Move the color left", "Bracket", asc("["))
+  SmAdd("Move the color right", "Bracket", asc("]"))
+  SmAdd("Undo", "Ctrl-Z", 26)
+  SmAdd("Revert this palette", "Ctrl-R", 18)
+  SmAdd("Back to the picture", "Esc", ESC_KEY)
+  choice = SmRun("Palette " + str(ms_palette_id))
+ end if
+ if choice = 0 then return 0
+ if sm_special(choice) = 0 then return sm_key(choice)
+
+ select case sm_special(choice)
+
+  case 1 'brush color
+   for i as Integer = 0 to ms_color_count - 1
+    names(i + 1) = str(i)
+   next
+   picked = SmPick("Brush color", names(), ms_color_count, brush + 1)
+   if picked > 0 then brush = picked - 1
+
+  case 11 'color of the palette
+   for i as Integer = 1 to ms_color_count - 1
+    names(i) = str(i)
+   next
+   picked = SmPick("Color", names(), ms_color_count - 1, brush)
+   if picked > 0 then brush = picked
+
+  case 12 to 14 'red, green, blue
+   shift = (sm_special(choice) - 12) * 5
+   picked = SmNumber((ms_pal(brush) \ (2 ^ shift)) mod 32, 31)
+   MsSetChannel(brush, shift, picked)
+
+ end select
+
+ return 0
+
+end function
 
 
 sub EditMonsterSprite(index_start as Integer)
@@ -738,6 +829,9 @@ sub EditMonsterSprite(index_start as Integer)
     keycode = 0
    end if
 
+   'Enter opens the menu of every action; the entries that stand for a key are handled as that key
+   if keycode = ENTER_KEY and loaded then keycode = MonsterSpriteActions(mode, brush)
+
    if keycode = PAGEUP_KEY then
     direction = -1
    elseif keycode = PAGEDOWN_KEY then
@@ -769,7 +863,7 @@ sub EditMonsterSprite(index_start as Integer)
         MsSetPixel(cx, cy, brush)
        end if
       end if
-     case SPACE_KEY, ENTER_KEY
+     case SPACE_KEY
       if MsEditable(cx, cy) and ms_px(cy, cx) <> brush then
        MsSaveUndo()
        MsSetPixel(cx, cy, brush)
@@ -845,20 +939,7 @@ sub EditMonsterSprite(index_start as Integer)
        case asc("Q"), asc("W"), asc("E"): channel += 1
        case else: channel -= 1
       end select
-      if channel >= 0 and channel <= 31 then
-       if ms_pal_undo_count = ms_undo_depth then
-        for i as Integer = 1 to ms_undo_depth - 1
-         ms_pal_undo_slot(i - 1) = ms_pal_undo_slot(i)
-         ms_pal_undo_value(i - 1) = ms_pal_undo_value(i)
-        next
-        ms_pal_undo_count -= 1
-       end if
-       ms_pal_undo_slot(ms_pal_undo_count) = brush
-       ms_pal_undo_value(ms_pal_undo_count) = ms_pal(brush)
-       ms_pal_undo_count += 1
-       raw = ms_pal(brush) and not (31 shl shift)
-       ms_pal(brush) = raw or (channel shl shift)
-      end if
+      MsSetChannel(brush, shift, channel)
      case 26 'Ctrl-Z
       if ms_pal_undo_count > 0 then
        ms_pal_undo_count -= 1

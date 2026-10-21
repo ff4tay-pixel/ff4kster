@@ -310,26 +310,132 @@ sub DrawBattleSpriteScreen(sheet as Integer, tile_id as Integer, pose as Integer
  BlueBox(0, 49, 78, 7)
  if mode = 2 then
   v = battle_palette_raw(pal, brush)
-  LuText(" KEYS, PALETTE ", 1, 49, 21)
+  LuText(" ACTIONS, PALETTE ", 1, 49, 21)
   LuText("Color " + hex(brush) + iif(brush = 0, ", transparent, not editable", iif(len(BattleColorRole(brush)) > 0, ", " + BattleColorRole(brush), "") + "   R " + str(v mod 32) + "  G " + str((v \ 32) mod 32) + "  B " + str((v \ 1024) mod 32)), 2, 51, 14)
-  LuText("Left Right pick a color. Q A red, W S green, E D blue: up and down", 2, 52, 15)
-  LuText("Bracket keys move this color left or right, the sprite pixels follow", 2, 53, 15)
-  LuText("Ctrl-Z undo   Ctrl-R revert this palette   Esc back to the tile sheet", 2, 54, 15)
+  LuText("Left Right: pick the color to change.", 2, 52, 15)
+  LuText("Enter: the menu to change its red, green and blue, move it, undo and more.", 2, 53, 15)
+  LuText("Esc: back to the tile sheet.", 2, 54, 15)
  elseif mode = 1 then
-  LuText(" KEYS, PIXELS ", 1, 49, 21)
-  LuText("Arrows move   0-9 A-F paint a color   Space paint with brush", 2, 51, 15)
-  LuText("Brackets change the brush. X Y flip. Ctrl-Z undo. Ctrl-C Ctrl-V copy tile", 2, 52, 15)
-  LuText("Esc back to the tile sheet", 2, 53, 15)
+  LuText(" ACTIONS, PIXELS ", 1, 49, 21)
+  LuText("Arrows: move.   Space: paint with the brush color.", 2, 51, 15)
+  LuText("Enter: the menu of every action, like brush color, flip, copy and paste.", 2, 52, 15)
+  LuText("Esc: back to the tile sheet.", 2, 53, 15)
  else
-  LuText(" KEYS, TILES ", 1, 49, 14)
-  LuText("Arrows move   Enter edit tile   PgUp PgDn change pose", 2, 51, 15)
-  LuText("Comma Period palette   P edit colors   Ctrl-C Ctrl-V copy tile", 2, 52, 15)
-  LuText("Ctrl-Z undo   R revert this sheet to the loaded ROM   Esc back", 2, 53, 15)
-  LuText("E export this character as a BMP   I import it from the BMP", 2, 54, 15)
+  LuText(" ACTIONS, TILES ", 1, 49, 14)
+  LuText("Arrows: pick a tile.   Enter: edit the tile.", 2, 51, 15)
+  LuText("Space: the menu of every action, like pose, palette, copy and export.", 2, 52, 15)
+  LuText("The menu shows each action's key, so the keys can be learned as you go.", 2, 53, 15)
+  LuText("Esc: back to the list.", 2, 54, 15)
  end if
  screenunlock
 
 end sub
+
+
+sub BattleSetChannel(pal as Integer, slot as Integer, shift as Integer, value as Integer)
+
+ 'Sets the red (shift 0), green (5) or blue (10) of a palette color to 0 to 31, remembering the old color for undo
+
+ dim raw as Integer
+
+ if value < 0 or value > 31 then exit sub
+
+ BattlePaletteSaveUndo(pal, slot)
+ raw = battle_palette_raw(pal, slot) and not (31 shl shift)
+ battle_palette_raw(pal, slot) = raw or (value shl shift)
+ RefreshBattlePalettes()
+
+end sub
+
+
+function BattleActions(mode as Integer, sheet as Integer, byref tile_id as Integer, byref pose as Integer, byref pal as Integer, byref brush as Integer, byref slot as Integer) as UInteger
+
+ 'The menu of every action of the battle sprite editor. Returns the key the chosen entry stands for, or 0 if the
+ ' editor handled it here (or the menu was cancelled).
+
+ dim choice as Integer
+ dim picked as Integer
+ dim names(1 to 32) as String
+ dim shift as Integer
+
+ SmReset()
+ if mode = 0 then
+  SmAdd("Edit this tile", "Enter", ENTER_KEY)
+  SmAdd("Choose the pose", "PgUp PgDn", 0, 1)
+  SmAdd("Choose the palette", "Comma Period", 0, 2)
+  SmAdd("Edit the palette colors", "P", asc("p"))
+  SmAdd("Copy this tile", "Ctrl-C", 3)
+  SmAdd("Paste the tile", "Ctrl-V", 22)
+  SmAdd("Undo", "Ctrl-Z", 26)
+  SmAdd("Export this character as BMP", "E", asc("e"))
+  SmAdd("Import this character from BMP", "I", asc("i"))
+  SmAdd("Revert this whole sheet", "R", asc("r"))
+  SmAdd("Back to the list", "Esc", ESC_KEY)
+  choice = SmRun("Tile sheet")
+ elseif mode = 1 then
+  SmAdd("Choose the brush color", "0 to 9, A to F", 0, 3)
+  SmAdd("Flip the tile horizontally", "X", asc("x"))
+  SmAdd("Flip the tile vertically", "Y", asc("y"))
+  SmAdd("Copy this tile", "Ctrl-C", 3)
+  SmAdd("Paste the tile", "Ctrl-V", 22)
+  SmAdd("Undo", "Ctrl-Z", 26)
+  SmAdd("Back to the tile sheet", "Esc", ESC_KEY)
+  choice = SmRun("Tile " + str(tile_id))
+ else
+  SmAdd("Choose the color", "Left Right", 0, 11)
+  SmAdd("Change its red", "Q A", 0, 12)
+  SmAdd("Change its green", "W S", 0, 13)
+  SmAdd("Change its blue", "E D", 0, 14)
+  SmAdd("Move the color left", "Bracket", asc("["))
+  SmAdd("Move the color right", "Bracket", asc("]"))
+  SmAdd("Undo", "Ctrl-Z", 26)
+  SmAdd("Revert this palette", "Ctrl-R", 18)
+  SmAdd("Back to the tile sheet", "Esc", ESC_KEY)
+  choice = SmRun("Palette " + str(pal))
+ end if
+ if choice = 0 then return 0
+ if sm_special(choice) = 0 then return sm_key(choice)
+
+ select case sm_special(choice)
+
+  case 1 'pose
+   for i as Integer = 0 to image_pose_count - 1
+    names(i + 1) = FF4Name(BattlePoseName(ImagePoseId(i)))
+   next
+   picked = SmPick("Pose", names(), image_pose_count, ImagePoseIndex(pose) + 1)
+   if picked > 0 then pose = ImagePoseId(picked - 1)
+
+  case 2 'palette
+   for i as Integer = 0 to 15
+    names(i + 1) = "Palette " + str(i)
+   next
+   picked = SmPick("Palette", names(), 16, pal + 1)
+   if picked > 0 then pal = picked - 1
+
+  case 3 'brush color
+   for i as Integer = 0 to 15
+    names(i + 1) = hex(i) + " " + BattleColorTag(i)
+   next
+   picked = SmPick("Brush color", names(), 16, brush + 1)
+   if picked > 0 then brush = picked - 1
+
+  case 11 'color of the palette
+   for i as Integer = 1 to 15
+    names(i) = hex(i) + " " + BattleColorTag(i)
+   next
+   picked = SmPick("Color", names(), 15, slot)
+   if picked > 0 then slot = picked
+
+  case 12 to 14 'red, green, blue
+   shift = (sm_special(choice) - 12) * 5
+   picked = SmNumber((battle_palette_raw(pal, slot) \ (2 ^ shift)) mod 32, 31)
+   BattleSetChannel(pal, slot, shift, picked)
+
+ end select
+
+ return 0
+
+end function
 
 
 sub EditBattleSheet(sheet as Integer)
@@ -365,6 +471,12 @@ sub EditBattleSheet(sheet as Integer)
   loop while key = ""
   keycode = asc(right(key, 1))
   if len(key) > 1 then keycode = keycode * &h100 + 255
+
+  'The menu of every action: Space on the tile sheet, Enter in the other two screens. The entries that stand
+  ' for a key are handled as that key.
+  if (mode = 0 and keycode = SPACE_KEY) or (mode <> 0 and keycode = ENTER_KEY) then
+   keycode = BattleActions(mode, sheet, tile_id, pose, pal, brush, slot)
+  end if
 
   'Tile keys that work in the tile sheet and the pixel editor (the palette editor has its own)
   select case iif(mode = 2, 0, keycode)
@@ -413,7 +525,7 @@ sub EditBattleSheet(sheet as Integer)
       BattleSpriteSaveUndo(sheet, tile_id)
       battle_char_gfx(sheet, tile_id, pixel_y, pixel_x) = brush
      end if
-    case SPACE_KEY, ENTER_KEY
+    case SPACE_KEY
      if battle_char_gfx(sheet, tile_id, pixel_y, pixel_x) <> brush then
       BattleSpriteSaveUndo(sheet, tile_id)
       battle_char_gfx(sheet, tile_id, pixel_y, pixel_x) = brush
@@ -458,12 +570,7 @@ sub EditBattleSheet(sheet as Integer)
       case asc("Q"), asc("W"), asc("E"): channel += 1
       case else: channel -= 1
      end select
-     if channel >= 0 and channel <= 31 then
-      BattlePaletteSaveUndo(pal, slot)
-      raw = battle_palette_raw(pal, slot) and not (31 shl shift)
-      battle_palette_raw(pal, slot) = raw or (channel shl shift)
-      RefreshBattlePalettes()
-     end if
+     BattleSetChannel(pal, slot, shift, channel)
     case asc("["), asc("]")
      s = slot + iif(keycode = asc("["), -1, 1)
      if s >= 1 and s <= 15 then

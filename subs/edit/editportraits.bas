@@ -280,21 +280,133 @@ sub DrawPortraitScreen(portrait as Integer, pal as Integer, mode as Integer, pix
  'Keys
  BlueBox(0, 47, 78, 6)
  if mode = 1 then
-  LuText(" KEYS, PALETTE ", 1, 47, 21)
-  LuText("Left Right pick a color. Q A red, W S green, E D blue: up and down", 2, 49, 15)
-  LuText("Bracket keys move this color left or right in the palette, the pixels follow", 2, 50, 15)
-  LuText("Ctrl-Z undo   Ctrl-R revert this palette   Esc back to the picture", 2, 51, 15)
+  LuText(" ACTIONS, PALETTE ", 1, 47, 21)
+  LuText("Left Right: pick the color to change.", 2, 49, 15)
+  LuText("Enter: the menu to change its red, green and blue, move it, undo and more.", 2, 50, 15)
+  LuText("Esc: back to the picture.", 2, 51, 15)
  else
-  LuText(" KEYS, PICTURE ", 1, 47, 14)
-  LuText("Arrows move   0-7 paint a color   Space paint with brush   F fill", 2, 49, 15)
-  LuText("Comma Period change palette   P edit the palette colors", 2, 50, 15)
-  LuText("X Y flip   Ctrl-C Ctrl-V copy picture   Ctrl-Z undo   R revert", 2, 51, 15)
-  LuText("PgUp PgDn other portrait   Home End first last row   Esc back", 2, 52, 15)
-  LuText("E export this portrait as a BMP   I import it from the BMP", 2, 53, 15)
+  LuText(" ACTIONS, PICTURE ", 1, 47, 14)
+  LuText("Arrows: move.   Space: paint with the brush color.", 2, 49, 15)
+  LuText("Enter: the menu of every action, like fill, flip, copy, palette and export.", 2, 50, 15)
+  LuText("The menu shows each action's key, so the keys can be learned as you go.", 2, 51, 15)
+  LuText("Esc: back to the list.", 2, 52, 15)
  end if
  screenunlock
 
 end sub
+
+
+sub PortraitSetChannel(pal as Integer, slot as Integer, shift as Integer, value as Integer)
+
+ 'Sets the red (shift 0), green (5) or blue (10) of a palette color to 0 to 31, remembering the old color for undo
+
+ dim raw as Integer
+
+ if value < 0 or value > 31 then exit sub
+
+ if pt_pal_undo_count = pt_undo_depth then
+  for i as Integer = 1 to pt_undo_depth - 1
+   pt_pal_undo_pal(i - 1) = pt_pal_undo_pal(i)
+   pt_pal_undo_slot(i - 1) = pt_pal_undo_slot(i)
+   pt_pal_undo_value(i - 1) = pt_pal_undo_value(i)
+  next
+  pt_pal_undo_count -= 1
+ end if
+ pt_pal_undo_pal(pt_pal_undo_count) = pal
+ pt_pal_undo_slot(pt_pal_undo_count) = slot
+ pt_pal_undo_value(pt_pal_undo_count) = portrait_palette_raw(pal, slot)
+ pt_pal_undo_count += 1
+ raw = portrait_palette_raw(pal, slot) and not (31 shl shift)
+ portrait_palette_raw(pal, slot) = raw or (value shl shift)
+
+end sub
+
+
+function PortraitActions(mode as Integer, byref portrait as Integer, byref pal as Integer, byref brush as Integer, byref slot as Integer) as UInteger
+
+ 'The menu of every action of the portrait editor. Returns the key the chosen entry stands for, or 0 if the
+ ' editor handled it here (or the menu was cancelled).
+
+ dim choice as Integer
+ dim picked as Integer
+ dim names(1 to 32) as String
+ dim count as Integer
+
+ SmReset()
+ if mode = 0 then
+  SmAdd("Fill with the brush color", "F", asc("f"))
+  SmAdd("Choose the brush color", "0 to 7", 0, 1)
+  SmAdd("Flip horizontally", "X", asc("x"))
+  SmAdd("Flip vertically", "Y", asc("y"))
+  SmAdd("Copy the picture", "Ctrl-C", 3)
+  SmAdd("Paste the picture", "Ctrl-V", 22)
+  SmAdd("Undo", "Ctrl-Z", 26)
+  SmAdd("Edit the palette colors", "P", asc("p"))
+  SmAdd("Choose the palette", "Comma Period", 0, 2)
+  SmAdd("Choose another portrait", "PgUp PgDn", 0, 3)
+  SmAdd("Export this portrait as BMP", "E", asc("e"))
+  SmAdd("Import this portrait from BMP", "I", asc("i"))
+  SmAdd("Revert this portrait", "R", asc("r"))
+  SmAdd("Back to the list", "Esc", ESC_KEY)
+  choice = SmRun("Portrait")
+ else
+  SmAdd("Choose the color", "Left Right", 0, 11)
+  SmAdd("Change its red", "Q A", 0, 12)
+  SmAdd("Change its green", "W S", 0, 13)
+  SmAdd("Change its blue", "E D", 0, 14)
+  SmAdd("Move the color left", "Bracket", asc("["))
+  SmAdd("Move the color right", "Bracket", asc("]"))
+  SmAdd("Undo", "Ctrl-Z", 26)
+  SmAdd("Revert this palette", "Ctrl-R", 18)
+  SmAdd("Back to the picture", "Esc", ESC_KEY)
+  choice = SmRun("Palette " + str(pal))
+ end if
+ if choice = 0 then return 0
+ if sm_special(choice) = 0 then return sm_key(choice)
+
+ select case sm_special(choice)
+
+  case 1 'brush color
+   for i as Integer = 0 to 7
+    names(i + 1) = str(i) + " " + PortraitColorTag(i)
+   next
+   picked = SmPick("Brush color", names(), 8, brush + 1)
+   if picked > 0 then brush = picked - 1
+
+  case 2 'palette
+   for i as Integer = 0 to 15
+    names(i + 1) = "Palette " + str(i)
+   next
+   picked = SmPick("Palette", names(), 16, pal + 1)
+   if picked > 0 then pal = picked - 1
+
+  case 3 'portrait
+   for i as Integer = 0 to total_portraits - 1
+    names(i + 1) = PortraitName(i)
+   next
+   picked = SmPick("Portrait", names(), total_portraits, portrait + 1)
+   if picked > 0 then
+    portrait = picked - 1
+    pal = PortraitDefaultPalette(portrait)
+   end if
+
+  case 11 'color of the palette
+   for i as Integer = 1 to 7
+    names(i) = str(i) + " " + PortraitColorTag(i)
+   next
+   picked = SmPick("Color", names(), 7, slot)
+   if picked > 0 then slot = picked
+
+  case 12 to 14 'red, green, blue
+   count = (sm_special(choice) - 12) * 5
+   picked = SmNumber((portrait_palette_raw(pal, slot) \ (2 ^ count)) mod 32, 31)
+   PortraitSetChannel(pal, slot, count, picked)
+
+ end select
+
+ return 0
+
+end function
 
 
 declare function ExportPortrait(p as Integer, pal as Integer) as String
@@ -332,6 +444,9 @@ sub EditPortrait(portrait_start as Integer)
   keycode = asc(right(key, 1))
   if len(key) > 1 then keycode = keycode * &h100 + 255
 
+  'Enter opens the menu of every action; the entries that stand for a key are handled as that key
+  if keycode = ENTER_KEY then keycode = PortraitActions(mode, portrait, pal, brush, slot)
+
   if mode = 0 then
 
    select case keycode
@@ -352,7 +467,7 @@ sub EditPortrait(portrait_start as Integer)
     case asc("0") to asc("7")
      brush = keycode - asc("0")
      PortraitPaint(portrait, pixel_x, pixel_y, brush)
-    case SPACE_KEY, ENTER_KEY
+    case SPACE_KEY
      PortraitPaint(portrait, pixel_x, pixel_y, brush)
     case asc("f"), asc("F")
      PortraitFill(portrait, pixel_x, pixel_y, brush)
@@ -443,22 +558,7 @@ sub EditPortrait(portrait_start as Integer)
       case asc("Q"), asc("W"), asc("E"): channel += 1
       case else: channel -= 1
      end select
-     if channel >= 0 and channel <= 31 then
-      if pt_pal_undo_count = pt_undo_depth then
-       for i as Integer = 1 to pt_undo_depth - 1
-        pt_pal_undo_pal(i - 1) = pt_pal_undo_pal(i)
-        pt_pal_undo_slot(i - 1) = pt_pal_undo_slot(i)
-        pt_pal_undo_value(i - 1) = pt_pal_undo_value(i)
-       next
-       pt_pal_undo_count -= 1
-      end if
-      pt_pal_undo_pal(pt_pal_undo_count) = pal
-      pt_pal_undo_slot(pt_pal_undo_count) = slot
-      pt_pal_undo_value(pt_pal_undo_count) = portrait_palette_raw(pal, slot)
-      pt_pal_undo_count += 1
-      raw = portrait_palette_raw(pal, slot) and not (31 shl shift)
-      portrait_palette_raw(pal, slot) = raw or (channel shl shift)
-     end if
+     PortraitSetChannel(pal, slot, shift, channel)
     case asc("["), asc("]")
      target = slot + iif(keycode = asc("["), -1, 1)
      if target >= 1 and target <= 7 then

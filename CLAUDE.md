@@ -160,3 +160,10 @@ decoding and crash problems without a keyboard. Other tricks used:
 - Keep `README.md` accurate: new keys, editors, config files and ROM behavior belong there.
 - Commit only when asked; commit messages end with the co-author line the session gives.
 - Never write test files to the drive root or into the repo; use the scratchpad.
+- **Keys are shortcuts, never the only way.** Every action must be reachable from something visible (a menu, a
+  "Add ..." line, a list entry); a key may also trigger it, and the menu shows the key beside the action. Prefer a
+  small menu when the user needs to choose over adding another key. (Sprite editors: `spritemenu.bas`; entry lists:
+  Space in `ListInput`; Spell Sets: Enter on a spell.)
+- **No leftovers.** Entering or leaving a menu or screen must leave nothing behind: clear the screen when a full
+  screen editor is left, and let popups restore what was under them (`BlueMenu.UserSelect`, the input boxes and
+  `ConfirmBox` already do).
