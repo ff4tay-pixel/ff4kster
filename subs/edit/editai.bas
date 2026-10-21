@@ -7,7 +7,7 @@
 '  1 AI SCRIPT   The AI the monster uses, and any other AI to look at: browsing does not change the monster
 '                until "use this AI" is chosen.
 '  2 PAIRS       Every pair of the AI in the style of the AI box in the monster editor: WHEN and AND lines for
-'                its conditions, THEN lines for its actions. The selected pair also has a script line and
+'                its conditions, THEN lines for its actions. Each pair also has a script line and
 '                Add lines. Left and Right switch to the previous or next pair.
 '
 'Tab or 1 2 switch panel (Up at the top of the list goes to panel 1, Down at the end of panel 1 to the list). Sets, conditions and scripts are shared in the ROM: one script can serve many
@@ -583,7 +583,7 @@ end sub
 
 sub AIBuildCondLines()
 
- 'Every pair in full: its conditions, then its actions. The selected pair adds its script line and Add lines.
+ 'Every pair in full: its conditions and an Add line, its script line, its actions and an Add line.
 
  dim n as Integer
  dim m as Integer
@@ -594,15 +594,15 @@ sub AIBuildCondLines()
   for j as Integer = 1 to n
    AIAddCondLine(ai_cl_condition, p, j)
   next
-  if p = ai_pair then AIAddCondLine(ai_cl_addcond, p, n + 1)
+  AIAddCondLine(ai_cl_addcond, p, n + 1)
 
   m = 0
   if AIScriptExists(AIScriptId(p)) then m = scripts(AIScriptIndex(AIScriptId(p))).Length()
-  if p = ai_pair then AIAddCondLine(ai_cl_chooser, p, 0)
+  AIAddCondLine(ai_cl_chooser, p, 0)
   for j as Integer = 1 to m
    AIAddCondLine(ai_cl_action, p, j)
   next
-  if p = ai_pair and AIScriptExists(AIScriptId(p)) then AIAddCondLine(ai_cl_addaction, p, m + 1)
+  if AIScriptExists(AIScriptId(p)) then AIAddCondLine(ai_cl_addaction, p, m + 1)
   AIAddCondLine(ai_cl_blank, p, 0)
  next
  AIAddCondLine(ai_cl_addpair, 0, 0)

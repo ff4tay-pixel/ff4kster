@@ -1279,8 +1279,8 @@ screen editor with two panels, one under the other:
     2 PAIRS         Every pair of the AI in full, in the same style as the AI
                     box of the monster editor, with a blank line between pairs:
                     WHEN and AND lines for its conditions, indented THEN
-                    lines for its actions. The selected pair
-                    also has an "Add a condition" line, a "Script N" line
+                    lines for its actions. Every pair also has
+                    an "Add a condition" line, a "Script N" line
                     (how many places use it; Enter on it picks another script)
                     and an "Add an action" line.
 
