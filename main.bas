@@ -112,6 +112,7 @@ ReadData(filename)
 disk_rom = original_rom
 BuildBaselineROM()
 SnapshotOriginalRows()
+SnapshotOriginalMessages()
 
 'Draw the tile overlays
 warp_overlay = ImageCreate(16, 16, RGB(255, 0, 255))

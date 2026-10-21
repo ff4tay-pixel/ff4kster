@@ -9,6 +9,7 @@ type BlueMessageInput
  cursor_x as UByte
  cursor_y as UByte
  cursor as Any ptr
+ original_message as String 'what the box started with, for Discard
  
  declare constructor(starting_x as UByte = 0, starting_y as UByte = 0, starting_message as String = "")
  

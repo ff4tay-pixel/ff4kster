@@ -11,9 +11,9 @@ that draws its font, windows and most graphics from the ROM being edited. Everyt
 memory and written only by "Save ROM". `README.md` documents every editor, key and config file for users;
 keep it in sync when behavior changes (its version-history entry for 0.9 is the one to extend until the next release).
 
-Editors on the main menu: Features, Spells (with animation preview), Spell Sets, Weapons (with sprite
+Editors on the main menu: Features, Spells (with animation preview), Spell Sets (both lists on one screen), Weapons (with sprite
 preview), Armors, Medicines, Tools, Shops, Jobs, **Battle Sprites** (tile/palette editor, BMP export/import), **Portraits** (menu faces, 32x32 3bpp, entry 32),
-Characters (full-screen **level up editor** with totals), Commands, Actors, Messages, Events, Triggers and NPCs
+Characters (full-screen **level up editor** with totals), Commands, Actors, Messages (banks with space meter, previews, search by text), Events, Triggers and NPCs
 (with overview minimaps), Tilesets, Map Info, Maps (paste preview, redo, replace tile, NPC/trigger overlay),
 Monsters (sprite preview, reorganized screen, **full screen AI editor** `subs/edit/editai.bas` with the pickers in `aitools.bas`), Formations (**battlefield preview**), Encounters, Autobattles,
 Solobattles, **Edit World Maps** (overworld, underground, moon: paint, fill, replace, copy/paste preview,
@@ -21,6 +21,42 @@ undo, triggers and encounter zones overlay, mouse), plus Search Everywhere, Spac
 CSV export/import and the two ROM comparisons still exist in `subs/csv` and `subs/general` but are hidden
 from the menu. The main menu is grouped under headings; `menu_id` maps a row to its entry number and
 `AddMainEntry(..., explicit_id)` adds an entry without renumbering the others (World Maps is 31).
+
+## How the interface should work (the user cares about this a lot)
+
+These come from the user's feedback; follow them for every new or changed screen.
+
+**Menus first, keys second.**
+- Every action must be reachable from something visible: a menu, an "Add ..." line, a list entry. A key may also
+  trigger it (the menu prints the key beside the action), but never as the only route. Do not add a shortcut
+  where a small menu would do; shortcuts add complexity to a tool that should be easy to use.
+- The patterns already in place: `spritemenu.bas` (`SmReset` / `SmAdd` / `SmRun` / `SmPick` / `SmNumber`: an actions
+  menu for the sprite editors, Enter, or Space on the battle sprite tile sheet), `EntryActionKey` (Space in any
+  `ListInput` list: revert, copy, paste, undo, where used), Enter on a spell in the Spell Sets editor, Space in the
+  Messages editor, Esc in the message text window. A menu entry can stand for a key: return that key and let the
+  editor handle it as if it had been pressed, so there is one code path.
+- On-screen key help is short: the menu key plus a few essentials, then "the menu shows each action's key".
+- Lists that grow get an "Add a ..." line at the end instead of relying on Insert.
+
+**Clarity.**
+- Use one word for one thing and the word the screen already shows (the pair's "set N" and a condition's "cond N";
+  the menu says "Change condition set", not "Choose the condition set of this pair"). When two menu entries sound
+  alike, one of them is probably wrong: rename or remove it, and remove what nobody can explain.
+- Say what a change reaches. Shared data (condition sets, scripts, element and equip sets, bank 2 messages
+  renumbered by insert) shows how many places use it ("used 6x") and the hint line says that a change reaches all.
+  Say the numbers that matter: counts, bytes used of bytes available, over a limit in red (Save ROM refuses).
+- Every cursor line has a hint on the bottom row (57) saying what Enter does there, in words of at most 78 letters.
+- Explain a term the first time it appears on a screen (a "pair" is conditions plus the actions to run), and name
+  boxes with a title and a digit that jumps to them.
+- Ask before anything destructive and say what is affected; offer undo where it is cheap (`Ctrl-Z`, always also in
+  a menu). Messages for the user say what happened and what to do next.
+- Look like the rest of the program: blue windows (`BlueBox`) with a title, text on them, never bare text on black.
+  Use `FF4Text` for text drawn with the ROM font and avoid the characters the font cannot draw (pitfall 2).
+
+**No leftovers.** Entering or leaving a menu, popup or screen must leave nothing behind: clear the screen when a
+full screen editor is left (and again when a text window that draws over the right of the screen ends), and let
+popups restore what was under them (`BlueMenu.UserSelect`, the input boxes and `ConfirmBox` already do). Check the
+screen after a transition, not only the screen you built.
 
 ## Shared building blocks (use these instead of writing new loops)
 
@@ -30,6 +66,15 @@ from the menu. The main menu is grouped under headings; `menu_id` maps a row to 
   autobattles, spell sets, encounters, events) need only those two, so prefer that for new kinds. A new kind
   touches: `KindIndex`, `EntryCount`, `EntryName`, `KindTitle`, `EntryRow`, `ApplyRow`, `IsRowKind`, the array
   sizes, `SnapshotOriginalRows`, the undo cases, `UsageText`, and `ChangedEntries` / `OpenEntry` in `globalsearch.bas`.
+  Space in a list opens the entry actions menu (`EntryActionKey`); keep it when you touch the key handling.
+- **Item forms** (`subs/edit/itemforms.bas`): the engine of the Spells, Weapons, Armors and Medicines editors. The
+  list stays on the left, every box of the entry is on screen, Enter on the list moves the cursor into the boxes
+  (`FormFields`). An editor registers its boxes (`FmAddMenu`, one line boxes with `FmAddLine`) and supplies show,
+  act, hint and extra-key routines; the components (`WeaponInformationMenu` ...) expose `EditField(row)` for one row.
+- **Messages** (`subs/general/messagedata.bas` and `subs/edit/editmessages.bas`): `MsgGet` / `MsgSet` / `MsgCount`
+  read any of the seven banks (bank 2 is per map), `MsgPlain` / `MsgPreview` give the text as letters, `MsgUsed` and
+  `MsgRoom` the same areas Save ROM checks, `MsgUsers` where a message is used and `MsgRenumber` renumbers the NPCs
+  and events of a map after bank 2 messages are inserted, deleted or swapped.
 - **Help**: one source, `FillHelp` in `mainhelp.bas`, used by the main menu panel and by F1 (`help_entry` is the
   main menu entry of the open editor). Add keys there and in README.
 - **Mouse**: `PollMouse` (`functions/mouse.bas`), `BlueMenu.MouseCode` (menus handle clicks themselves),
@@ -134,6 +179,13 @@ the rip JSON and in `.asm` comments are SNES `bank/address` or file offsets: use
 10. **Window scaling is not possible** with FreeBASIC's gfxlib here (a resized window does not stretch; the OpenGL
     2D mode never switched on). Do not spend time on it again.
 11. Do not drive the real mouse (`SetCursorPos`, `mouse_event`) in tests: it clicks whatever window is under it.
+12. **More reserved or taken names** (confusing compile errors again): `list`, `width`, `menu` (a type name, names are
+    case-insensitive) and `map` cannot be variables or parameters; `iif` cannot return an object such as a `List`, use
+    `if ... then a = x else a = y`.
+13. **Editing text files with scripts.** Write edit scripts with the Write tool, not shell heredocs, when the text has
+    quotes or apostrophes (the heredoc breaks). When a script replaces the text between two markers in `README.md`,
+    check that no other section lies between them (a replace once deleted the Spell Sets and Features sections).
+    Check the result with `git diff` for lines it should not have removed.
 
 ## How to test (there is no unit test suite)
 
@@ -160,10 +212,6 @@ decoding and crash problems without a keyboard. Other tricks used:
 - Keep `README.md` accurate: new keys, editors, config files and ROM behavior belong there.
 - Commit only when asked; commit messages end with the co-author line the session gives.
 - Never write test files to the drive root or into the repo; use the scratchpad.
-- **Keys are shortcuts, never the only way.** Every action must be reachable from something visible (a menu, a
-  "Add ..." line, a list entry); a key may also trigger it, and the menu shows the key beside the action. Prefer a
-  small menu when the user needs to choose over adding another key. (Sprite editors: `spritemenu.bas`; entry lists:
-  Space in `ListInput`; Spell Sets: Enter on a spell.)
-- **No leftovers.** Entering or leaving a menu or screen must leave nothing behind: clear the screen when a full
-  screen editor is left, and let popups restore what was under them (`BlueMenu.UserSelect`, the input boxes and
-  `ConfirmBox` already do).
+- **Follow "How the interface should work" above** for every screen you add or change: menus first and keys as
+  shortcuts, clear wording, no leftovers. After a change, look at the screen (screenshot harness) before saying it
+  is done, and say what you could not try by hand.

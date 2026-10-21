@@ -7,6 +7,7 @@ constructor BlueMessageInput(starting_x as UByte = 0, starting_y as UByte = 0, s
  'topline = 1
  'cursor = ImageCreate(8, 8, 14)
  cursor = ImageCreate(8, 8, RGB(255, 255, 0))
+ original_message = starting_message
  
  ParseMessage(starting_message)
  if lines.Length() = 0 then lines.Append("")
@@ -132,6 +133,7 @@ sub BlueMessageInput.Display()
  DisplayDialogue(screen_width - 28 - x, 0, Message(), 9, RoundUp((topline - 1) / 4) + 1, message_image, true)
  put (x * 8, y * 8), message_image, pset
  ImageDestroy(message_image)
+ WriteText(FF4Text("Esc opens the menu: done, insert a code, discard. Enter: new line."), 1, 57, 14)
  
  'put ((screen_width - 28) * 8, y * 8), blank, pset
  'DisplayDialogue(screen_width - 28, y, Message(), 9, RoundUp((topline - 1) / 4) + 1)
@@ -197,6 +199,15 @@ sub BlueMessageInput.UserType()
  dim name_menu as BlueMenu
  dim song_menu as BlueMenu
  dim parameter_input as BlueNumberInput
+ dim esc_menu as BlueMenu
+ dim want_insert as Boolean
+ 
+ esc_menu = BlueMenu(x, y + 2)
+ esc_menu.title = "Message"
+ esc_menu.AddOption(FF4Text("Done"))
+ esc_menu.AddOption(FF4Text("Insert a code"))
+ esc_menu.AddOption(FF4Text("Discard my changes"))
+ esc_menu.AddOption(FF4Text("Keep typing"))
  
  insert_menu = BlueMenu(x, y + h + 2)
  insert_menu.AddOption(FF4Text("Name"))
@@ -235,7 +246,19 @@ sub BlueMessageInput.UserType()
   select case a
 
    case ESC_KEY
-    done = true
+    esc_menu.UserSelect()
+    if not esc_menu.cancelled then
+     select case esc_menu.selected
+      case 1
+       done = true
+      case 2
+       want_insert = true
+      case 3
+       ParseMessage(original_message)
+       if lines.Length() = 0 then lines.Append("")
+       done = true
+     end select
+    end if
 
    case UP_KEY
     if cursor_y - y - 1 > 0 then
@@ -330,48 +353,7 @@ sub BlueMessageInput.UserType()
     end if
     
    case INSERT_KEY
-    dim instring as String
-    pos_y = cursor_y - y + topline - 1
-    pos_x = cursor_x - x
-    temp = Pad(lines.ItemAt(pos_y), pos_x,, FF4Text(" "))
-    insert_menu.UserSelect()
-    if not insert_menu.cancelled then
-     select case insert_menu.selected
-      case 1 'Name
-       name_menu.UserSelect()
-       if not name_menu.cancelled then instring = FF4Text("/name" + Pad(str(name_menu.selected - 1), 2, true, "0"))
-      case 2 'Song
-       song_menu.UserSelect()
-       if not song_menu.cancelled then instring = FF4Text("/song" + Pad(str(song_menu.selected - 1), 2, true, "0"))
-      case 3 'Pause
-       parameter_input.UserSelect()
-       if parameter_input.number > 0 then instring = FF4Text("/wait" + Pad(str(parameter_input.number), 3, true, "0"))
-      case 4 'Symbol
-       symbol_menu.UserSelect()
-       if not symbol_menu.cancelled then
-        if symbol_menu.selected < 34 then
-         instring = chr(32 + symbol_menu.selected)
-        else
-         instring = chr(84 + symbol_menu.selected)
-        end if
-       end if
-     end select
-     if len(instring) > 0 then
-      temp = left(temp, pos_x - 1) + instring + mid(temp, pos_x)
-      lines.Assign(pos_y, left(temp, w))
-      if len(temp) > w then lines.Insert(pos_y + 1, mid(temp, w + 1))
-      cursor_x += len(instring)
-      if cursor_x - x > w then
-       cursor_x = x + pos_x + len(instring) - w
-       cursor_y += 1
-       if cursor_y - y > h then
-        cursor_y -= 1
-        topline += 1
-       end if
-      end if
-     end if
-
-    end if
+    want_insert = true
 
    case else
     pos_y = cursor_y - y + topline - 1
@@ -400,6 +382,53 @@ sub BlueMessageInput.UserType()
      if cursor_y - y + 1 <= h then cursor_y += 1 else topline += 1
     end if
   end select
+
+ if want_insert then
+  want_insert = false
+  dim instring as String
+   pos_y = cursor_y - y + topline - 1
+   pos_x = cursor_x - x
+   temp = Pad(lines.ItemAt(pos_y), pos_x,, FF4Text(" "))
+   insert_menu.UserSelect()
+   if not insert_menu.cancelled then
+    select case insert_menu.selected
+     case 1 'Name
+      name_menu.UserSelect()
+      if not name_menu.cancelled then instring = FF4Text("/name" + Pad(str(name_menu.selected - 1), 2, true, "0"))
+     case 2 'Song
+      song_menu.UserSelect()
+      if not song_menu.cancelled then instring = FF4Text("/song" + Pad(str(song_menu.selected - 1), 2, true, "0"))
+     case 3 'Pause
+      parameter_input.UserSelect()
+      if parameter_input.number > 0 then instring = FF4Text("/wait" + Pad(str(parameter_input.number), 3, true, "0"))
+     case 4 'Symbol
+      symbol_menu.UserSelect()
+      if not symbol_menu.cancelled then
+       if symbol_menu.selected < 34 then
+        instring = chr(32 + symbol_menu.selected)
+       else
+        instring = chr(84 + symbol_menu.selected)
+       end if
+      end if
+    end select
+    if len(instring) > 0 then
+     temp = left(temp, pos_x - 1) + instring + mid(temp, pos_x)
+     lines.Assign(pos_y, left(temp, w))
+     if len(temp) > w then lines.Insert(pos_y + 1, mid(temp, w + 1))
+     cursor_x += len(instring)
+     if cursor_x - x > w then
+      cursor_x = x + pos_x + len(instring) - w
+      cursor_y += 1
+      if cursor_y - y > h then
+       cursor_y -= 1
+       topline += 1
+      end if
+     end if
+    end if
+
+   end if
+ end if
+
  loop until done
 
 end sub

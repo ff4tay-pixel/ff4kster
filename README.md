@@ -882,7 +882,38 @@ the various locations in the game. Each location has an associated set
 of messages which its NPCs and sometimes certain events can utilize. The
 battle messages are called during in-battle events, and the battle alerts
 are more generic messages that could come up in any battle. You can also
-change the display of status effect names during battle.
+change the display of status effect names during battle, and the item
+descriptions.
+
+The first screen lists the banks with how many messages each has and how full
+its area of the ROM is (yellow when nearly full, red when over the limit: Save
+ROM refuses a bank that is over, so the same numbers are shown here). Bank 2
+asks for a map next. The list of messages shows each message's number and the
+start of its text, so messages can be told apart; yellow ones differ from the
+ROM as it was loaded. The selected message is shown on the right as the game
+displays it, and the space used by the whole bank is always in the title.
+
+    ENTER:   Edit the message.
+    SPACE:   The menu of the message, with the key of each action beside it:
+             edit, find text in the list (the whole text, not only the start
+             shown), find the next match, copy and paste the text (between
+             banks of the same kind), revert it to the loaded ROM, undo the
+             last text change (Ctrl-Z, up to 40 changes) and show where it is
+             used (the events and, in bank 2, the NPCs that show it). For bank
+             2 also add a message at the end, insert one before this one,
+             delete this one and move it up or down.
+    CTRL+R, CTRL+C, CTRL+V, CTRL+Z, CTRL+U, INSERT, DELETE: shortcuts for those.
+    ESC:     Back.
+
+Inserting, deleting or moving a bank 2 message changes the numbers of the
+messages after it, so the NPCs placed on the map and the events that belong to
+it are renumbered along with it and keep showing the same text. An NPC that is
+also placed on another map keeps its numbers there, and the editor says which
+ones to check. Deleting a message that is used says what uses it first; those
+then show the next message. Searching (Search Everywhere on the main menu) also
+finds messages by their text, and Changed Entries lists the changed messages.
+Item descriptions and battle messages are used by parts of the game that are
+not followed, so their "where used" says so.
 
 When editing messages from Banks 1, 2, or 3, there is a large text editing
 window you can use to enter or edit the text. However, the underlying text
@@ -947,16 +978,17 @@ symbols or other effects:
            "4/10" then you would type "4/slash10"
          
 All of these codes can by typed manually, but most of them can also be 
-accessed via a sub menu which appears when you press INSERT while editing.
+accessed via a sub menu which appears when you press INSERT while editing, or
+when you press ESC and choose "Insert a code". ESC in the text window opens a
+small menu: Done (keep the text), Insert a code, Discard my changes (put the
+text back as it was when the window opened) or Keep typing.
 
-Bank 2 messages belong to a map: pick the map, then the message. In that list
-INSERT adds a blank message before the selected one, DELETE removes the
-selected one (after asking, and never the last one), and SHIFT-ENTER followed by
-ENTER on another message swaps the two. Bank 2 messages and the other banks
-are checked for space when you save; if a bank has too much text the editor
-shows an overflow warning ("Bank 1 overflow!" and so on) and does not write the
-ROM, so shorten some messages first. The Space Usage entry on the main menu
-shows how full each bank is.
+Bank 2 messages belong to a map: pick the map, then the message. Bank 2
+messages and the other banks are checked for space when you save; if a bank has
+too much text the editor shows an overflow warning ("Bank 1 overflow!" and so
+on) and does not write the ROM, so shorten some messages first. The title of
+the message list shows the space used and turns red as soon as a bank is over,
+and the Space Usage entry on the main menu shows how full each bank is.
 
 
 EVENTS
@@ -1659,6 +1691,12 @@ VERSION HISTORY
       conditions and actions in the style of the monster editor's AI box) with insert/delete,
       copy/paste, undo, a list of the monsters that use the AI and a
       room check (Save ROM refuses AI data that does not fit)
+    - Messages editor: the list shows the start of each message, changed ones
+      are yellow, the space of the bank is always shown, a menu (Space) has
+      find text, add, insert, delete, move, copy, revert, undo and where used,
+      inserting, deleting and moving bank 2 messages renumbers the NPCs and
+      events that use them, Esc in the text window has a menu (done, insert
+      a code, discard), and Search Everywhere finds messages by text
     - Menus instead of shortcuts: every action of the sprite editors has an
       actions menu (Enter, Space on the battle sprite tile sheet), the entry
       lists have one too (Space: revert, copy, paste, undo, where used), and

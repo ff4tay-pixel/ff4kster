@@ -103,6 +103,7 @@ declare function ChestFormation(m as Integer, chest_byte as Integer) as Integer
 #include once "subs/edit/editcharacters.bas"
 #include once "subs/edit/editcommands.bas"
 #include once "subs/edit/editactors.bas"
+#include once "subs/general/messagedata.bas"
 #include once "subs/edit/editmessages.bas"
 #include once "subs/general/eventtools.bas"
 #include once "subs/edit/editevents.bas"

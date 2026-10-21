@@ -25,6 +25,7 @@ sub OpenEntry(kind as String, index as Integer)
   case "events": help_entry = 16
   case "autobattles": help_entry = 25
   case "solobattles": help_entry = 26
+  case "messages": help_entry = 15
  end select
  select case kind
   case "spells": EditSpells()
@@ -43,6 +44,7 @@ sub OpenEntry(kind as String, index as Integer)
   case "events": EditEvents()
   case "autobattles": EditAutoBattles()
   case "solobattles": EditSoloBattles()
+  case "messages": EditMessages()
  end select
  help_entry = saved_help
  jump_kind = ""
@@ -62,7 +64,7 @@ sub SearchEverywhere()
  dim n as Integer
  dim results as BlueMenu
 
- query = lcase(PromptLine("Search spells, items, monsters:", 20))
+ query = lcase(PromptLine("Search spells, items, monsters, messages:", 20))
  if query = "" then exit sub
 
  for k as Integer = 1 to 6
@@ -76,12 +78,28 @@ sub SearchEverywhere()
   next
  next
 
+ 'the text of the messages, with the bank and the number to open it on
+ for b as Integer = 1 to msg_bank_count
+  for mp as Integer = iif(b = 2, 1, 0) to iif(b = 2, total_maps, 0)
+   for i as Integer = 1 to MsgCount(b, mp)
+    if n < 300 then
+     if instr(lcase(MsgPlain(b, MsgGet(b, mp, i))), query) > 0 then
+      n += 1
+      result_kind(n) = "messages"
+      result_index(n) = (b * 1000 + mp) * 1000 + i
+      results.AddOption(FF4Text(Pad("Message " + MsgBankName(b) + iif(b = 2, " " + str(mp), "") + " #" + str(i), 20)) + MsgPreview(b, MsgGet(b, mp, i), 40))
+     end if
+    end if
+   next
+  next
+ next
+
  if n = 0 then
   InfoBox("No matches.||Press any key")
   exit sub
  end if
 
- results.x = 20
+ results.x = 2
  results.y = 4
  results.max_rows = 30
  results.UserSelect()
@@ -116,12 +134,28 @@ sub ChangedEntries()
   next
  next
 
+ 'changed messages
+ for b as Integer = 1 to msg_bank_count
+  for mp as Integer = iif(b = 2, 1, 0) to iif(b = 2, total_maps, 0)
+   for i as Integer = 1 to MsgCount(b, mp)
+    if n < 300 then
+     if MsgChanged(b, mp, i) then
+      n += 1
+      result_kind(n) = "messages"
+      result_index(n) = (b * 1000 + mp) * 1000 + i
+      results.AddOption(FF4Text(Pad("Message " + MsgBankName(b) + iif(b = 2, " " + str(mp), "") + " #" + str(i), 20)) + MsgPreview(b, MsgGet(b, mp, i), 40))
+     end if
+    end if
+   next
+  next
+ next
+
  if n = 0 then
   InfoBox("Nothing has been changed since the ROM was loaded.||Press any key")
   exit sub
  end if
 
- results.x = 20
+ results.x = 2
  results.y = 4
  results.max_rows = 30
  results.UserSelect()
