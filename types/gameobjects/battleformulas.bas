@@ -16,6 +16,15 @@ type BattleFormulas
  buff_known as Boolean 'Armor (protect) and Shell: the numbers they add to the defense and to the magic defense
  protect_add as UByte 'added to the defense of the target by magic effect $0d, 5 in the original
  shell_add as UByte 'added to the magic defense by magic effect $0e, 3 in the original
+ back_known as Boolean 'the back row rules of Fight, see BackEffectOffset: whether the code is the original
+ back_hit(2) as UByte 'the hit rate of an attacker in the back row (1) and against a target in the back row (2): 1 halved, 2 unchanged, 3 doubled
+ back_flag(2) as Boolean 'a unit with the no back row penalty flag (the bow) is not affected
+ back_jump(2) as Boolean 'a jumping unit is not affected
+ back_def as UByte 'the defense of a target in the back row: 1 x0.5, 2 x1, 3 x2 (original)
+ slot_known(4) as Boolean 'the bonus of the unit in the first slot, see SlotUnitOffset: whether the code is the original
+ slot_who(4) as UByte 'who gets it: 1 the first slot of both sides (original), 2 the first slot of the party, 3 the whole party
+ slot_mult(4) as UByte 'the rate is multiplied by this and divided by 4: 5 in the original, 25% more
+ slot_target as Boolean 'rule 4 only: the slot of the target decides, not the slot of the attacker (the original game)
  um_known(11) as Boolean 'the other status rules of the damage formulas, see UmLdaOffset: whether the code is the original
  um_list(11) as UByte 'the status byte the rule tests: 1 persistent (status 1), 2 temporary, 3 system, 4 hidden
  um_mask(11) as UByte 'the statuses of that byte that switch the rule on

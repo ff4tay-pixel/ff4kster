@@ -224,9 +224,32 @@ sub FsLayout()
   "|and lasts WIS plus WIL x |@SL| plus |@SK| ticks", _
   "Regen|heals every |@RG| ticks", _
   "Sleep, paralyze|last |@LB| minus |@LM| x spirit, divided by |@LV| ticks"}
+ dim page6(1 to 8) as String = { _
+  "Attacker, hit rate|when the attacker is |@FW1", _
+  "|its hit rate is multiplied by |@FM1| / 4", _
+  "Target, evasion|when the target is |@FW2", _
+  "|its evasion is multiplied by |@FM2| / 4", _
+  "Attacker, spell hit|when the attacker is |@FW3", _
+  "|its spell hit rate is multiplied by |@FM3| / 4", _
+  "Target, magic def|when the |@FU| is |@FW4", _
+  "|its magic defense rate is multiplied by |@FM4| / 4"}
+ dim page7(1 to 7) as String = { _
+  "Attacker, back row|its hit rate is |@RA1", _
+  "|ignored with the no back row penalty flag: |@RX1", _
+  "|ignored when it is jumping: |@RJ1", _
+  "Target, back row|the hit rate against it is |@RA2", _
+  "|ignored if the attacker has that flag: |@RX2", _
+  "|ignored if the attacker is jumping: |@RJ2", _
+  "|and its defense is |@RD"}
  dim joined(1 to 20) as String
 
  select case fs_page
+  case 7
+   fs_x0 = 24
+   FsFill(page7(), 7)
+  case 6
+   fs_x0 = 24
+   FsFill(page6(), 8)
   case 5
    fs_x0 = 22
    FsFill(page5(), 10)
@@ -358,6 +381,13 @@ function FsFieldText(code as String) as String
   case "LV": if not formulas.sleep_known then return "?" else return str(formulas.sleep_div)
   case "M2": if not formulas.st_known(2) then return "?" else return MenuCommand.CodeItem("x0.5|x1|x2", formulas.st_mult)
   case "XD": if not formulas.st_known(2) then return "?" else return iif(formulas.st_defense_zero, "0", "unchanged")
+  case "FW1", "FW2", "FW3", "FW4": if not formulas.slot_known(val(mid(code, 3))) then return "?" else return MenuCommand.CodeItem("slot 0 of both sides|slot 0 of the party|the whole party", formulas.slot_who(val(mid(code, 3))))
+  case "FM1", "FM2", "FM3", "FM4": if not formulas.slot_known(val(mid(code, 3))) then return "?" else return str(formulas.slot_mult(val(mid(code, 3))))
+  case "RA1", "RA2": if not formulas.back_known then return "?" else return MenuCommand.CodeItem("halved, original|unchanged|doubled", formulas.back_hit(val(mid(code, 3))))
+  case "RX1", "RX2": if not formulas.back_known then return "?" else return iif(formulas.back_flag(val(mid(code, 3))), "yes", "no")
+  case "RJ1", "RJ2": if not formulas.back_known then return "?" else return iif(formulas.back_jump(val(mid(code, 3))), "yes", "no")
+  case "RD": if not formulas.back_known then return "?" else return MenuCommand.CodeItem("x0.5|x1|x2", formulas.back_def)
+  case "FU": if not formulas.slot_known(4) then return "?" else return iif(formulas.slot_target, "target", "attacker")
   case "CT": if not formulas.doom_known then return "?" else return str(formulas.doom_ticks)
   case "CS": if not formulas.doom_known then return "?" else return MenuCommand.CodeItem("Dead|Stone|Toad|Mini|Pig|Mute|Blind|Poison", formulas.doom_status)
  end select
@@ -423,13 +453,15 @@ sub FsDraw()
  dim piece as String
  dim shown as String
  dim field_number as Integer
- dim page_titles(1 to 5) as String = {" Formulas of the stats of the party in battle ", " Statuses that weaken a unit ", " Other adjustments of the statuses ", " Armor and Shell ", " Timers "}
- dim page_heights(1 to 5) as Integer = {17, 22, 33, 10, 19}
- dim page_texts(1 to 5) as String = {"Monsters have stats of their own that are not changed here.", _
+ dim page_titles(1 to 7) as String = {" Formulas of the stats of the party in battle ", " Statuses that weaken a unit ", " Other adjustments of the statuses ", " Armor and Shell ", " Timers ", " Bonus of the first slot ", " The back row "}
+ dim page_heights(1 to 7) as Integer = {17, 22, 33, 10, 19, 13, 11}
+ dim page_texts(1 to 7) as String = {"Monsters have stats of their own that are not changed here.", _
   "Each rule is for a set of statuses of the unit: none switches the rule off.", _
   "Each rule is for a set of statuses of the unit: none switches the rule off.", _
   "Spells with these effects add to the defense stats of their target.", _
-  "A tick is one pass of the battle loop, its length depends on the battle speed."}
+  "A tick is one pass of the battle loop, its length depends on the battle speed.", _
+  "The first slot has these rates multiplied by a number divided by 4.", _
+  "The back row rules of Fight, Aim, Jump and Focus. Spells are not affected."}
 
  BlueBox(1, 3, 76, page_heights(fs_page))
  WriteText(FF4Text(page_titles(fs_page)), 2, 3, 14)
@@ -590,6 +622,49 @@ sub FsEditField(code as String)
     fml_number.starting_number = formulas.speed_add
     fml_number.UserSelect()
     formulas.speed_add = fml_number.number
+   end if
+  case "RA1", "RA2"
+   n = val(mid(code, 3))
+   if formulas.back_known then
+    pick = FmlPick(px, py, "halved, original|unchanged|doubled", formulas.back_hit(n))
+    if pick > 0 then formulas.back_hit(n) = pick
+   end if
+  case "RX1", "RX2"
+   n = val(mid(code, 3))
+   if formulas.back_known then
+    pick = FmlPick(px, py, "yes, original|no", iif(formulas.back_flag(n), 1, 2))
+    if pick > 0 then formulas.back_flag(n) = (pick = 1)
+   end if
+  case "RJ1", "RJ2"
+   n = val(mid(code, 3))
+   if formulas.back_known then
+    pick = FmlPick(px, py, "yes, original|no", iif(formulas.back_jump(n), 1, 2))
+    if pick > 0 then formulas.back_jump(n) = (pick = 1)
+   end if
+  case "RD"
+   if formulas.back_known then
+    pick = FmlPick(px, py, "x0.5|x1|x2, original", formulas.back_def)
+    if pick > 0 then formulas.back_def = pick
+   end if
+  case "FW1", "FW2", "FW3", "FW4"
+   n = val(mid(code, 3))
+   if formulas.slot_known(n) then
+    pick = FmlPick(px, py, "slot 0 of both sides, original|slot 0 of the party|the whole party", formulas.slot_who(n))
+    if pick > 0 then formulas.slot_who(n) = pick
+   end if
+  case "FM1", "FM2", "FM3", "FM4"
+   n = val(mid(code, 3))
+   if formulas.slot_known(n) then
+    fml_number.x = px: fml_number.y = py
+    fml_number.min_value = 0: fml_number.max_value = 10
+    fml_number.starting_number = formulas.slot_mult(n)
+    fml_number.UserSelect()
+    formulas.slot_mult(n) = fml_number.number
+   end if
+  case "FU"
+   if formulas.slot_known(4) then
+    pick = FmlPick(px, py, "attacker, original|target", iif(formulas.slot_target, 2, 1))
+    if pick > 0 then formulas.slot_target = (pick = 2)
    end if
   case "PD"
    if formulas.poison_known then
@@ -762,12 +837,19 @@ sub FsHint()
     case "SA": message = "Enter types the number Shell adds to the magic defense, 3 in the original."
     case "PZ": message = "Enter chooses if Armor works in the Zeromus battle, original: does nothing."
     case "SZ": message = "Enter chooses if Shell works in the Zeromus battle, original: does nothing."
+    case "RA1", "RA2": message = "Enter picks what happens to the hit rate: halved, unchanged or doubled."
+    case "RX1", "RX2": message = "Enter picks if the no back row penalty flag, a bow for example, avoids it."
+    case "RJ1", "RJ2": message = "Enter picks if a jumping unit avoids it."
+    case "RD": message = "Enter picks what the defense of a target in the back row is multiplied by."
+    case "FW1", "FW2", "FW3", "FW4": message = "Enter picks who gets the bonus: slot 0 of both sides, of the party, or all."
+    case "FM1", "FM2", "FM3", "FM4": message = "Enter types the number the rate is multiplied by, divided by 4: 5 is 25% more."
+    case "FU": message = "Enter picks whose slot decides: the attacker, as in the game, or the target."
     case "PD": message = "Enter picks the number that the max HP is divided by, 8 in the original."
     case "SD": message = "Enter types the HP that HP leak takes every tick, 2 in the original."
     case "IS": message = "Enter picks the stat of a character that the wait between ticks starts from."
     case "IC": message = "Enter types the number added to it, 20 in the original. Petrify uses it too."
     case "SE": message = "Enter types after how many ticks HP leak takes its HP, 1 in the original."
-    case "SL": message = "Enter types what WIS plus WIL is multiplied by for the length, 2 in the original."
+    case "SL": message = "Enter types what WIS plus WIL is multiplied by for the length, 2 originally."
     case "SK": message = "Enter types the number added to the length of HP leak, 30 in the original."
     case "RG": message = "Enter types after how many ticks Regen heals, 6 in the original."
     case "LB": message = "Enter types the base of the length of sleep and paralyze, 300 in the original."
@@ -843,15 +925,23 @@ function FmlGroupData(entry as Integer, f as BattleFormulas ptr, c as MenuComman
    next
    s += str(f->plus_on) + "," + str(f->yang_stat) + "," + str(f->yang_mult) + "," + str(f->yang_plus)
   case 10
+   for i as Integer = 1 to 4
+    s += str(f->slot_who(i)) + "/" + str(f->slot_mult(i)) + ","
+   next
+   s += str(f->slot_target)
+  case 11
+   s = str(f->back_hit(1)) + "," + str(f->back_hit(2)) + "," + str(f->back_flag(1)) + "," + str(f->back_flag(2)) + ","
+   s += str(f->back_jump(1)) + "," + str(f->back_jump(2)) + "," + str(f->back_def)
+  case 12
    for i as Integer = 1 to 6
     s += str(f->st_mask(i)) + ","
    next
    s += str(f->st_power) + "," + str(f->st_mult) + "," + str(f->st_defense_zero)
-  case 11
+  case 13
    for i as Integer = 1 to 11
     s += str(f->um_list(i)) + "/" + str(f->um_mask(i)) + "/" + str(f->um_effect(i)) + ","
    next
-  case 12
+  case 14
    s = str(f->speed_anchor) + "," + str(f->speed_num) + "," + str(f->speed_mul) + "," + str(f->speed_add) + "," + str(f->doom_ticks) + "," + str(f->doom_status) + ","
    s += str(f->poison_div) + "," + str(f->wait_stat) + "," + str(f->wait_const) + "," + str(f->sap_damage) + "," + str(f->sap_every) + ","
    s += str(f->sap_len_mult) + "," + str(f->sap_len_const) + "," + str(f->regen_every) + "," + str(f->sleep_base) + "," + str(f->sleep_mult) + "," + str(f->sleep_div)
@@ -898,15 +988,25 @@ sub FmlGroupCopy(entry as Integer, df as BattleFormulas ptr, sf as BattleFormula
    next
    df->plus_on = sf->plus_on: df->yang_stat = sf->yang_stat: df->yang_mult = sf->yang_mult: df->yang_plus = sf->yang_plus
   case 10
+   for i as Integer = 1 to 4
+    df->slot_who(i) = sf->slot_who(i): df->slot_mult(i) = sf->slot_mult(i)
+   next
+   df->slot_target = sf->slot_target
+  case 11
+   df->back_hit(1) = sf->back_hit(1): df->back_hit(2) = sf->back_hit(2)
+   df->back_flag(1) = sf->back_flag(1): df->back_flag(2) = sf->back_flag(2)
+   df->back_jump(1) = sf->back_jump(1): df->back_jump(2) = sf->back_jump(2)
+   df->back_def = sf->back_def
+  case 12
    for i as Integer = 1 to 6
     df->st_mask(i) = sf->st_mask(i)
    next
    df->st_power = sf->st_power: df->st_mult = sf->st_mult: df->st_defense_zero = sf->st_defense_zero
-  case 11
+  case 13
    for i as Integer = 1 to 11
     df->um_list(i) = sf->um_list(i): df->um_mask(i) = sf->um_mask(i): df->um_effect(i) = sf->um_effect(i)
    next
-  case 12
+  case 14
    df->speed_anchor = sf->speed_anchor: df->speed_num = sf->speed_num: df->speed_mul = sf->speed_mul: df->speed_add = sf->speed_add
    df->doom_ticks = sf->doom_ticks: df->doom_status = sf->doom_status: df->poison_div = sf->poison_div
    df->wait_stat = sf->wait_stat: df->wait_const = sf->wait_const: df->sap_damage = sf->sap_damage: df->sap_every = sf->sap_every
@@ -1163,9 +1263,41 @@ sub FsNotes5()
 end sub
 
 
+sub FsNotes6()
+
+ BlueBox(1, 18, 76, 9)
+ WriteText(FF4Text(" Notes "), 2, 18, 14)
+ WriteText(FF4Text("In the original game the unit in the first slot, the first party member"), 2, 19, 15)
+ WriteText(FF4Text("and also the first monster, has 25% more of these rates: the rate is"), 2, 20, 15)
+ WriteText(FF4Text("multiplied by 5 and divided by 4. Any number from 0 to 10 can be used:"), 2, 21, 15)
+ WriteText(FF4Text("4 is no bonus, 8 is double and 3 is 25% less."), 2, 22, 15)
+ WriteText(FF4Text("The magic defense rate checks the slot of the attacker in the original"), 2, 23, 15)
+ WriteText(FF4Text("game, which looks like a mistake: switch it to the target to give the"), 2, 24, 15)
+ WriteText(FF4Text("bonus to the unit that is attacked."), 2, 25, 15)
+ WriteText(FF4Text("Ctrl-R reverts this page, Ctrl-Z undoes, Space shows both."), 2, 26, 15)
+
+end sub
+
+
+sub FsNotes7()
+
+ BlueBox(1, 16, 76, 8)
+ WriteText(FF4Text(" Notes "), 2, 16, 14)
+ WriteText(FF4Text("In the original game a unit in the back row has its hit rate halved when it"), 2, 17, 15)
+ WriteText(FF4Text("attacks, and a target in the back row halves the hit rate against it and has"), 2, 18, 15)
+ WriteText(FF4Text("its defense doubled. A unit with the no back row penalty flag, which a bow"), 2, 19, 15)
+ WriteText(FF4Text("gives, or a jumping unit is not affected. The hit rate can also be doubled."), 2, 20, 15)
+ WriteText(FF4Text("The rules are for Fight, Aim, Jump and Focus, spells ignore the back row."), 2, 22, 15)
+ WriteText(FF4Text("Ctrl-R reverts this page, Ctrl-Z undoes, Space shows both."), 2, 23, 15)
+
+end sub
+
+
 sub FsNotes()
 
  select case fs_page
+  case 7: FsNotes7()
+  case 6: FsNotes6()
   case 2: FsNotes2()
   case 3: FsNotes3()
   case 4: FsNotes4()
@@ -1198,7 +1330,7 @@ sub EditStatFormulas(page as Integer = 1)
  cls
 
  fs_page = page
- dim entry_of_page(1 to 5) as Integer = {9, 10, 11, 6, 12}
+ dim entry_of_page(1 to 7) as Integer = {9, 12, 13, 6, 14, 10, 11}
  fs_entry = entry_of_page(page)
  FsLayout()
  fs_line = 1
@@ -1459,12 +1591,18 @@ sub FmlShow(entry as Integer)
    FmlNote(3, "The formulas of the stats of the party in battle:|attack multiplier, attack power, attack hit rate,|Yang's attack, defense multiplier, defense, magic|defense multiplier and magic defense rate.||Enter opens them as formulas on one screen, with|the numbers and stats you can change in yellow.")
 
   case 10
-   FmlNote(3, "The statuses that weaken a unit: a weak attacker|(Frog and Mini do 1 attack power), a hurt target|(they take double damage and have no defense), no|defense multiplier, spells that ignore magic defense,|attackers that inflict no status or use no arrows.||Enter opens them as rules with fields you can change.|Each rule can have any statuses of the list.")
+   FmlNote(3, "The bonus of the unit in the first slot: in the original|game it has 25% more hit rate when it attacks, 25% more|evasion when it is attacked, and 25% more magic defense|rate. The first slot is the first party member and also|the first monster.||Enter opens them as rules with fields you can change.")
 
   case 11
-   FmlNote(3, "The other places where a status changes a number:|a blind attacker or target, berserk, jump, curse,|defend and focus, for attacks and for spells.||Enter opens them as rules with fields you can change.|Each rule can have statuses of any of the four lists.")
+   FmlNote(3, "The back row: in the original game a unit in the back|row has its hit rate halved when it attacks, a target in|the back row halves the hit rate against it, and doubles|its defense. A unit with the no back row penalty flag,|a bow for example, or a jumping unit is not affected.||Enter opens them as rules with fields you can change.")
 
   case 12
+   FmlNote(3, "The statuses that weaken a unit: a weak attacker|(Frog and Mini do 1 attack power), a hurt target|(they take double damage and have no defense), no|defense multiplier, spells that ignore magic defense,|attackers that inflict no status or use no arrows.||Enter opens them as rules with fields you can change.|Each rule can have any statuses of the list.")
+
+  case 13
+   FmlNote(3, "The other places where a status changes a number:|a blind attacker or target, berserk, jump, curse,|defend and focus, for attacks and for spells.||Enter opens them as rules with fields you can change.|Each rule can have statuses of any of the four lists.")
+
+  case 14
    FmlNote(3, "The timers of the battle: the turn wait of every unit,|Count, also called doom, poison, HP leak, Regen and|the length of sleep and paralyze.||Enter opens them as lines with fields you can change.")
 
  end select
@@ -1477,9 +1615,11 @@ sub FmlShow(entry as Integer)
   case 7: WriteText(FF4Text("Enter switches what the effect removes. Esc goes back."), 1, 57, 14)
   case 8: WriteText(FF4Text("Enter picks the summon or switches how it is aimed. Esc goes back."), 1, 57, 14)
   case 9: WriteText(FF4Text("Enter opens the formulas of the stats of the party."), 1, 57, 14)
-  case 10: WriteText(FF4Text("Enter opens the statuses that weaken a unit, with rules you can change."), 1, 57, 14)
-  case 11: WriteText(FF4Text("Enter opens the other status rules, with fields you can change."), 1, 57, 14)
-  case 12: WriteText(FF4Text("Enter opens the timers, with fields you can change."), 1, 57, 14)
+  case 10: WriteText(FF4Text("Enter opens the bonus of the first slot, with rules you can change."), 1, 57, 14)
+  case 11: WriteText(FF4Text("Enter opens the rules of the back row, with fields you can change."), 1, 57, 14)
+  case 12: WriteText(FF4Text("Enter opens the statuses that weaken a unit, with rules you can change."), 1, 57, 14)
+  case 13: WriteText(FF4Text("Enter opens the other status rules, with fields you can change."), 1, 57, 14)
+  case 14: WriteText(FF4Text("Enter opens the timers, with fields you can change."), 1, 57, 14)
  end select
 
 end sub
@@ -1571,9 +1711,11 @@ sub FmlEdit(entry as Integer)
   case 7: fml_hook_entry = 7: FmlEditRemoval()
   case 8: fml_hook_entry = 8: FmlEditBook()
   case 9: EditStatFormulas(1): FmlShow(9)
-  case 10: EditStatFormulas(2): FmlShow(10)
-  case 11: EditStatFormulas(3): FmlShow(11)
-  case 12: EditStatFormulas(5): FmlShow(12)
+  case 10: EditStatFormulas(6): FmlShow(10)
+  case 11: EditStatFormulas(7): FmlShow(11)
+  case 12: EditStatFormulas(2): FmlShow(12)
+  case 13: EditStatFormulas(3): FmlShow(13)
+  case 14: EditStatFormulas(5): FmlShow(14)
  end select
 
  fml_hook_entry = 0
@@ -1607,6 +1749,8 @@ sub EditFormulas()
  fml_hub.AddOption(FF4Text("Dispel, Black Hole"))
  fml_hub.AddOption(FF4Text("Summon Book"))
  fml_hub.AddOption(FF4Text("Party stats"))
+ fml_hub.AddOption(FF4Text("First slot bonus"))
+ fml_hub.AddOption(FF4Text("Back row"))
  fml_hub.AddOption(FF4Text("Weakening statuses"))
  fml_hub.AddOption(FF4Text("Status adjustments"))
  fml_hub.AddOption(FF4Text("Timers"))
@@ -1636,7 +1780,7 @@ sub EditFormulas()
 
  do
   FmlShow(fml_hub.selected)
-  for i as Integer = 1 to 12
+  for i as Integer = 1 to 14
    if FmlGroupChanged(i) then fml_hub.ChangeOption(i, "", 14) else fml_hub.ChangeOption(i, "", 15)
   next
   fml_hub.cancelled = false

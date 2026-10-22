@@ -1,3 +1,85 @@
+function BackEffectOffset(r as Integer) as UInteger
+
+ 'The back row in Fight (battle/fight.asm): a unit in the back row, bit 7 of byte 1 of its properties, has its hit
+ ' rate halved (lsr), unless it has the no back row penalty flag (bit 5 of that byte, the bow) or is jumping, and
+ ' so has the hit rate against a target in the back row (tested with the flag and the jump of the attacker); the
+ ' defense of a target in the back row is doubled. r 1 the hit rate of the attacker in the back row, 2 the hit
+ ' rate against a target in the back row, 3 the defense (6 bytes: asl, rol).
+
+ select case r
+  case 1: return &h1C733
+  case 2: return &h1C768
+  case 3: return &h1C90D
+ end select
+
+ return 0
+
+end function
+
+
+function BackFlagMaskOffset(r as Integer) as UInteger
+
+ 'The operand of the "and #$20" that tests the no back row penalty flag, for rule 1 and 2.
+
+ if r = 1 then return &h1C729
+
+ return &h1C75E
+
+end function
+
+
+function BackJumpMaskOffset(r as Integer) as UInteger
+
+ 'The operand of the "and #$02" that tests the jump status.
+
+ if r = 1 then return &h1C730
+
+ return &h1C765
+
+end function
+
+
+function SlotUnitOffset(r as Integer) as UInteger
+
+ 'The four rates that the unit in the first slot has 25% more of (battle/fight.asm and battle/magic.asm):
+ ' 1 the hit rate of an attacker, 2 the evasion of a target, 3 the hit rate of a spell and 4 the magic defense rate
+ ' of the target of a spell. Each is "lda $cd" or "lda $ce" (the attacker or the target), "and #$7f", a branch
+ ' that skips the rest when that is not 0, then the rate times 5 divided by 4. The game tests the attacker for
+ ' rule 4, which looks like a mistake. This is the operand of the lda.
+
+ select case r
+  case 1: return &h1C737
+  case 2: return &h1C7C0
+  case 3: return &h1D0E3
+  case 4: return &h1D2BA
+ end select
+
+ return 0
+
+end function
+
+
+function SlotMaskOffset(r as Integer) as UInteger
+
+ return SlotUnitOffset(r) + 2
+
+end function
+
+
+function SlotMultOffset(r as Integer) as UInteger
+
+ select case r
+  case 1: return &h1C742
+  case 2: return &h1C7CB
+  case 3: return &h1D0EE
+  case 4: return &h1D2C5
+ end select
+
+ return 0
+
+end function
+
+
 function BattleFormulas.UmLdaOffset(r as Integer) as UInteger
 
  'The rules that test a status byte of the attacker ($2683 to $2686) or of the target ($2703 to $2706) with a
@@ -369,6 +451,47 @@ sub BattleFormulas.ReadFromROM()
  if not st_defense_zero and not MenuCommand.BytesAre(&h1C96A, "EAEAEAEAEA") then st_known(2) = false
 
 
+ 'The back row, see BackEffectOffset.
+ back_known = true
+ for r as Integer = 1 to 2
+  if ByteAt(BackFlagMaskOffset(r) - 1) <> &h29 or ByteAt(BackJumpMaskOffset(r) - 1) <> &h29 then back_known = false
+  back_flag(r) = (ByteAt(BackFlagMaskOffset(r)) = &h20)
+  back_jump(r) = (ByteAt(BackJumpMaskOffset(r)) = &h02)
+  if ByteAt(BackFlagMaskOffset(r)) <> &h20 and ByteAt(BackFlagMaskOffset(r)) <> &h00 then back_known = false
+  if ByteAt(BackJumpMaskOffset(r)) <> &h02 and ByteAt(BackJumpMaskOffset(r)) <> &h00 then back_known = false
+ next
+ back_hit(1) = 0
+ back_hit(2) = 0
+ for r as Integer = 1 to 2
+  if MenuCommand.BytesAre(BackEffectOffset(r), "4EF838") then back_hit(r) = 1
+  if MenuCommand.BytesAre(BackEffectOffset(r), "EAEAEA") then back_hit(r) = 2
+  if MenuCommand.BytesAre(BackEffectOffset(r), "0EF838") then back_hit(r) = 3
+  if back_hit(r) = 0 then back_known = false
+ next
+ back_def = 0
+ if MenuCommand.BytesAre(BackEffectOffset(3), "4E05396E0439") then back_def = 1
+ if MenuCommand.BytesAre(BackEffectOffset(3), "EAEAEAEAEAEA") then back_def = 2
+ if MenuCommand.BytesAre(BackEffectOffset(3), "0E04392E0539") then back_def = 3
+ if back_def = 0 then back_known = false
+
+ 'The bonus of the first slot, see SlotUnitOffset. The mask says who: 7F the unit number without the monster bit
+ ' (slot 0 of the party and of the monsters), FF only the party slot 0, 80 any member of the party.
+ for r as Integer = 1 to 4
+  slot_known(r) = (ByteAt(SlotMaskOffset(r) - 1) = &h29 and ByteAt(SlotMultOffset(r) - 1) = &hA9)
+  slot_who(r) = 0
+  select case ByteAt(SlotMaskOffset(r))
+   case &h7F: slot_who(r) = 1
+   case &hFF: slot_who(r) = 2
+   case &h80: slot_who(r) = 3
+  end select
+  if slot_who(r) = 0 then slot_known(r) = false
+  slot_mult(r) = ByteAt(SlotMultOffset(r))
+ next
+ if ByteAt(SlotUnitOffset(2)) <> &hCE then slot_known(2) = false
+ if ByteAt(SlotUnitOffset(1)) <> &hCD or ByteAt(SlotUnitOffset(3)) <> &hCD then slot_known(1) = false: slot_known(3) = false
+ slot_target = (ByteAt(SlotUnitOffset(4)) = &hCE)
+ if ByteAt(SlotUnitOffset(4)) <> &hCD and ByteAt(SlotUnitOffset(4)) <> &hCE then slot_known(4) = false
+
  'The other status rules, see UmLdaOffset. The lda picks the byte (list 1 to 4), the mask the statuses.
  dim unit_base as Integer
  dim lda_offset as UInteger
@@ -559,6 +682,46 @@ sub BattleFormulas.WriteToROM()
  next
  if plus_known then
   if plus_on then WriteByte(&h19E41, &h1A) else WriteByte(&h19E41, &hEA)
+ end if
+
+ 'the back row
+ if back_known then
+  dim back_text as String
+  for r as Integer = 1 to 2
+   select case back_hit(r)
+    case 1: back_text = "4EF838"
+    case 2: back_text = "EAEAEA"
+    case else: back_text = "0EF838"
+   end select
+   for i as Integer = 0 to 2
+    WriteByte(BackEffectOffset(r) + i, val("&h" + mid(back_text, i * 2 + 1, 2)))
+   next
+   if back_flag(r) then WriteByte(BackFlagMaskOffset(r), &h20) else WriteByte(BackFlagMaskOffset(r), &h00)
+   if back_jump(r) then WriteByte(BackJumpMaskOffset(r), &h02) else WriteByte(BackJumpMaskOffset(r), &h00)
+  next
+  select case back_def
+   case 1: back_text = "4E05396E0439"
+   case 2: back_text = "EAEAEAEAEAEA"
+   case else: back_text = "0E04392E0539"
+  end select
+  for i as Integer = 0 to 5
+   WriteByte(BackEffectOffset(3) + i, val("&h" + mid(back_text, i * 2 + 1, 2)))
+  next
+ end if
+
+ 'the bonus of the first slot
+ for r as Integer = 1 to 4
+  if slot_known(r) then
+   select case slot_who(r)
+    case 1: WriteByte(SlotMaskOffset(r), &h7F)
+    case 2: WriteByte(SlotMaskOffset(r), &hFF)
+    case else: WriteByte(SlotMaskOffset(r), &h80)
+   end select
+   WriteByte(SlotMultOffset(r), slot_mult(r))
+  end if
+ next
+ if slot_known(4) then
+  if slot_target then WriteByte(SlotUnitOffset(4), &hCE) else WriteByte(SlotUnitOffset(4), &hCD)
  end if
 
  'the other status rules
