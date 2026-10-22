@@ -25,7 +25,13 @@ type CommandParametersMenu
  cover_menu as BlueMenu
  steal_menu as BlueMenu
  regen_menu as BlueMenu
- 
+ clone_menu as BlueMenu
+ code_menu as BlueMenu 'Dark Wave and Kick: the code settings
+ code_choice_menu as BlueMenu
+ fail_menu as BlueMenu 'Jump and Throw: the message when the action fails
+ source_menu as BlueMenu
+ source_ids(26) as UByte
+
  declare constructor(starting_x as UByte = 0, starting_y as UByte = 0)
  
  declare sub Display()

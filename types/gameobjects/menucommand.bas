@@ -22,10 +22,21 @@ type MenuCommand
  cover_actor as UByte
  cover_by_job as Boolean
  misc_bytes(8) as UByte
- 
+ code_choice(2) as UByte 'Dark Wave and Kick: which known code variant is in the ROM (0 = not one of the known ones)
+ behaves_like as UByte 'command 22 only: the command whose routine it runs (0 = none)
+
+ declare static function CodeRows(index as UByte) as Integer
+ declare static function CodeTitle(index as UByte, row as Integer) as String
+ declare static function CodeOffset(index as UByte, row as Integer) as UInteger
+ declare static function CodeNames(index as UByte, row as Integer) as String
+ declare static function CodeBytes(index as UByte, row as Integer) as String
+ declare static function CodeItem(s as String, n as Integer) as String
+ declare static function CanBeCopied(index as UByte) as Boolean
  declare static function HasParameters(index as UByte) as Boolean
  declare static function TargetsCorrectly(index as UByte) as Boolean
  
+ declare sub ReadCode(index as UByte)
+ declare sub WriteCode(index as UByte)
  declare sub ReadFromROM(index as UByte)
  declare sub WriteToROM(index as UByte)
 

@@ -9,10 +9,26 @@ function MenuCommand.HasParameters(index as UByte) as Boolean
    temp = true
   case 16 to 20
    temp = true
+  case 22
+   temp = true
+  case 7, 23
+   temp = true
+  case 6, 15
+   temp = true
  end select
- 
+
  return temp
- 
+
+
+end function
+
+
+function MenuCommand.CanBeCopied(index as UByte) as Boolean
+
+ 'Whether command 22 can borrow this command's routine: the game must have one for it
+ ' (White, Black, Call and Ninja are run by the spell menu, they have none).
+
+ return index <> 22 and (ByteAt(&h1B57C + (index - 1) * 2) <> 0 or ByteAt(&h1B57D + (index - 1) * 2) <> 0)
 
 end function
 
@@ -22,6 +38,164 @@ function MenuCommand.TargetsCorrectly(index as UByte) as Boolean
  return index = 8 or index = 9 or index = 11 or index = 12 or index = 16 or index = 17 or index = 22
 
 end function
+
+
+function MenuCommand.CodeRows(index as UByte) as Integer
+
+ 'Settings that are not data bytes but small changes to the game's code. Each one is a few bytes
+ ' that are replaced by another known sequence of the same length (found with the disassembly,
+ ' battle/cmd.asm). Only the known variants can be chosen.
+
+ select case index
+  case 6: return 3 'Dark Wave
+  case 15: return 2 'Kick
+ end select
+
+ return 0
+
+end function
+
+
+function MenuCommand.CodeTitle(index as UByte, row as Integer) as String
+
+ select case index
+  case 6
+   if row = 1 then return "HP the user loses:    "
+   if row = 2 then return "Damage to undead:     "
+   return "Base damage, both:    "
+  case 15
+   if row = 1 then return "Attack multiplier:    "
+   return "Base damage, both:    "
+ end select
+
+ return ""
+
+end function
+
+
+function MenuCommand.CodeOffset(index as UByte, row as Integer) as UInteger
+
+ select case index
+  case 6
+   if row = 1 then return &h1EBF4
+   if row = 2 then return &h1E9A3
+   return &h1E93A
+  case 15
+   if row = 1 then return &h1E924
+   return &h1E93A
+ end select
+
+ return 0
+
+end function
+
+
+function MenuCommand.CodeNames(index as UByte, row as Integer) as String
+
+ 'The choices, separated by |. The first one that matches the ROM is shown, the order matches CodeBytes.
+
+ select case index
+  case 6
+   if row = 1 then return "1/2 of max HP|1/4 of max HP|1/8 of max HP, original|1/16 of max HP|1/32 of max HP|1/64 of max HP|None"
+   if row = 2 then return "Full damage|Half damage|Quarter damage, original"
+   return "x0.5, original|x1|x2"
+  case 15
+   if row = 1 then return "Half, original|Full|Double"
+   return "x0.5, original|x1|x2"
+ end select
+
+ return ""
+
+end function
+
+
+function MenuCommand.CodeBytes(index as UByte, row as Integer) as String
+
+ 'The bytes of each choice in hex, separated by |. Dark Wave cost: a call to a routine that shifts the
+ ' 16 bit value right by N (Lsr_N in the disassembly) or "lda #0". Damage to undead: two shift pairs
+ ' (lsr/ror) of which the choices keep two, one or none. Kick: lsr, nothing or asl on the multiplier.
+ ' Base damage: the shared half of multiplier x power (lsr/ror), nothing, or doubled (asl/rol), used by
+ ' both commands, so it is the same bytes on both screens.
+
+ select case index
+  case 6
+   if row = 1 then return "208784|208684|208584|208484|208384|208284|A90000"
+   if row = 2 then return "EAEAEAEAEAEAEAEA|46CA66C9EAEAEAEA|46CA66C946CA66C9"
+   return "46E466E3|EAEAEAEA|06E326E4"
+  case 15
+   if row = 1 then return "46DF|EAEA|06DF"
+   return "46E466E3|EAEAEAEA|06E326E4"
+ end select
+
+ return ""
+
+end function
+
+
+function MenuCommand.CodeItem(s as String, n as Integer) as String
+
+ 'The n-th (from 1) part of s when it is split at |.
+
+ dim start as Integer = 1
+ dim finish as Integer
+
+ for i as Integer = 2 to n
+  start = instr(start, s, "|")
+  if start = 0 then return ""
+  start += 1
+ next
+ finish = instr(start, s, "|")
+ if finish = 0 then return mid(s, start)
+
+ return mid(s, start, finish - start)
+
+end function
+
+
+sub MenuCommand.ReadCode(index as UByte)
+
+ dim names as String
+ dim wanted as String
+ dim found as String
+ dim n as Integer
+ dim bytes_text as String
+
+ for row as Integer = 1 to CodeRows(index)
+  code_choice(row) = 0
+  bytes_text = CodeBytes(index, row)
+  n = 1
+  do
+   wanted = CodeItem(bytes_text, n)
+   if wanted = "" then exit do
+   found = ""
+   for i as Integer = 0 to len(wanted) \ 2 - 1
+    found += hex(ByteAt(CodeOffset(index, row) + i), 2)
+   next
+   if found = wanted then
+    code_choice(row) = n
+    exit do
+   end if
+   n += 1
+  loop
+ next
+
+end sub
+
+
+sub MenuCommand.WriteCode(index as UByte)
+
+ dim wanted as String
+
+ for row as Integer = 1 to CodeRows(index)
+  if code_choice(row) > 0 then
+   wanted = CodeItem(CodeBytes(index, row), code_choice(row))
+   for i as Integer = 0 to len(wanted) \ 2 - 1
+    WriteByte(CodeOffset(index, row) + i, val("&h" + mid(wanted, i * 2 + 1, 2)))
+   next
+  end if
+ next
+
+end sub
 
 
 sub MenuCommand.ReadFromROM(index as UByte)
@@ -43,6 +217,7 @@ sub MenuCommand.ReadFromROM(index as UByte)
  disabling_temporary = ByteAt(&h9FF19 + (index - 1) * 2  + 1)
  
  charging_stance = ByteAt(&hB7E60 + (index - 1))
+ ReadCode(index)
  action_stance = &hFF
  action_stance2 = &hFF
  action_stance3 = &hFF
@@ -78,6 +253,7 @@ sub MenuCommand.ReadFromROM(index as UByte)
    action_stance = ByteAt(&h14828)
    action_stance2 = ByteAt(&h14833)
    action_stance3 = ByteAt(&h146CD)
+   message(1) = ByteAt(&h1EB62) 'Failure message
    
   case 8 'Recall
    action_stance = ByteAt(&h148E1)
@@ -170,9 +346,19 @@ sub MenuCommand.ReadFromROM(index as UByte)
   case 21 'Peep
    action_stance = ByteAt(&h149AB)
    
+  case 22 'Unused in the original game; the editor can make it run another command's routine
+   behaves_like = 0
+   for i as Integer = 1 to 26
+    if CanBeCopied(i) and ByteAt(&h1B57C + (index - 1) * 2) = ByteAt(&h1B57C + (i - 1) * 2) and ByteAt(&h1B57D + (index - 1) * 2) = ByteAt(&h1B57D + (i - 1) * 2) then
+     behaves_like = i
+     exit for
+    end if
+   next
+
   case 23 'Throw
    action_stance = ByteAt(&h1434C)
-   
+   message(1) = ByteAt(&h1E56D) 'Failure message
+
   case 24 'Steal
    action_stance = ByteAt(&h149F3)
    misc_bytes(1) = ByteAt(&h1E3F1) 'Base
@@ -217,6 +403,7 @@ sub MenuCommand.WriteToROM(index as UByte)
  WriteByte(&h9FF19 + (index - 1) * 2, disabling_persistent)
  WriteByte(&h9FF19 + (index - 1) * 2 + 1, disabling_temporary) 
  WriteByte(&hB7E60 + (index - 1), charging_stance)
+ WriteCode(index)
  
  select case index
  
@@ -249,6 +436,7 @@ sub MenuCommand.WriteToROM(index as UByte)
    WriteByte(&h14828, action_stance)
    WriteByte(&h14833, action_stance2)
    WriteByte(&h146CD, action_stance3)
+   WriteByte(&h1EB62, message(1))
  
   case 8 'Recall
    start = &h1EC22
@@ -470,8 +658,20 @@ sub MenuCommand.WriteToROM(index as UByte)
   case 21 'Peep
    WriteByte(&h149AB, action_stance)
   
+  case 22 'Runs the routine (and plays the animation) of the command it behaves like
+   for i as Integer = 0 to 1
+    if behaves_like = 0 then
+     WriteByte(&h1B57C + (index - 1) * 2 + i, 0)
+     WriteByte(&h1424B + (index - 1) * 2 + i, ByteAt(&h1424B + &h1D * 2 + i)) 'the "no animation" routine
+    else
+     WriteByte(&h1B57C + (index - 1) * 2 + i, ByteAt(&h1B57C + (behaves_like - 1) * 2 + i))
+     WriteByte(&h1424B + (index - 1) * 2 + i, ByteAt(&h1424B + (behaves_like - 1) * 2 + i))
+    end if
+   next
+
   case 23 'Throw
    WriteByte(&h1434C, action_stance)
+   WriteByte(&h1E56D, message(1))
    
   case 24 'Steal
    WriteByte(&h1E3F1, misc_bytes(1)) 'Base

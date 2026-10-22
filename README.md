@@ -835,6 +835,32 @@ Parameters shows the details that go with the command if it has any that can
 be edited (for example base values, multipliers and the stats and elements
 involved).
 
+Jump and Throw have one parameter, the message shown when they fail.
+
+Dark Wave and Kick have code settings. They are not data bytes: the editor
+swaps a few bytes of the game's code for another known sequence of the same
+length (found in the battle code of the disassembly), and offers only those
+known sequences. Dark Wave: the HP the user loses (1/2 to 1/64 of max HP, or
+none; the original is 1/8) and the damage to undead targets (full, half, or
+the original quarter). Kick: the attack multiplier used (half, the original,
+full, or double). Both screens also have "Base damage, both": Kick and Dark
+Wave work out damage with the same instructions (attack multiplier times
+attack power, divided by 2, plus a random amount), and this setting changes
+that division to x0.5 (original), x1 or x2, so it changes both commands. If another patch has changed those bytes, the screen says
+"Custom, not changed" and leaves them alone until you pick one of the known
+choices.
+
+Command 22 (named "Dummy") is not used by the original game. Its Parameters
+screen has "Behaves like": pick another command and 22 runs that command's
+routine and animation in battle, so you can give it its own name, target,
+delay, disabling statuses and wait stance (they start as a copy of the chosen
+command's). Give it to an actor in the Actors editor to use it. Two limits
+come from the game code: the routine's parameters are shared, so a change to
+Sing's spells also changes this command, and the banner shown during the
+action still carries the original command's name. White, Black, Call and
+Ninja cannot be chosen because the spell menu runs them, not a routine. Type
+a few letters in the list to jump to a command.
+
 Commands such as Sing and Fight have "If" lines that test one byte of the
 battle properties of the unit that uses the command (128 bytes each, the list
 is in the order of those bytes). Their names come from the disassembly
@@ -1652,6 +1678,9 @@ VERSION HISTORY
       pair), pairs can be added and moved, a new pair starts as set 1 and script 1, and the sharing of sets
       and scripts is said on screen (private copies were removed)
     - Commands: the unknown bytes in the If lists are named from the disassembly (or shown as unused bytes)
+    - Commands: Dark Wave and Kick have code settings (HP cost, damage to undead, Kick multiplier, shared base damage)
+    - Commands: Jump and Throw have a Parameters screen with their failure message
+    - Commands: the unused command 22 can "Behave like" another command (runs its routine and animation)
     - Messages editor: the list shows the start of each message, changed ones are yellow, the space of the
       bank is always shown, a menu (Space) has find text, add, insert, delete, move, copy, revert, undo and
       where used, inserting, deleting and moving bank 2 messages renumbers the NPCs and events that use

@@ -22,7 +22,16 @@ constructor CommandParametersMenu(starting_x as UByte = 0, starting_y as UByte =
  cover_menu = BlueMenu(x, y)
  steal_menu = BlueMenu(x, y)
  regen_menu = BlueMenu(x, y)
- 
+ clone_menu = BlueMenu(x, y)
+ fail_menu = BlueMenu(x, y)
+ code_menu = BlueMenu(x, y)
+ code_choice_menu = BlueMenu(x + 26, y)
+ code_choice_menu.max_rows = 8
+
+ source_menu = BlueMenu(x + 15, y)
+ source_menu.max_rows = 12
+ source_menu.type_ahead = true
+
  item_menu = BlueMenu(x + 8, y)
  item_menu.max_rows = 1
  for i as Integer = 1 to total_items
@@ -289,6 +298,35 @@ sub CommandParametersMenu.Display()
    cover_menu.ChangeOption(3, FF4Text("Disable if present: ") + Pad(temp, actor_names.Width(),, FF4Text(" ")), 15)
    cover_menu.Display()
    
+  case 6, 15 'Dark Wave, Kick: code settings
+   for row as Integer = 1 to MenuCommand.CodeRows(id)
+    if menucommands(id).code_choice(row) = 0 then
+     temp = FF4Text("Custom, not changed")
+    else
+     temp = FF4Text(MenuCommand.CodeItem(MenuCommand.CodeNames(id, row), menucommands(id).code_choice(row)))
+    end if
+    code_menu.ChangeOption(row, FF4Text(MenuCommand.CodeTitle(id, row)) + temp, 15)
+   next
+   code_menu.Remove(MenuCommand.CodeRows(id) + 1)
+   code_menu.Display()
+   
+  case 7, 23 'Jump, Throw
+   fail_menu.ChangeOption(1, FF4Text("Failure message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
+   fail_menu.Display()
+   
+  case 22 'Unused command: runs another command's routine
+   if menucommands(id).behaves_like = 0 then
+    temp = FF4Text("-- NONE --")
+    clone_menu.ChangeOption(2, FF4Text("It does nothing in battle."), 15)
+   else
+    temp = menucommands(menucommands(id).behaves_like).name
+    clone_menu.ChangeOption(2, FF4Text("It shares the parameters of ") + temp + FF4Text("."), 15)
+   end if
+   clone_menu.ChangeOption(1, FF4Text("Behaves like: ") + temp, 15)
+   clone_menu.ChangeOption(3, FF4Text("A change to them reaches both."), 15)
+   clone_menu.ChangeOption(4, FF4Text("The battle banner keeps its name."), 15)
+   clone_menu.Display()
+
   case 24 'Steal
    steal_menu.ChangeOption(1, FF4Text("Base chance:   " + Pad(str(menucommands(id).misc_bytes(1)), 3)), 15)
    steal_menu.ChangeOption(2, FF4Text("   Plus user's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(2) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
@@ -326,6 +364,9 @@ sub CommandParametersMenu.UserSelect()
  'Edit the currently selected command's parameters.
  ' Since each command is so different, this basically contains a unique
  ' process for each different command.
+
+ dim temp as String
+ dim n as Integer
 
  select case id
    
@@ -715,6 +756,85 @@ sub CommandParametersMenu.UserSelect()
     Display()
    loop until cover_menu.cancelled
    
+  case 6, 15 'Dark Wave, Kick: pick one of the known code variants
+   code_menu.cancelled = false
+   do until code_menu.cancelled
+    code_menu.UserSelect()
+    if not code_menu.cancelled then
+     code_choice_menu.ClearAll()
+     n = 1
+     do
+      temp = MenuCommand.CodeItem(MenuCommand.CodeNames(id, code_menu.selected), n)
+      if temp = "" then exit do
+      code_choice_menu.AddOption(FF4Text(temp))
+      n += 1
+     loop
+     code_choice_menu.x = x + 28
+     code_choice_menu.y = y + code_menu.selected - 1
+     code_choice_menu.top_row = 1
+     code_choice_menu.ChangeSelected(Max(1, menucommands(id).code_choice(code_menu.selected)))
+     code_choice_menu.UserSelect()
+     if not code_choice_menu.cancelled then menucommands(id).code_choice(code_menu.selected) = code_choice_menu.selected
+    end if
+    code_choice_menu.Hide()
+    Display()
+   loop
+   
+  case 7, 23 'Jump, Throw: the failure message (it cannot be left out, the game shows it every time)
+   fail_menu.cancelled = false
+   do until fail_menu.cancelled
+    fail_menu.UserSelect()
+    if not fail_menu.cancelled then
+     message_menu.x = x + 17
+     message_menu.y = y
+     message_menu.ChangeSelected(menucommands(id).message(1) + 2)
+     message_menu.UserSelect()
+     if not message_menu.cancelled and message_menu.selected > 1 then menucommands(id).message(1) = message_menu.selected - 2
+    end if
+    Display()
+   loop
+   
+  case 22 'Unused command: choose the routine it runs
+   clone_menu.cancelled = false
+   do until clone_menu.cancelled
+    clone_menu.UserSelect()
+    if not clone_menu.cancelled and clone_menu.selected = 1 then
+     source_menu.ClearAll()
+     source_menu.AddOption(FF4Text("-- NONE --"))
+     source_ids(1) = 0
+     for i as Integer = 1 to total_commands
+      if MenuCommand.CanBeCopied(i) then
+       source_menu.AddOption(menucommands(i).name)
+       source_ids(source_menu.options.Length()) = i
+      end if
+     next
+     source_menu.x = x + 15
+     source_menu.y = y
+     source_menu.top_row = 1
+     source_menu.ChangeSelected(1)
+     for i as Integer = 1 to source_menu.options.Length()
+      if source_ids(i) = menucommands(id).behaves_like then source_menu.ChangeSelected(i)
+     next
+     source_menu.UserSelect()
+     if not source_menu.cancelled then
+      menucommands(id).behaves_like = source_ids(source_menu.selected)
+      if menucommands(id).behaves_like > 0 then
+       'start from the borrowed command's settings, which can then be changed on the Information screen
+       with menucommands(menucommands(id).behaves_like)
+        menucommands(id).target_byte = .target_byte
+        menucommands(id).target = .target
+        menucommands(id).delay = .delay
+        menucommands(id).disabling_persistent = .disabling_persistent
+        menucommands(id).disabling_temporary = .disabling_temporary
+        menucommands(id).charging_stance = .charging_stance
+       end with
+      end if
+     end if
+    end if
+    clone_menu.Hide()
+    Display()
+   loop
+
   case 24 'Steal
    steal_menu.cancelled = false
    success_input.max_value = &hFF
