@@ -16,7 +16,7 @@ function SafeToSave(filename as String) as Boolean
  if lof(a) > 0 then get #a, , raw
  close #a
 
- if len(raw) = 1048576 then current = string(&h200, 0) + raw else current = raw
+ if RomSizeKind(len(raw)) = 1 then current = string(&h200, 0) + raw else current = raw
  if current = disk_rom then return true
 
  return ConfirmBox("The ROM file changed on disk. Overwrite it?")
@@ -104,7 +104,8 @@ sub ApplyDataToROM()
  next
  
  for i as Integer = 1 to total_commands
-  menucommands(i).WriteToROM(i)
+  'a command that was not edited is not written: a ROM hack may have changed the code that some of its bytes are in
+  if not menucommands(i).SameAs(orig_menucommands(i)) then menucommands(i).WriteToROM(i)
  next
  formulas.WriteToROM()
  for k as Integer = 1 to 4

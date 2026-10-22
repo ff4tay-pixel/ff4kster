@@ -119,8 +119,13 @@ The console build is recommended for testing because it shows the ROM file
 selector and any startup errors.
 
 The program opens a file selector for a compatible FF2US v1.1 ROM. The
-current code supports a 1 MiB unheadered ROM or a 1,049,088-byte headered ROM;
-the local `ff2.smc` test ROM is 1 MiB. Keep a backup before saving changes.
+current code supports an unheadered ROM of 1 MiB or more (a multiple of 32 KiB, so
+extended ROM hacks open too) or the same with a 512-byte header; the local `ff2.smc` test ROM is 1 MiB.
+A ROM whose size is not exactly 1 MiB (without header) gets a warning on opening that asks whether to continue.
+The editor only reads and writes the original 1 MiB area, so data a hack keeps beyond it is untouched.
+The Commands editor writes only the commands you changed, so an unedited hack keeps its own command
+code, and command 22 shows "custom routine, not changed" when the ROM has its own code there.
+Keep a backup before saving changes.
 Successful builds may show non-fatal warnings about mixed Boolean and
 non-Boolean operands in menu code.
 
@@ -1915,6 +1920,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.0
+    - Extended ROMs (2 MiB hacks and the like) open and save without changing a byte you did not edit; the Commands editor leaves unedited commands alone.
     - Enemy AI editor: one list of pairs in the style of the monster editor's AI box (WHEN, AND and
       THEN lines, a blank line between pairs, the set and condition numbers and how many places use them),
       Enter on a condition opens a menu (change the condition set, edit the condition, insert a pair, move the

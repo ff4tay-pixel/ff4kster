@@ -344,7 +344,7 @@ function CommandChanges(i as Integer) as String
   if .item_visual <> orig_menucommands(i).item_visual or .regen_amount <> orig_menucommands(i).regen_amount then parameters = true
   if .regen_freeze <> orig_menucommands(i).regen_freeze or .disable_actor <> orig_menucommands(i).disable_actor then parameters = true
   if .cover_actor <> orig_menucommands(i).cover_actor or .cover_by_job <> orig_menucommands(i).cover_by_job then parameters = true
-  for j as Integer = 1 to 2
+  for j as Integer = 1 to 3
    if .code_choice(j) <> orig_menucommands(i).code_choice(j) then code = true
   next
   if .reversed <> orig_menucommands(i).reversed or .behaves_like <> orig_menucommands(i).behaves_like then code = true

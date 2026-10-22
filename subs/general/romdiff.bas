@@ -237,11 +237,11 @@ sub CompareWithFile()
   InfoBox("Could not open that file.||Press any key")
   exit sub
  end if
- if lof(f) = 1048576 then
+ if RomSizeKind(lof(f)) = 1 then
   other = string(lof(f), 0)
   get #f, , other
   other = string(&h200, 0) + other
- elseif lof(f) = 1049088 then
+ elseif RomSizeKind(lof(f)) = 2 then
   other = string(lof(f), 0)
   get #f, , other
  else

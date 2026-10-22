@@ -343,6 +343,20 @@ sub MenuCommand.WriteAim()
 end sub
 
 
+#include once "crt/string.bi"
+
+function MenuCommand.SameAs(other as MenuCommand) as Boolean
+
+ 'Whether every setting of the command is the same as in another copy, which is how the editor knows a command
+ ' was not edited and leaves the ROM bytes of it alone (a ROM hack may have changed the code that they are in).
+
+ if name <> other.name then return false
+
+ return memcmp(@target, @other.target, sizeof(MenuCommand) - offsetof(MenuCommand, target)) = 0
+
+end function
+
+
 function MenuCommand.DelayDescription(index as UByte, value as UByte) as String
 
  'The delay of a command as the Information screen shows it. The game reads the table only for commands
@@ -733,9 +747,11 @@ sub MenuCommand.ReadFromROM(index as UByte)
    
   case 22 'Unused in the original game; the editor can make it run another command's routine
    behaves_like = 0
+   behaves_known = (ByteAt(&h1B57C + (index - 1) * 2) = 0 and ByteAt(&h1B57D + (index - 1) * 2) = 0)
    for i as Integer = 1 to 26
     if CanBeCopied(i) and ByteAt(&h1B57C + (index - 1) * 2) = ByteAt(&h1B57C + (i - 1) * 2) and ByteAt(&h1B57D + (index - 1) * 2) = ByteAt(&h1B57D + (i - 1) * 2) then
      behaves_like = i
+     behaves_known = true
      exit for
     end if
    next
@@ -1056,6 +1072,7 @@ sub MenuCommand.WriteToROM(index as UByte)
   
   case 22 'Runs the routine (and plays the animation) of the command it behaves like
    for i as Integer = 0 to 1
+    if not behaves_known then exit for
     if behaves_like = 0 then
      WriteByte(&h1B57C + (index - 1) * 2 + i, 0)
      WriteByte(&h1424B + (index - 1) * 2 + i, ByteAt(&h1424B + &h1D * 2 + i)) 'the "no animation" routine

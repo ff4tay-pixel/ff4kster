@@ -111,8 +111,12 @@ screen 18, 32
 ' It will not write anything to the actual ROM until you explicitly tell it to save.
 ReadData(filename)
 disk_rom = original_rom
+if len(ff4rom) - &h200 <> 1048576 then 'an extended or odd sized ROM: say so before anything is edited
+ if not ConfirmBox("This ROM is " + str(len(ff4rom) - &h200) + " bytes, the original is 1048576. Open it anyway?") then end
+ cls
+end if
+SnapshotOriginalRows() 'before the baseline: a command that was not edited is not written
 BuildBaselineROM()
-SnapshotOriginalRows()
 SnapshotOriginalMessages()
 
 'Draw the tile overlays

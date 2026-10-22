@@ -1,5 +1,20 @@
 declare sub ReadWorldMaps()
 
+function RomSizeKind(size as LongInt) as Integer
+
+ 'What the size of a ROM file says: 1 a ROM without a header, 2 a ROM with the 512 byte header, 0 neither. A
+ ' ROM can be longer than the original 1 MB (a hack that was extended), the sizes are still a whole number of
+ ' 32 KB banks, plus the header. Everything the editor reads is in the first 1 MB, the rest is kept as it is.
+
+ if size < 1048576 then return 0
+ if size mod &h8000 = 0 then return 1
+ if size mod &h8000 = &h200 then return 2
+
+ return 0
+
+end function
+
+
 sub ReadData(filename as String)
  
  'Reads all the relevant objects from the ROM into memory.
@@ -19,10 +34,10 @@ sub ReadData(filename as String)
   if lof(1) > 0 then
    ff4rom = String(lof(1), 0)
    get #1, , ff4rom
-   if lof(1) = 1048576 then 'it must be unheadered
+   if RomSizeKind(lof(1)) = 1 then 'it must be unheadered
     ff4rom = String(&h200, 0) + ff4rom 'give it a dummy header
     unheadered = true
-   elseif lof(1) <> 1049088 then 'it isn't FF4
+   elseif RomSizeKind(lof(1)) <> 2 then 'it isn't FF4
     print "FILE SIZE ERROR"
     getkey
     end

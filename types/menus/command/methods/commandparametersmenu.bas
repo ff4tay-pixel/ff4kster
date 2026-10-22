@@ -434,7 +434,10 @@ sub CommandParametersMenu.Display()
    throw_menu.Display()
 
   case 22 'Unused command: runs another command's routine
-   if menucommands(id).behaves_like = 0 then
+   if not menucommands(id).behaves_known then
+    temp = FF4Text("custom routine, not changed")
+    clone_menu.ChangeOption(2, FF4Text("This ROM has its own code for command 22."), 15)
+   elseif menucommands(id).behaves_like = 0 then
     temp = FF4Text("-- NONE --")
     clone_menu.ChangeOption(2, FF4Text("It does nothing in battle."), 15)
    else
@@ -1048,7 +1051,7 @@ sub CommandParametersMenu.UserSelect()
    clone_menu.cancelled = false
    do until clone_menu.cancelled
     clone_menu.UserSelect()
-    if not clone_menu.cancelled and clone_menu.selected = 1 then
+    if not clone_menu.cancelled and clone_menu.selected = 1 and menucommands(id).behaves_known then
      source_menu.ClearAll()
      source_menu.AddOption(FF4Text("-- NONE --"))
      source_ids(1) = 0

@@ -22,7 +22,7 @@ type MenuCommand
  cover_actor as UByte
  cover_by_job as Boolean
  misc_bytes(8) as UByte
- code_choice(2) as UByte 'Dark Wave and Kick: which known code variant is in the ROM (0 = not one of the known ones)
+ code_choice(3) as UByte 'Dark Wave and Kick: which known code variant is in the ROM (0 = not one of the known ones)
  extra_delay as UByte 'Charge, Twin, Regen: the entry of the delay table (the 3 hidden ones) used by their second part
  jump_wait as UByte 'Jump: ticks before it leaves
  jump_air as UByte 'Jump: ticks in the air
@@ -42,6 +42,7 @@ type MenuCommand
  recall_uses_mp as Boolean 'Recall takes the spell's MP
  halfsteps_known as Boolean 'Fight: false if the damage multiplier routine is not the original or the half step one
  halfsteps_on as Boolean 'Fight: the damage multiplier routine understands half steps (x1.5, x2.5, x3.5)
+ behaves_known as Boolean 'command 22 only: false if its jump table entry is a routine of the ROM that is none of the commands'
  behaves_like as UByte 'command 22 only: the command whose routine it runs (0 = none)
 
  declare static function ReverseParts(index as UByte) as Integer
@@ -72,6 +73,7 @@ type MenuCommand
  declare sub WriteAim()
  declare sub ReadReverse(index as UByte)
  declare sub WriteReverse(index as UByte)
+ declare function SameAs(other as MenuCommand) as Boolean
  declare sub ReadCode(index as UByte)
  declare sub WriteCode(index as UByte)
  declare sub ReadFromROM(index as UByte)
