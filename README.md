@@ -1861,6 +1861,7 @@ VERSION HISTORY
 - **Export CSV / Import CSV** (currently hidden from the main menu; the code is still in the program): spells, weapons, armors, medicines, tools and monsters go to/from `exports/<table>.csv` (next to the editor). Edit them in a spreadsheet and import them back; only the columns present are applied, so a file with just `id,attack` works. Names use `{HH}` for characters with no ASCII equivalent. Imports change the in-memory data only; use Save ROM to keep them.
 - **Compare to Original ROM** (currently hidden from the main menu): shows which tables your edits changed and writes `exports/rom_diff.txt` with offsets and old/new bytes. Edits are measured against what Save ROM would write for the unedited data (Save also re-lays-out some data, which is reported as a separate count).
 - **In any menu:** Ctrl+F finds an entry by name, Ctrl+N jumps to the next match, Ctrl+G goes to an entry by number.
+- **Typing in the AI action menus:** in the list of action kinds and in the spell, technique and command pickers, just type (for example "chain i") and the cursor jumps to the first entry that starts with those letters, or else contains them. Backspace removes a letter; the typing starts over after two seconds.
 
 ## Safety and navigation extras
 

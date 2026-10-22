@@ -246,6 +246,7 @@ function AIEditScriptEntry(entry as AIScriptEntry ptr, ax as Integer, ay as Inte
 
  script_functions = BlueMenu(ax, ay)
  script_functions.max_rows = 12
+ script_functions.type_ahead = true
  script_functions.AddOption(FF4Text("Cast a single-targeted spell"))
  script_functions.AddOption(FF4Text("Cast a group-targeted spell"))
  script_functions.AddOption(FF4Text("Use a monster technique"))
@@ -286,6 +287,7 @@ function AIEditScriptEntry(entry as AIScriptEntry ptr, ax as Integer, ay as Inte
    dim pmenu as BlueMenu
    pmenu = BlueMenu(script_functions.x + 2, script_functions.y + 2)
    pmenu.max_rows = 12
+   pmenu.type_ahead = true
    for i as Integer = 1 to &h30
     pmenu.AddOption(spells(i).name)
    next
@@ -300,6 +302,7 @@ function AIEditScriptEntry(entry as AIScriptEntry ptr, ax as Integer, ay as Inte
    dim pmenu as BlueMenu
    pmenu = BlueMenu(script_functions.x + 2, script_functions.y + 2)
    pmenu.max_rows = 12
+   pmenu.type_ahead = true
    for i as Integer = &h1 to &h2E
     pmenu.AddOption(spells(i).name)
    next
@@ -314,6 +317,7 @@ function AIEditScriptEntry(entry as AIScriptEntry ptr, ax as Integer, ay as Inte
    dim pmenu as BlueMenu
    pmenu = BlueMenu(script_functions.x + 2, script_functions.y + 2)
    pmenu.max_rows = 12
+   pmenu.type_ahead = true
    for i as Integer = &h5F to &hBF
     pmenu.AddOption(spells(i).name)
    next
@@ -328,6 +332,7 @@ function AIEditScriptEntry(entry as AIScriptEntry ptr, ax as Integer, ay as Inte
    dim pmenu as BlueMenu
    pmenu = BlueMenu(script_functions.x + 2, script_functions.y + 2)
    pmenu.max_rows = 12
+   pmenu.type_ahead = true
    for i as Integer = 1 to &h27
     if i <= total_commands then
      pmenu.AddOption(menucommands(i).name)

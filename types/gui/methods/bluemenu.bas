@@ -121,6 +121,8 @@ function BlueMenu.ProcessKey(key_code as UInteger) as Boolean
   indexed_mode = not indexed_mode
   RestoreSnapshot()
   TakeSnapshot()
+ case 8, 32 to 126
+  if type_ahead then TypeAhead(key_code)
  end select
  
  return result
@@ -305,6 +307,43 @@ sub BlueMenu.FindNext(new_search as Boolean)
    exit sub
   end if
  next
+
+end sub
+
+
+sub BlueMenu.TypeAhead(key_code as UInteger)
+
+ 'Keeps the letters typed in the last 2 seconds and moves to the first entry
+ ' that starts with them, or else the first that contains them. Backspace
+ ' removes the last letter.
+
+ dim n as Integer = options.Length()
+ dim found as Integer = 0
+
+ if timer - typed_time > 2 then typed_text = ""
+ typed_time = timer
+ if key_code = 8 then
+  if len(typed_text) > 0 then typed_text = left(typed_text, len(typed_text) - 1)
+ else
+  typed_text += lcase(chr(key_code))
+ end if
+ if typed_text = "" or n = 0 then exit sub
+
+ for i as Integer = 1 to n
+  if left(lcase(FF4Name(options.ItemAt(i))), len(typed_text)) = typed_text then
+   found = i
+   exit for
+  end if
+ next
+ if found = 0 then
+  for i as Integer = 1 to n
+   if instr(lcase(FF4Name(options.ItemAt(i))), typed_text) > 0 then
+    found = i
+    exit for
+   end if
+  next
+ end if
+ if found > 0 then ChangeSelected(found)
 
 end sub
 
