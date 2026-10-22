@@ -211,7 +211,7 @@ sub FsLayout()
   "Shell|adds |@SA| to the magic defense of the target", _
   "Armor, Zeromus|in the Zeromus battle Armor |@PZ", _
   "Shell, Zeromus|in the Zeromus battle Shell |@SZ"}
- dim page5(1 to 10) as String = { _
+ dim page5(1 to 9) as String = { _
   "Turn wait, top|@AN|@NU", _
   "|divided by My AGI x |@MU| plus |@AD", _
   "Count, doom|counts down once every |@CT| ticks of the timer loop", _
@@ -255,7 +255,7 @@ sub FsLayout()
    FsFill(page6(), 8)
   case 5
    fs_x0 = 22
-   FsFill(page5(), 10)
+   FsFill(page5(), 9)
   case 4
    fs_x0 = 24
    FsFill(page4(), 4)
