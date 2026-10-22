@@ -30,6 +30,7 @@ function FmlPick(px as Integer, py as Integer, names as String, current as Integ
 
  pick = BlueMenu(px, py)
  pick.max_rows = 8
+ pick.type_ahead = true
  do
   item = MenuCommand.CodeItem(names, n)
   if item = "" then exit do
@@ -105,6 +106,398 @@ sub FmlNote(first_row as Integer, notes as String)
 end sub
 
 
+dim shared fs_text(1 to 12, 1 to 14) as String 'the pieces of the formula lines: text, or @ and the field
+dim shared fs_pieces(1 to 12) as Integer
+dim shared fs_labels(1 to 12) as String
+dim shared fs_lines as Integer
+dim shared fs_line as Integer 'the line of the cursor
+dim shared fs_field as Integer 'the field of the cursor, counted in the fields of the line
+dim shared fs_hit_x(1 to 12, 1 to 14) as Integer 'where each piece was drawn, for the mouse
+dim shared fs_hit_w(1 to 12, 1 to 14) as Integer
+
+
+sub FsLayout()
+
+ 'The lines of the character stat formulas. A piece is plain text, or @ and a field: S1 to S11 the stat of a
+ ' term, D1 to D12 its divisor, PL the plus 1 of the attack multiplier, YS YM YP Yang's attack, AN NU MU AD
+ ' the turn wait. The terms are numbered as in BattleFormulas.TermStatOffset.
+
+ dim lines_text(1 to 12) as String = { _
+  "Attack multiplier|@S1| / |@D1| plus |@S2| / |@D2| plus |@PL", _
+  "Attack power|@S3| / |@D3| plus |@S4| / |@D4| plus weapon attack", _
+  "Attack hit rate|@S4| / |@D4| plus weapon hit rate", _
+  "Yang's attack power|@YS| x |@YM| plus |@S3| / |@D3| plus |@YP", _
+  "Defense multiplier|@S5| / |@D5| x shield multiplier plus |@S6| / |@D6", _
+  "Defense|@S7| / |@D7| plus armor plus shield defense", _
+  "Magic def multiplier|sum of |@S8| and |@S9| / |@D10| plus |@S11| / |@D11", _
+  "Magic defense rate|sum of |@S8| and |@S9| / |@D12| plus armor and shield", _
+  "Turn wait, top|@AN|@NU", _
+  "divided by|My AGI x |@MU| plus |@AD", _
+  "", ""}
+ dim rest as String
+ dim p as Integer
+
+ fs_lines = 10
+ for i as Integer = 1 to fs_lines
+  rest = lines_text(i)
+  p = instr(rest, "|")
+  fs_labels(i) = left(rest, p - 1)
+  rest = mid(rest, p + 1)
+  fs_pieces(i) = 0
+  do
+   p = instr(rest, "|")
+   fs_pieces(i) += 1
+   if p = 0 then
+    fs_text(i, fs_pieces(i)) = rest
+   else
+    fs_text(i, fs_pieces(i)) = left(rest, p - 1)
+    rest = mid(rest, p + 1)
+   end if
+  loop until p = 0
+ next
+
+end sub
+
+
+function FsFieldText(code as String) as String
+
+ 'The text of a field. A field that holds custom code says ?.
+
+ dim kind as String = left(code, 1)
+ dim n as Integer = val(mid(code, 2))
+ dim names as String
+
+ select case left(code, 2)
+  case "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9"
+   n = val(mid(code, 2))
+   if formulas.term_stat(n) = 0 then return "?"
+   return MenuCommand.CodeItem(BattleFormulas.TermStatNames(), formulas.term_stat(n))
+  case "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9"
+   n = val(mid(code, 2))
+   if formulas.term_div(n) = 0 then return "?"
+   return MenuCommand.CodeItem("1|2|4|8|16|32|64", formulas.term_div(n))
+ end select
+
+ select case code
+  case "S10", "S11": if formulas.term_stat(val(mid(code, 2))) = 0 then return "?" else return MenuCommand.CodeItem(BattleFormulas.TermStatNames(), formulas.term_stat(val(mid(code, 2))))
+  case "D10", "D11", "D12": if formulas.term_div(val(mid(code, 2))) = 0 then return "?" else return MenuCommand.CodeItem("1|2|4|8|16|32|64", formulas.term_div(val(mid(code, 2))))
+  case "PL": if not formulas.plus_known then return "?" else return iif(formulas.plus_on, "1", "0")
+  case "YS": if not formulas.yang_known then return "?" else return MenuCommand.CodeItem(BattleFormulas.TermStatNames(), formulas.yang_stat)
+  case "YM": if not formulas.yang_known then return "?" else return str(3 - formulas.yang_mult)
+  case "YP": if not formulas.yang_known then return "?" else return str(formulas.yang_plus)
+  case "AN": if not formulas.speed_known then return "?" else if formulas.speed_anchor then return "Anchor's AGI x " else return "no anchor "
+  case "NU": if not formulas.speed_known then return "?" else return str(formulas.speed_num)
+  case "MU": if not formulas.speed_known then return "?" else return str(formulas.speed_mul)
+  case "AD": if not formulas.speed_known then return "?" else return str(formulas.speed_add)
+ end select
+
+ return "?"
+
+end function
+
+
+function FsIsField(piece as String) as Boolean
+
+ return left(piece, 1) = "@"
+
+end function
+
+
+function FsFieldCount(l as Integer) as Integer
+
+ dim n as Integer
+
+ for i as Integer = 1 to fs_pieces(l)
+  if FsIsField(fs_text(l, i)) then n += 1
+ next
+
+ return n
+
+end function
+
+
+function FsPieceOfField(l as Integer, f as Integer) as Integer
+
+ 'The number of the piece that is the f-th field of line l.
+
+ dim n as Integer
+
+ for i as Integer = 1 to fs_pieces(l)
+  if FsIsField(fs_text(l, i)) then
+   n += 1
+   if n = f then return i
+  end if
+ next
+
+ return 0
+
+end function
+
+
+sub FsDraw()
+
+ 'Draws all the lines. The fields are yellow, the one under the cursor has a frame.
+
+ dim x as Integer
+ dim y as Integer
+ dim piece as String
+ dim shown as String
+ dim field_number as Integer
+
+ line (0, 3 * 8)-(639, 55 * 8 - 1), RGB(0, 0, 0), bf
+ for l as Integer = 1 to fs_lines
+  y = 5 + (l - 1) * 2
+  if l = 10 then y -= 1
+  WriteText(FF4Text(fs_labels(l)), 2, y, 15)
+  x = 24
+  field_number = 0
+  for i as Integer = 1 to fs_pieces(l)
+   piece = fs_text(l, i)
+   if FsIsField(piece) then
+    field_number += 1
+    shown = FsFieldText(mid(piece, 2))
+    WriteText(FF4Text(shown), x, y, 14)
+    fs_hit_x(l, i) = x
+    fs_hit_w(l, i) = len(shown)
+    if l = fs_line and field_number = fs_field then
+     line (x * 8 - 2, y * 8 - 2)-((x + len(shown)) * 8 + 1, y * 8 + 9), RGB(255, 255, 255), b
+    end if
+    x += len(shown)
+   else
+    WriteText(FF4Text(piece), x, y, 15)
+    fs_hit_x(l, i) = -1
+    x += len(piece)
+   end if
+  next
+ next
+
+end sub
+
+
+sub FsEditField(code as String)
+
+ 'Enter on a field: a pop-up list of the choices or a number box.
+
+ dim pick as Integer
+ dim n as Integer
+ dim px as Integer = 30
+ dim py as Integer = 5 + (fs_line - 1) * 2 + 1
+ dim div_names as String = "1|2|4|8|16|32|64"
+
+ if left(code, 1) = "S" then
+  n = val(mid(code, 2))
+  pick = FmlPick(px, py, BattleFormulas.TermStatNames(), formulas.term_stat(n))
+  if pick > 0 then formulas.term_stat(n) = pick
+  exit sub
+ end if
+ if left(code, 1) = "D" then
+  n = val(mid(code, 2))
+  if n = 7 then div_names = "1|2"
+  pick = FmlPick(px, py, div_names, formulas.term_div(n))
+  if pick > 0 then formulas.term_div(n) = pick
+  exit sub
+ end if
+
+ select case code
+  case "PL"
+   if formulas.plus_known then
+    pick = FmlPick(px, py, "0|1", iif(formulas.plus_on, 2, 1))
+    if pick > 0 then formulas.plus_on = (pick = 2)
+   end if
+  case "YS"
+   if formulas.yang_known then
+    pick = FmlPick(px, py, BattleFormulas.TermStatNames(), formulas.yang_stat)
+    if pick > 0 then formulas.yang_stat = pick
+   end if
+  case "YM"
+   if formulas.yang_known then
+    pick = FmlPick(px, py, "2, original|1", formulas.yang_mult)
+    if pick > 0 then formulas.yang_mult = pick
+   end if
+  case "YP"
+   if formulas.yang_known then
+    fml_number.x = px: fml_number.y = py
+    fml_number.min_value = 0: fml_number.max_value = 255
+    fml_number.starting_number = formulas.yang_plus
+    fml_number.UserSelect()
+    formulas.yang_plus = fml_number.number
+   end if
+  case "AN"
+   if formulas.speed_known then
+    pick = FmlPick(px, py, "Anchor's AGI x|no anchor", iif(formulas.speed_anchor, 1, 2))
+    if pick > 0 then formulas.speed_anchor = (pick = 1)
+    if formulas.speed_anchor and formulas.speed_num > 255 then formulas.speed_num = 255
+   end if
+  case "NU"
+   if formulas.speed_known then
+    fml_number.x = px: fml_number.y = py
+    fml_number.min_value = 1
+    if formulas.speed_anchor then fml_number.max_value = 255 else fml_number.max_value = 65535
+    fml_number.starting_number = formulas.speed_num
+    fml_number.UserSelect()
+    formulas.speed_num = fml_number.number
+   end if
+  case "MU"
+   if formulas.speed_known then
+    fml_number.x = px: fml_number.y = py
+    fml_number.min_value = 1: fml_number.max_value = 255
+    fml_number.starting_number = formulas.speed_mul
+    fml_number.UserSelect()
+    formulas.speed_mul = fml_number.number
+   end if
+  case "AD"
+   if formulas.speed_known then
+    fml_number.x = px: fml_number.y = py
+    fml_number.min_value = 0: fml_number.max_value = 500
+    fml_number.starting_number = formulas.speed_add
+    fml_number.UserSelect()
+    formulas.speed_add = fml_number.number
+   end if
+ end select
+
+end sub
+
+
+sub FsHint()
+
+ dim p as Integer = FsPieceOfField(fs_line, fs_field)
+ dim code as String = mid(fs_text(fs_line, p), 2)
+ dim message as String
+
+ select case left(code, 1)
+  case "S": message = "Enter picks the stat of this term."
+  case "D": message = "Enter picks the number the stat is divided by."
+  case else
+   select case code
+    case "PL": message = "Enter picks what the attack multiplier adds, 1 in the original."
+    case "YS": message = "Enter picks the stat that Yang's attack starts from, level in the original."
+    case "YM": message = "Enter picks 2 or 1, the number that Yang's first term is multiplied by."
+    case "YP": message = "Enter types the number that is added to Yang's attack."
+    case "AN": message = "Enter chooses to use the anchor's agility or only the number. Anchor: see notes."
+    case "NU": message = "Enter types the number the wait starts from, the anchor's agility times 50 in the original."
+    case "MU": message = "Enter types the number the agility is multiplied by, 10 in the original."
+    case "AD": message = "Enter types the number that is added to the divisor, 0 in the original."
+   end select
+ end select
+
+ line (0, 57 * 8)-(639, 58 * 8 - 1), RGB(0, 0, 0), bf
+ WriteText(FF4Text(left(message, 78)), 1, 57, 14)
+
+end sub
+
+
+sub FsNotes()
+
+ WriteText(FF4Text("Arrows move between the yellow fields, Enter changes one, Esc goes back."), 1, 38, 10)
+ WriteText(FF4Text("The turn wait is for every unit, monsters too: a unit waits the top line"), 1, 40, 10)
+ WriteText(FF4Text("divided by the line below it. The anchor is the actor that Cover disables"), 1, 41, 10)
+ WriteText(FF4Text("if present, else the actor that covers, else the first party member. Both"), 1, 42, 10)
+ WriteText(FF4Text("are set under Cover in the Commands editor."), 1, 43, 10)
+ WriteText(FF4Text("The level and strength terms are shared by the lines that show them."), 1, 45, 10)
+
+end sub
+
+
+sub EditStatFormulas()
+
+ 'The formulas of the stats of the party on one screen: the fields in yellow are the ones that can be
+ ' changed. Left and Right move along a line, Up and Down between lines, Enter changes the field.
+
+ dim shot as Any ptr
+ dim key as String
+ dim code as UInteger
+ dim done as Boolean
+ dim mouse_x as Integer
+ dim mouse_y as Integer
+ dim left_click as Boolean
+ dim right_click as Boolean
+ dim wheel as Integer
+ dim hit_line as Integer
+ dim hit_field as Integer
+
+ shot = ImageCreate(640, 480)
+ get (0, 0)-(639, 479), shot
+ cls
+
+ FsLayout()
+ fs_line = 1
+ fs_field = 1
+ WriteText(FF4Text("Formulas of the party's stats in battle"), 1, 1, 14)
+ WriteText(FF4Text("Monsters have stats of their own that are not changed here."), 1, 3, 15)
+
+ do until done
+  FsDraw()
+  FsHint()
+  FsNotes()
+  do
+   key = inkey
+   if key = "" then
+    PollMouse(mouse_x, mouse_y, left_click, right_click, wheel)
+    if right_click then
+     code = ESC_KEY
+    elseif left_click then
+     hit_line = 0
+     for l as Integer = 1 to fs_lines
+      for i as Integer = 1 to fs_pieces(l)
+       if fs_hit_x(l, i) >= 0 and mouse_y = 5 + (l - 1) * 2 - iif(l = 10, 1, 0) then
+        if mouse_x >= fs_hit_x(l, i) and mouse_x < fs_hit_x(l, i) + fs_hit_w(l, i) then
+         hit_line = l
+         hit_field = 0
+         for j as Integer = 1 to i
+          if FsIsField(fs_text(l, j)) then hit_field += 1
+         next
+        end if
+       end if
+      next
+     next
+     if hit_line > 0 then
+      if hit_line = fs_line and hit_field = fs_field then
+       code = ENTER_KEY
+      else
+       fs_line = hit_line
+       fs_field = hit_field
+       code = 1
+      end if
+     end if
+    elseif wheel > 0 then
+     code = UP_KEY
+    elseif wheel < 0 then
+     code = DOWN_KEY
+    else
+     sleep 10
+    end if
+   else
+    code = asc(right(key, 1))
+    if len(key) > 1 then code = code * &h100 + 255
+   end if
+  loop until key <> "" or code <> 0 and (left_click or right_click or wheel <> 0)
+
+  select case code
+   case ESC_KEY
+    done = true
+   case ENTER_KEY
+    FsEditField(mid(fs_text(fs_line, FsPieceOfField(fs_line, fs_field)), 2))
+   case UP_KEY
+    if fs_line > 1 then fs_line -= 1
+    if fs_field > FsFieldCount(fs_line) then fs_field = FsFieldCount(fs_line)
+   case DOWN_KEY
+    if fs_line < fs_lines then fs_line += 1
+    if fs_field > FsFieldCount(fs_line) then fs_field = FsFieldCount(fs_line)
+   case LEFT_KEY
+    if fs_field > 1 then fs_field -= 1
+   case RIGHT_KEY
+    if fs_field < FsFieldCount(fs_line) then fs_field += 1
+  end select
+  code = 0
+ loop
+
+ line (0, 0)-(639, 479), RGB(0, 0, 0), bf
+ put (0, 0), shot, pset
+ ImageDestroy(shot)
+
+end sub
+
+
 sub FmlShow(entry as Integer)
 
  'Draws the settings of one line of the list in the window on its right.
@@ -139,6 +532,9 @@ sub FmlShow(entry as Integer)
    fml_book.Display()
    FmlNote(16, "The Summon Book item calls one of these ten at random.|Enter on a name picks the summon, Enter on its right|side switches between all targets and one random target.")
 
+  case 7
+   FmlNote(3, "The formulas of the stats of the party in battle:|attack multiplier, attack power, attack hit rate,|Yang's attack, defense multiplier, defense, magic|defense multiplier and rate, and the turn wait.||Enter opens them as formulas on one screen, with|the numbers and stats you can change in yellow.")
+
  end select
 
  line (0, 57 * 8)-(639, 58 * 8 - 1), RGB(0, 0, 0), bf
@@ -146,6 +542,7 @@ sub FmlShow(entry as Integer)
   case 1 to 4: WriteText(FF4Text("Enter changes the settings. Esc goes back to the list."), 1, 57, 14)
   case 5: WriteText(FF4Text("Enter changes the setting. A setting of custom code is left alone."), 1, 57, 14)
   case 6: WriteText(FF4Text("Enter picks the summon or switches how it is aimed. Esc goes back."), 1, 57, 14)
+  case 7: WriteText(FF4Text("Enter opens the formulas of the stats of the party and the turn wait."), 1, 57, 14)
  end select
 
 end sub
@@ -234,6 +631,7 @@ sub FmlEdit(entry as Integer)
   case 4: fml_params.SetTo(123): fml_params.UserSelect()
   case 5: FmlEditSpells()
   case 6: FmlEditBook()
+  case 7: EditStatFormulas(): FmlShow(7)
  end select
 
 end sub
@@ -252,6 +650,7 @@ sub EditFormulas()
  fml_hub.AddOption(FF4Text("Throw"))
  fml_hub.AddOption(FF4Text("Spell damage"))
  fml_hub.AddOption(FF4Text("Summon Book"))
+ fml_hub.AddOption(FF4Text("Character stats"))
  fml_x = fml_hub.WindowWidth() + 4
 
  fml_params = CommandParametersMenu(fml_x, 3)

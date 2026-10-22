@@ -976,6 +976,37 @@ Wisdom and Will, the original), which is also the stat of the hit rate, and
 the number of hits of summons and spells cast from items. The base damage, the
 random part and the damage cap are shared with the other formulas.
 
+Character stats: how the game works out the stats of the party members when a
+battle starts (monsters have stats of their own that are stored with them and
+are not changed here). Enter opens one screen with the formulas written out,
+for example "Attack multiplier: STR / 8 plus AGI / 16 plus 1", where the fields
+in yellow can be changed: move with the arrows (or click), Enter picks another
+stat (level, STR, AGI, VIT, WIS or WIL), another divisor (1, 2, 4, 8, 16, 32 or
+64) or another number. The formulas are the attack multiplier, the attack
+power, the attack hit rate, Yang's attack power (level x 2 plus STR / 4 plus 2,
+Yang is special in the game), the defense multiplier (level / 16 times the
+shield's multiplier plus AGI / 8), the defense (VIT / 2), the magic defense
+multiplier (the sum of WIS and WIL / 32 plus AGI / 32) and the magic defense
+rate (the sum / 8). The terms are added to the weapon and armor values. The
+level term of the attack hit rate and attack power is one term, and so is the
+strength term of the attack power and Yang's attack, so changing it on one
+line changes the other. A field shows ? when other changes have altered that
+code, and it is left alone.
+
+The turn wait is how long every unit, monsters too, waits between its actions.
+The game works it out as the anchor's agility times 50, divided by the unit's
+own agility times 10 (Cecil's agility, in the usual party). The anchor is the
+actor that Cover disables if present, else the actor that covers, else the
+first party member (both are set under Cover in the Commands editor). The
+screen shows it as the top line, and "divided by My AGI x 10 plus 0" below it.
+Each number can be changed, "Anchor's AGI x" can be switched to "no anchor" so
+that the top line is only a number, and the number added after the
+multiplication can be set. For example 750 divided by (My AGI x 1 plus 32) is
+a wait that depends on the unit's own agility only. A bigger top number or a
+smaller bottom makes everyone slower. Adding a number needs a small routine
+that the editor puts in the unused bytes at the end of the battle code bank,
+which it clears again when the number is 0.
+
 Summon Book: the item of that name calls one of ten summons at random. Each
 has its summon and whether it hits all targets or one random target.
 
@@ -1796,6 +1827,7 @@ VERSION HISTORY
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Recall can skip its MP check and its MP cost
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
+    - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %) and the turn timer
     - Battle Formulas editor: Fight, Kick, Dark Wave and Throw formulas (moved from Commands), spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book
     - Commands: overview of all commands with what changed, and the names of the four internal commands
     - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)

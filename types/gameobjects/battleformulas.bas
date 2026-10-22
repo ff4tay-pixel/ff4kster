@@ -9,6 +9,19 @@ type BattleFormulas
  stats_choice as UByte 'which two stats the tries and the hit rate use (black magic, then white)
  hits_known as Boolean 'false if the code that gives items and summons a fixed number of hits is not the original
  fixed_hits as UByte 'the number of hits of summons and spells cast from items
+ term_stat(12) as UByte 'the stat terms of the character stat formulas: 1 level, 2 STR ... 6 WIL, 0 custom code
+ term_div(12) as UByte 'and what they are divided by: 1 nothing, 2 /2, 3 /4 ... 7 /64, 0 custom code
+ plus_known as Boolean 'the plus 1 of the attack multiplier can be switched
+ plus_on as Boolean
+ yang_known as Boolean 'Yang's attack: level x 2 plus STR / 4 plus 2
+ yang_stat as UByte 'the first term, a stat (1 level ... 6 WIL)
+ yang_mult as UByte 'times 2 (1, original) or times 1 (2)
+ yang_plus as UByte 'the constant that is added
+ speed_known as Boolean 'the turn wait: anchor's agility x numerator / (own agility x multiplier plus add)
+ speed_anchor as Boolean 'false: the numerator alone (the anchor's agility is not used)
+ speed_num as UInteger
+ speed_mul as UByte
+ speed_add as UInteger
  summon_book(9) as UByte 'the 10 summons the Summon Book can call: the spell, plus 80h for one random target
 
  declare static function PowerNames() as String
@@ -17,6 +30,11 @@ type BattleFormulas
  declare static function SummonBytes() as String
  declare static function DivisorNames() as String
  declare static function StatsNames() as String
+ declare static function TermStatOffset(t as Integer) as UInteger
+ declare static function TermShiftOffset(t as Integer) as UInteger
+ declare static function TermShiftLength(t as Integer) as Integer
+ declare static function TermStatNames() as String
+ declare static function TermDivNames(t as Integer) as String
 
  declare sub ReadFromROM()
  declare sub WriteToROM()
