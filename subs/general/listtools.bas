@@ -347,6 +347,9 @@ function CommandChanges(i as Integer) as String
   for j as Integer = 1 to 3
    if .code_choice(j) <> orig_menucommands(i).code_choice(j) then code = true
   next
+  if .steal_min <> orig_menucommands(i).steal_min or .steal_max <> orig_menucommands(i).steal_max then parameters = true
+  if .steal_caught_fixed <> orig_menucommands(i).steal_caught_fixed or .steal_caught <> orig_menucommands(i).steal_caught then parameters = true
+  if .steal_shift <> orig_menucommands(i).steal_shift then parameters = true
   if .reversed <> orig_menucommands(i).reversed or .behaves_like <> orig_menucommands(i).behaves_like then code = true
   if .extra_delay <> orig_menucommands(i).extra_delay or .jump_wait <> orig_menucommands(i).jump_wait then code = true
   if .jump_air <> orig_menucommands(i).jump_air or .throw_stat <> orig_menucommands(i).throw_stat then code = true

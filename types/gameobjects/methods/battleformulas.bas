@@ -80,6 +80,26 @@ function SlotMultOffset(r as Integer) as UInteger
 end function
 
 
+function CritRoutine(mult as Integer, bonus as Boolean) as String
+
+ 'The routine in free space that replaces the 14 bytes in CalcDmg (battle/damage.asm) which add the critical
+ ' bonus of the weapon to the damage ($a4, 16 bits). It multiplies the damage by mult (Mult16 at 83B9, 32 bit
+ ' result in $3941), divides by 4 and caps it at $FFFF, then adds the bonus if wanted, and returns.
+
+ dim s as String
+
+ if mult <> 4 then
+  s = "A6A48E3D39A2" + hex(mult, 2) + "008E3F3920B983"
+  s += "C2204E43396E41394E43396E4139AD4339F005A9FFFF8003AD413985A4E220"
+ end if
+ if bonus then s += "18A5A46D013985A4A5A5690085A5"
+ s += "60"
+
+ return s
+
+end function
+
+
 function BattleFormulas.UmLdaOffset(r as Integer) as UInteger
 
  'The rules that test a status byte of the attacker ($2683 to $2686) or of the target ($2703 to $2706) with a
@@ -451,6 +471,25 @@ sub BattleFormulas.ReadFromROM()
  if not st_defense_zero and not MenuCommand.BytesAre(&h1C96A, "EAEAEAEAEA") then st_known(2) = false
 
 
+ 'The damage of a critical hit: the 14 bytes at 1CBEE add the weapon's bonus, or they are a jsr to our routine.
+ crit_known = false
+ crit_mult = 4
+ crit_bonus = true
+ if MenuCommand.BytesAre(&h1CBEE, "18A5A46D013985A4A5A5690085A5") then
+  crit_known = true
+  for i as Integer = 0 to &h7F 'the free space for the routine must be free, a ROM hack may keep data there
+   if ByteAt(&h20180 + i) <> &hFF then crit_known = false
+  next
+ elseif MenuCommand.BytesAre(&h1CBEE, "2080FF"+"EAEAEAEAEAEAEAEAEAEAEA") and ByteAt(&h1CBE9 + 4) = &h0E then
+  for m as Integer = 0 to 16
+   for b as Integer = 0 to 1
+    if MenuCommand.BytesAre(&h20180, CritRoutine(m, (b = 1))) then
+     crit_known = true: crit_mult = m: crit_bonus = (b = 1)
+    end if
+   next
+  next
+ end if
+
  'The back row, see BackEffectOffset.
  back_known = true
  for r as Integer = 1 to 2
@@ -682,6 +721,30 @@ sub BattleFormulas.WriteToROM()
  next
  if plus_known then
   if plus_on then WriteByte(&h19E41, &h1A) else WriteByte(&h19E41, &hEA)
+ end if
+
+ 'critical hits
+ if crit_known then
+  if crit_mult = 4 and crit_bonus then
+   wanted = "18A5A46D013985A4A5A5690085A5"
+   if not MenuCommand.BytesAre(&h1CBEE, wanted) then 'our routine is there: free the space again
+    for i as Integer = 0 to &h7F
+     WriteByte(&h20180 + i, &hFF)
+    next
+   end if
+  else
+   wanted = "2080FF"+"EAEAEAEAEAEAEAEAEAEAEA"
+   for i as Integer = 0 to &h7F
+    WriteByte(&h20180 + i, &hFF)
+   next
+   dim crit_text as String = CritRoutine(crit_mult, crit_bonus)
+   for i as Integer = 0 to len(crit_text) \ 2 - 1
+    WriteByte(&h20180 + i, val("&h" + mid(crit_text, i * 2 + 1, 2)))
+   next
+  end if
+  for i as Integer = 0 to 13
+   WriteByte(&h1CBEE + i, val("&h" + mid(wanted, i * 2 + 1, 2)))
+  next
  end if
 
  'the back row

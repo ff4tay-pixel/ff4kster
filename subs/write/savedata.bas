@@ -54,6 +54,8 @@ function BackupName(filename as String) as String
 end function
 
 
+dim shared command_written(1 to 255) as Boolean 'the commands that Save ROM has written in this session
+
 sub ApplyDataToROM()
 
  dim start as UInteger
@@ -105,7 +107,11 @@ sub ApplyDataToROM()
  
  for i as Integer = 1 to total_commands
   'a command that was not edited is not written: a ROM hack may have changed the code that some of its bytes are in
-  if not menucommands(i).SameAs(orig_menucommands(i)) then menucommands(i).WriteToROM(i)
+  'A command that was written once is written again, so that undoing the edit puts its bytes back.
+  if not menucommands(i).SameAs(orig_menucommands(i)) or command_written(i) then
+   menucommands(i).WriteToROM(i)
+   command_written(i) = true
+  end if
  next
  formulas.WriteToROM()
  for k as Integer = 1 to 4

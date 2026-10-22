@@ -873,6 +873,15 @@ Jump and Throw have the message shown when they fail. Jump also has the ticks
 it waits before leaving and the ticks it stays in the air (4 each in the
 original game; a tick is the game's smallest timer step).
 
+Steal (Sneak) has the base chance, the stat of the user that is added and the stat
+of the target that is taken off, which item of the monster is stolen, and its three
+messages. The chance is the sum in percent, at least the lowest chance (1) and at
+most the highest chance (99); both can be changed. When a steal fails the monster
+may catch the thief: the chance is the target's level plus 10, or a fixed
+percentage, and a caught thief loses 1/2, 1/4, 1/8, 1/16 (original), 1/32 or 1/64
+of its max HP. The four rows of the chance show custom code, not changed, if other
+changes have altered those bytes.
+
 Charge, Twin and Regen have one more value each, which is an entry of the
 game's action delay table that the Information screen does not list because
 no command number points to it: Charge's wait before the attack, Twin's wait
@@ -922,7 +931,7 @@ BATTLE FORMULAS
 
 This editor has the formulas and numbers the battle uses. The list on the left
 has a line for each group, in this order: the commands Fight, Kick, Dark Wave and
-Throw; the spells (Spell damage, Armor and Shell, Dispel and Black Hole, the
+Throw, then Critical hits; the spells (Spell damage, Armor and Shell, Dispel and Black Hole, the
 Summon Book); the stats of the party (Party stats, First slot bonus, Back row); the statuses (Weakening
 statuses, Status adjustments); and the Timers. The settings of the highlighted
 line are shown on the right, and Enter on a line changes them (Esc goes back).
@@ -1050,6 +1059,16 @@ the hit rate of the attacker and the hit rate against the target can be halved,
 unchanged or doubled, the defense of the target x0.5, x1 or x2, and the two
 exceptions (the flag and jumping) can be switched off for each of the two hit
 rate rules. They are for Fight, Aim, Jump and Focus; spells ignore the back row.
+
+Critical hits: the critical hit rate and bonus belong to the character (the game
+takes them from the character data, not from the weapon; a bow triples the rate
+and adds the arrow's attack to the bonus, two weapons double the rate). In the
+original game a critical hit adds the bonus to the damage before the defense is
+taken off. The page lets the damage be multiplied first (a number divided by 4,
+so 4 changes nothing, 8 doubles and 6 gives half again; 0 to 16) and the bonus be
+left out. Fight, Jump and Kick use this code. The new code is a short routine in
+free space at the end of bank 3 (file offset 1FF80); with the original settings
+the original bytes are put back.
 
 Weakening statuses: the statuses that change the damage formulas, written as rules
 with the statuses in yellow. In the original game Toad and Mini do all of
@@ -1932,6 +1951,8 @@ VERSION HISTORY
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Recall can skip its MP check and its MP cost
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
+    - Battle Formulas: the damage of critical hits (multiplier and bonus)
+    - Commands: Steal has its lowest and highest chance, the chance of being caught and what a caught thief loses
     - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the Armor and Shell numbers, what Dispel and Black Hole remove, the bonus of the first slot, the back row, the statuses that weaken a unit and the other status adjustments, and the timers (turn wait, Count, poison, HP leak, Regen, sleep)
     - Battle Formulas editor: Fight, Kick, Dark Wave and Throw formulas (moved from Commands), spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book
     - Commands: overview of all commands with what changed, and the names of the four internal commands

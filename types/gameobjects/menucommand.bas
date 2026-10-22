@@ -43,6 +43,12 @@ type MenuCommand
  halfsteps_known as Boolean 'Fight: false if the damage multiplier routine is not the original or the half step one
  halfsteps_on as Boolean 'Fight: the damage multiplier routine understands half steps (x1.5, x2.5, x3.5)
  behaves_known as Boolean 'command 22 only: false if its jump table entry is a routine of the ROM that is none of the commands'
+ steal_known as Boolean 'Steal: false if the chance code is not the original (the lowest and highest chance, being caught)
+ steal_min as UByte 'Steal: the lowest chance, 1 in the original
+ steal_max as UByte 'Steal: the highest chance, 99 in the original
+ steal_caught_fixed as Boolean 'Steal: a failed steal is caught at a fixed chance and not at the level of the target plus 10
+ steal_caught as UByte 'Steal: that fixed chance
+ steal_shift as UByte 'Steal: a thief that is caught loses its max HP divided by 2 to this power, 4 (1/16) in the original
  behaves_like as UByte 'command 22 only: the command whose routine it runs (0 = none)
 
  declare static function ReverseParts(index as UByte) as Integer
@@ -68,6 +74,8 @@ type MenuCommand
  declare sub ReadRecall()
  declare sub WriteRecall()
  declare sub ReadThrow()
+ declare sub ReadStealChance()
+ declare sub WriteStealChance()
  declare sub WriteThrow()
  declare sub ReadAim()
  declare sub WriteAim()

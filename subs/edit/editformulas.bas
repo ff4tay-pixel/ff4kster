@@ -241,9 +241,15 @@ sub FsLayout()
   "|ignored if the attacker has that flag: |@RX2", _
   "|ignored if the attacker is jumping: |@RJ2", _
   "|and its defense is |@RD"}
+ dim page8(1 to 2) as String = { _
+  "Critical hit|the damage is multiplied by |@KM| divided by 4", _
+  "|then the weapon's critical bonus is added: |@KB"}
  dim joined(1 to 20) as String
 
  select case fs_page
+  case 8
+   fs_x0 = 16
+   FsFill(page8(), 2)
   case 7
    fs_x0 = 24
    FsFill(page7(), 7)
@@ -387,6 +393,8 @@ function FsFieldText(code as String) as String
   case "RX1", "RX2": if not formulas.back_known then return "?" else return iif(formulas.back_flag(val(mid(code, 3))), "yes", "no")
   case "RJ1", "RJ2": if not formulas.back_known then return "?" else return iif(formulas.back_jump(val(mid(code, 3))), "yes", "no")
   case "RD": if not formulas.back_known then return "?" else return MenuCommand.CodeItem("x0.5|x1|x2", formulas.back_def)
+  case "KM": if not formulas.crit_known then return "?" else return str(formulas.crit_mult)
+  case "KB": if not formulas.crit_known then return "?" else return iif(formulas.crit_bonus, "yes", "no")
   case "FU": if not formulas.slot_known(4) then return "?" else return iif(formulas.slot_target, "target", "attacker")
   case "CT": if not formulas.doom_known then return "?" else return str(formulas.doom_ticks)
   case "CS": if not formulas.doom_known then return "?" else return MenuCommand.CodeItem("Dead|Stone|Toad|Mini|Pig|Mute|Blind|Poison", formulas.doom_status)
@@ -453,15 +461,16 @@ sub FsDraw()
  dim piece as String
  dim shown as String
  dim field_number as Integer
- dim page_titles(1 to 7) as String = {" Formulas of the stats of the party in battle ", " Statuses that weaken a unit ", " Other adjustments of the statuses ", " Armor and Shell ", " Timers ", " Bonus of the first slot ", " The back row "}
- dim page_heights(1 to 7) as Integer = {17, 22, 33, 10, 19, 13, 11}
- dim page_texts(1 to 7) as String = {"Monsters have stats of their own that are not changed here.", _
+ dim page_titles(1 to 8) as String = {" Formulas of the stats of the party in battle ", " Statuses that weaken a unit ", " Other adjustments of the statuses ", " Armor and Shell ", " Timers ", " Bonus of the first slot ", " The back row ", " Critical hits of Fight "}
+ dim page_heights(1 to 9) as Integer = {17, 22, 33, 10, 19, 13, 11, 7}
+ dim page_texts(1 to 8) as String = {"Monsters have stats of their own that are not changed here.", _
   "Each rule is for a set of statuses of the unit: none switches the rule off.", _
   "Each rule is for a set of statuses of the unit: none switches the rule off.", _
   "Spells with these effects add to the defense stats of their target.", _
   "A tick is one pass of the battle loop, its length depends on the battle speed.", _
   "The first slot has these rates multiplied by a number divided by 4.", _
-  "The back row rules of Fight, Aim, Jump and Focus. Spells are not affected."}
+  "The back row rules of Fight, Aim, Jump and Focus. Spells are not affected.", _
+  "A critical hit adds to the damage before the defense is taken off."}
 
  BlueBox(1, 3, 76, page_heights(fs_page))
  WriteText(FF4Text(page_titles(fs_page)), 2, 3, 14)
@@ -661,6 +670,19 @@ sub FsEditField(code as String)
     fml_number.UserSelect()
     formulas.slot_mult(n) = fml_number.number
    end if
+  case "KM"
+   if formulas.crit_known then
+    fml_number.x = px: fml_number.y = py
+    fml_number.min_value = 0: fml_number.max_value = 16
+    fml_number.starting_number = formulas.crit_mult
+    fml_number.UserSelect()
+    formulas.crit_mult = fml_number.number
+   end if
+  case "KB"
+   if formulas.crit_known then
+    pick = FmlPick(px, py, "yes, original|no", iif(formulas.crit_bonus, 1, 2))
+    if pick > 0 then formulas.crit_bonus = (pick = 1)
+   end if
   case "FU"
    if formulas.slot_known(4) then
     pick = FmlPick(px, py, "attacker, original|target", iif(formulas.slot_target, 2, 1))
@@ -843,6 +865,8 @@ sub FsHint()
     case "RD": message = "Enter picks what the defense of a target in the back row is multiplied by."
     case "FW1", "FW2", "FW3", "FW4": message = "Enter picks who gets the bonus: slot 0 of both sides, of the party, or all."
     case "FM1", "FM2", "FM3", "FM4": message = "Enter types the number the rate is multiplied by, divided by 4: 5 is 25% more."
+    case "KM": message = "Enter types the multiplier, divided by 4: 4 changes nothing, 8 doubles."
+    case "KB": message = "Enter picks if the weapon's critical bonus is added, yes in the original."
     case "FU": message = "Enter picks whose slot decides: the attacker, as in the game, or the target."
     case "PD": message = "Enter picks the number that the max HP is divided by, 8 in the original."
     case "SD": message = "Enter types the HP that HP leak takes every tick, 2 in the original."
@@ -879,6 +903,21 @@ dim shared fml_undo_c(1 to fml_undo_max) as MenuCommand 'the command of lines 1 
 dim shared fml_undo_count as Integer
 dim shared fml_hook_entry as Integer 'the line of the list whose menus are open, 0: the keys are not handled
 dim shared fml_in_hook as Boolean
+
+
+function FmlEntryOf(row as Integer) as Integer
+
+ 'The setting group (the entry numbers used everywhere) that a row of the list shows. The group added last,
+ ' 15 critical hits, is listed after the commands.
+
+ select case row
+  case 5: return 15
+  case is > 5: return row - 1
+ end select
+
+ return row
+
+end function
 
 
 function FmlCmdIndex(entry as Integer) as Integer
@@ -924,6 +963,7 @@ function FmlGroupData(entry as Integer, f as BattleFormulas ptr, c as MenuComman
     s += str(f->term_stat(i)) + "/" + str(f->term_div(i)) + ","
    next
    s += str(f->plus_on) + "," + str(f->yang_stat) + "," + str(f->yang_mult) + "," + str(f->yang_plus)
+  case 15: s = str(f->crit_mult) + "," + str(f->crit_bonus)
   case 10
    for i as Integer = 1 to 4
     s += str(f->slot_who(i)) + "/" + str(f->slot_mult(i)) + ","
@@ -987,6 +1027,8 @@ sub FmlGroupCopy(entry as Integer, df as BattleFormulas ptr, sf as BattleFormula
     df->term_stat(i) = sf->term_stat(i): df->term_div(i) = sf->term_div(i)
    next
    df->plus_on = sf->plus_on: df->yang_stat = sf->yang_stat: df->yang_mult = sf->yang_mult: df->yang_plus = sf->yang_plus
+  case 15
+   df->crit_mult = sf->crit_mult: df->crit_bonus = sf->crit_bonus
   case 10
    for i as Integer = 1 to 4
     df->slot_who(i) = sf->slot_who(i): df->slot_mult(i) = sf->slot_mult(i)
@@ -1293,9 +1335,27 @@ sub FsNotes7()
 end sub
 
 
+sub FsNotes8()
+
+ BlueBox(1, 11, 76, 11)
+ WriteText(FF4Text(" Notes "), 2, 11, 14)
+ WriteText(FF4Text("The critical hit rate and bonus belong to the character: the game takes"), 2, 12, 15)
+ WriteText(FF4Text("them from the character data, not from the weapon. A bow triples the rate"), 2, 13, 15)
+ WriteText(FF4Text("and adds the arrow attack to the bonus, two weapons double the rate."), 2, 14, 15)
+ WriteText(FF4Text("Fight picks a number from 0 to 98, the hit is critical if it is below the"), 2, 15, 15)
+ WriteText(FF4Text("rate. In the original game the bonus is added to the damage before the"), 2, 16, 15)
+ WriteText(FF4Text("defense is taken off. Here the damage can first be multiplied: 4 divided by"), 2, 17, 15)
+ WriteText(FF4Text("4 changes nothing, 8 doubles it. The bonus can be left out. The damage"), 2, 18, 15)
+ WriteText(FF4Text("still stops at 9999. A Frog or a Mini never scores a critical hit. Jump"), 2, 19, 15)
+ WriteText(FF4Text("and Kick use the same code. Ctrl-R reverts, Ctrl-Z undoes."), 2, 20, 15)
+
+end sub
+
+
 sub FsNotes()
 
  select case fs_page
+  case 8: FsNotes8()
   case 7: FsNotes7()
   case 6: FsNotes6()
   case 2: FsNotes2()
@@ -1330,7 +1390,7 @@ sub EditStatFormulas(page as Integer = 1)
  cls
 
  fs_page = page
- dim entry_of_page(1 to 7) as Integer = {9, 12, 13, 6, 14, 10, 11}
+ dim entry_of_page(1 to 8) as Integer = {9, 12, 13, 6, 14, 10, 11, 15}
  fs_entry = entry_of_page(page)
  FsLayout()
  fs_line = 1
@@ -1602,6 +1662,9 @@ sub FmlShow(entry as Integer)
   case 13
    FmlNote(3, "The other places where a status changes a number:|a blind attacker or target, berserk, jump, curse,|defend and focus, for attacks and for spells.||Enter opens them as rules with fields you can change.|Each rule can have statuses of any of the four lists.")
 
+  case 15
+   FmlNote(3, "The critical hits of Fight, Jump and Kick: in the|original game the weapon's critical bonus is added to|the damage. The damage can be multiplied first, and|the bonus can be left out.||Enter opens them as a line with fields you can change.")
+
   case 14
    FmlNote(3, "The timers of the battle: the turn wait of every unit,|Count, also called doom, poison, HP leak, Regen and|the length of sleep and paralyze.||Enter opens them as lines with fields you can change.")
 
@@ -1620,6 +1683,7 @@ sub FmlShow(entry as Integer)
   case 12: WriteText(FF4Text("Enter opens the statuses that weaken a unit, with rules you can change."), 1, 57, 14)
   case 13: WriteText(FF4Text("Enter opens the other status rules, with fields you can change."), 1, 57, 14)
   case 14: WriteText(FF4Text("Enter opens the timers, with fields you can change."), 1, 57, 14)
+  case 15: WriteText(FF4Text("Enter opens the critical hit damage, with fields you can change."), 1, 57, 14)
  end select
 
 end sub
@@ -1716,6 +1780,7 @@ sub FmlEdit(entry as Integer)
   case 12: EditStatFormulas(2): FmlShow(12)
   case 13: EditStatFormulas(3): FmlShow(13)
   case 14: EditStatFormulas(5): FmlShow(14)
+  case 15: EditStatFormulas(8): FmlShow(15)
  end select
 
  fml_hook_entry = 0
@@ -1732,11 +1797,11 @@ sub EditFormulas()
  cls
 
  key_hook = @FmlKeyHook
- BlueBox(1, 18, 19, 3)
- WriteText(FF4Text(" Keys "), 2, 18, 14)
- WriteText(FF4Text("Space: menu"), 2, 19, 15)
- WriteText(FF4Text("Ctrl-R: revert"), 2, 20, 15)
- WriteText(FF4Text("Ctrl-Z: undo"), 2, 21, 15)
+ BlueBox(1, 22, 19, 3)
+ WriteText(FF4Text(" Keys "), 2, 22, 14)
+ WriteText(FF4Text("Space: menu"), 2, 23, 15)
+ WriteText(FF4Text("Ctrl-R: revert"), 2, 24, 15)
+ WriteText(FF4Text("Ctrl-Z: undo"), 2, 25, 15)
  fml_hub = BlueMenu(1, 3)
  fml_hub.title = "Battle formulas"
  fml_hub.min_width = 19
@@ -1744,6 +1809,7 @@ sub EditFormulas()
  fml_hub.AddOption(FF4Text("Kick"))
  fml_hub.AddOption(FF4Text("Dark Wave"))
  fml_hub.AddOption(FF4Text("Throw"))
+ fml_hub.AddOption(FF4Text("Critical hits"))
  fml_hub.AddOption(FF4Text("Spell damage"))
  fml_hub.AddOption(FF4Text("Armor and Shell"))
  fml_hub.AddOption(FF4Text("Dispel, Black Hole"))
@@ -1779,18 +1845,18 @@ sub EditFormulas()
 
 
  do
-  FmlShow(fml_hub.selected)
-  for i as Integer = 1 to 14
-   if FmlGroupChanged(i) then fml_hub.ChangeOption(i, "", 14) else fml_hub.ChangeOption(i, "", 15)
+  FmlShow(FmlEntryOf(fml_hub.selected))
+  for i as Integer = 1 to 15
+   if FmlGroupChanged(FmlEntryOf(i)) then fml_hub.ChangeOption(i, "", 14) else fml_hub.ChangeOption(i, "", 15)
   next
   fml_hub.cancelled = false
   if fml_hub.UserInput() then
    if fml_hub.cancelled then exit do
-   FmlEdit(fml_hub.selected)
+   FmlEdit(FmlEntryOf(fml_hub.selected))
   else
    key = fml_hub.last_key
    if key = SPACE_KEY then key = FmlActionKey()
-   if key = 18 then FmlDoRevert(fml_hub.selected)
+   if key = 18 then FmlDoRevert(FmlEntryOf(fml_hub.selected))
    if key = 26 then FmlDoUndo()
   end if
  loop

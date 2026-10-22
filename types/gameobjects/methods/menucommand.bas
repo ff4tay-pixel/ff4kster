@@ -345,6 +345,50 @@ end sub
 
 #include once "crt/string.bi"
 
+sub MenuCommand.ReadStealChance()
+
+ 'The chance of Steal (battle/cmd.asm, Cmd_17): rate = level of the thief + base - (level of the target + 10),
+ ' at least 1 and at most 99 (lda #base, adc, sbc, lda #1, cmp #99, lda #99); a random number 0 to 98 must not
+ ' be above the rate. A failed steal is caught if another random number is below the level of the target
+ ' plus 10 (cmp $272f, or cmp #n with a nop for a fixed chance), and the thief then loses max HP shifted right
+ ' by a call to one of the Lsr routines (83 to 87 of the battle code, Lsr_4 in the original).
+
+ steal_known = (ByteAt(&h1E3F0) = &hA9 and ByteAt(&h1E3FB) = &hA9 and ByteAt(&h1E3FF) = &hC9 and ByteAt(&h1E403) = &hA9)
+ steal_min = ByteAt(&h1E3FC)
+ steal_max = ByteAt(&h1E400)
+ if ByteAt(&h1E404) <> steal_max then steal_known = false
+ steal_caught_fixed = (ByteAt(&h1E40C) = &hC9)
+ steal_caught = 0
+ if steal_caught_fixed then
+  steal_caught = ByteAt(&h1E40D)
+  if ByteAt(&h1E40E) <> &hEA then steal_known = false
+ elseif not BytesAre(&h1E40C, "CD2F27") then
+  steal_known = false
+ end if
+ steal_shift = 0
+ if ByteAt(&h1E416) = &h20 and ByteAt(&h1E418) = &h84 and ByteAt(&h1E417) >= &h82 and ByteAt(&h1E417) <= &h87 then steal_shift = &h88 - ByteAt(&h1E417)
+ if steal_shift = 0 then steal_known = false
+
+end sub
+
+
+sub MenuCommand.WriteStealChance()
+
+ if not steal_known then exit sub
+
+ WriteByte(&h1E3FC, steal_min)
+ WriteByte(&h1E400, steal_max)
+ WriteByte(&h1E404, steal_max)
+ if steal_caught_fixed then
+  WriteByte(&h1E40C, &hC9): WriteByte(&h1E40D, steal_caught): WriteByte(&h1E40E, &hEA)
+ else
+  WriteByte(&h1E40C, &hCD): WriteByte(&h1E40D, &h2F): WriteByte(&h1E40E, &h27)
+ end if
+ WriteByte(&h1E417, &h88 - steal_shift)
+
+end sub
+
+
 function MenuCommand.SameAs(other as MenuCommand) as Boolean
 
  'Whether every setting of the command is the same as in another copy, which is how the editor knows a command
@@ -767,6 +811,7 @@ sub MenuCommand.ReadFromROM(index as UByte)
    misc_bytes(2) = ByteAt(&h1E3F3) 'Bonus stat
    misc_bytes(3) = ByteAt(&h1E3F7) 'Penalty stat
    misc_bytes(4) = ByteAt(&h1E457) 'Slot
+   ReadStealChance()
    message(1) = ByteAt(&h1E433) 'Damaged by enemy
    message(2) = ByteAt(&h1E43A) 'Couldn't steal
    message(3) = ByteAt(&h1E4CA) 'Stole item
@@ -1092,6 +1137,7 @@ sub MenuCommand.WriteToROM(index as UByte)
    WriteByte(&h1E3F3, misc_bytes(2)) 'Bonus stat
    WriteByte(&h1E3F7, misc_bytes(3)) 'Penalty stat
    WriteByte(&h1E457, misc_bytes(4)) 'Slot
+   WriteStealChance()
    WriteByte(&h1E433, message(1)) 'Damaged by enemy
    if message(1) = &hFF then
     WriteByte(&h1E434, &hEA)

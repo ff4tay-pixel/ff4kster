@@ -454,9 +454,26 @@ sub CommandParametersMenu.Display()
    steal_menu.ChangeOption(2, FF4Text("   Plus user's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(2) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
    steal_menu.ChangeOption(3, FF4Text("Minus target's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(3) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
    steal_menu.ChangeOption(4, FF4Text("Steal item:    ") + Pad(slot_menu.options.ItemAt(menucommands(id).misc_bytes(4) + 1), slot_menu.options.Width()), 15)
-   steal_menu.ChangeOption(5, FF4Text("'Caught' message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
-   steal_menu.ChangeOption(6, FF4Text("Failure message:  ") + message_menu.options.ItemAt((menucommands(id).message(2) + 2) mod &h100), 15)
-   steal_menu.ChangeOption(7, FF4Text("Success message:  ") + message_menu.options.ItemAt((menucommands(id).message(3) + 2) mod &h100), 15)
+   if not menucommands(id).steal_known then
+    temp = FF4Text("Custom, not changed")
+    steal_menu.ChangeOption(5, FF4Text("Lowest chance:  ") + temp, 15)
+    steal_menu.ChangeOption(6, FF4Text("Highest chance: ") + temp, 15)
+    steal_menu.ChangeOption(7, FF4Text("Caught chance:  ") + temp, 15)
+    steal_menu.ChangeOption(8, FF4Text("Caught, loses:  ") + temp, 15)
+   else
+    steal_menu.ChangeOption(5, FF4Text("Lowest chance:  " + Pad(str(menucommands(id).steal_min), 3)), 15)
+    steal_menu.ChangeOption(6, FF4Text("Highest chance: " + Pad(str(menucommands(id).steal_max), 3)), 15)
+    if menucommands(id).steal_caught_fixed then
+     temp = FF4Text(str(menucommands(id).steal_caught) + " percent")
+    else
+     temp = FF4Text("target's level plus 10")
+    end if
+    steal_menu.ChangeOption(7, FF4Text("Caught chance:  ") + temp, 15)
+    steal_menu.ChangeOption(8, FF4Text("Caught, loses:  " + MenuCommand.CodeItem("1/2|1/4|1/8|1/16|1/32|1/64", menucommands(id).steal_shift) + " of max HP"), 15)
+   end if
+   steal_menu.ChangeOption(9, FF4Text("'Caught' message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
+   steal_menu.ChangeOption(10, FF4Text("Failure message:  ") + message_menu.options.ItemAt((menucommands(id).message(2) + 2) mod &h100), 15)
+   steal_menu.ChangeOption(11, FF4Text("Success message:  ") + message_menu.options.ItemAt((menucommands(id).message(3) + 2) mod &h100), 15)
    steal_menu.Display()
   
   case 26 'Regen
@@ -1116,21 +1133,51 @@ sub CommandParametersMenu.UserSelect()
        slot_menu.ChangeSelected(menucommands(id).misc_bytes(4) + 1)
        slot_menu.UserSelect()
        if not slot_menu.cancelled then menucommands(id).misc_bytes(4) = slot_menu.selected - 1
-      case 5 'Caught message
+      case 5, 6 'Lowest and highest chance
+       if menucommands(id).steal_known then
+        success_input.max_value = 99
+        success_input.y = y + steal_menu.selected - 1
+        if steal_menu.selected = 5 then success_input.starting_number = menucommands(id).steal_min else success_input.starting_number = menucommands(id).steal_max
+        success_input.UserSelect()
+        if steal_menu.selected = 5 then menucommands(id).steal_min = success_input.number else menucommands(id).steal_max = success_input.number
+        success_input.max_value = &hFF
+        success_input.y = y
+       end if
+      case 7 'Caught chance
+       if menucommands(id).steal_known then
+        n = FmlPick(x + 15, y + 7, "the target's level plus 10, original|a fixed percentage", iif(menucommands(id).steal_caught_fixed, 2, 1))
+        if n = 1 then menucommands(id).steal_caught_fixed = false
+        if n = 2 then
+         menucommands(id).steal_caught_fixed = true
+         success_input.max_value = 99
+         success_input.y = y + 6
+         success_input.starting_number = menucommands(id).steal_caught
+         success_input.UserSelect()
+         menucommands(id).steal_caught = success_input.number
+         success_input.max_value = &hFF
+         success_input.y = y
+        end if
+       end if
+      case 8 'What a caught thief loses
+       if menucommands(id).steal_known then
+        n = FmlPick(x + 15, y + 8, "1/2|1/4|1/8|1/16, original|1/32|1/64", menucommands(id).steal_shift)
+        if n > 0 then menucommands(id).steal_shift = n
+       end if
+      case 9 'Caught message
        message_menu.x = x + 18
-       message_menu.y = y + 4
+       message_menu.y = y + 8
        message_menu.ChangeSelected(menucommands(id).message(1) + 2)
        message_menu.UserSelect()
        if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
-      case 6 'Failure message
+      case 10 'Failure message
        message_menu.x = x + 18
-       message_menu.y = y + 5
+       message_menu.y = y + 9
        message_menu.ChangeSelected(menucommands(id).message(2) + 2)
        message_menu.UserSelect()
        if not message_menu.cancelled then menucommands(id).message(2) = message_menu.selected - 2
-      case 7 'Success message
+      case 11 'Success message
        message_menu.x = x + 18
-       message_menu.y = y + 6
+       message_menu.y = y + 10
        message_menu.ChangeSelected(menucommands(id).message(3) + 2)
        message_menu.UserSelect()
        if not message_menu.cancelled then menucommands(id).message(3) = message_menu.selected - 2
