@@ -835,6 +835,17 @@ Parameters shows the details that go with the command if it has any that can
 be edited (for example base values, multipliers and the stats and elements
 involved).
 
+The menu you get with Enter on a command also has two entries that are about
+all commands. "Overview of all commands" is one screen with every command: its
+target, its delay, how many actors have it in their command list and what has
+changed since the ROM was loaded (name, target, delay, statuses, stances,
+parameters or code settings). Rows with changes are yellow, typing letters
+jumps to a command, and Enter closes the overview and goes to that command in
+the list. The Commands list marks a command as changed for any of these changes,
+not only the name, target and delay. "Internal command names" edits the four
+names after the 26 commands, which the battle shows for Change row, Defend and
+two commands the game uses itself (Chang, Parry, Show and Off in the original).
+
 The delay index on the Information screen is how long a unit waits after
 choosing the command before it acts, and the screen says what the value means:
 0 is no wait, 1 to 127 is 1/value of the unit's turn timer (1 is a whole turn
@@ -1729,6 +1740,7 @@ VERSION HISTORY
     - Commands: Aim can use any stat of the target and the user, Boast and Cry can be reversed (raise or lower)
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Recall can skip its MP check and its MP cost
+    - Commands: overview of all commands with what changed, and the names of the four internal commands
     - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)
     - Commands: the unused command 22 can "Behave like" another command (runs its routine and animation)
     - Messages editor: the list shows the start of each message, changed ones are yellow, the space of the

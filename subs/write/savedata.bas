@@ -106,6 +106,11 @@ sub ApplyDataToROM()
  for i as Integer = 1 to total_commands
   menucommands(i).WriteToROM(i)
  next
+ for k as Integer = 1 to 4
+  for j as Integer = 0 to 4
+   WriteByte(&h7A9C6 + (total_commands + k - 1) * 5 + j, asc(mid(internal_command_names(k), j + 1, 1)))
+  next
+ next
  
  for i as Integer = 1 to total_jobs
   jobs(i).WriteToROM(i)

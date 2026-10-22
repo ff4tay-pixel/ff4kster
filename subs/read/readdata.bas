@@ -168,6 +168,12 @@ sub ReadData(filename as String)
  for i as Integer = 1 to total_commands
   menucommands(i).ReadFromROM(i)
  next
+ for k as Integer = 1 to 4
+  internal_command_names(k) = ""
+  for j as Integer = 0 to 4
+   internal_command_names(k) += chr(ByteAt(&h7A9C6 + (total_commands + k - 1) * 5 + j))
+  next
+ next
  print "DONE"
  
  'Read actor data

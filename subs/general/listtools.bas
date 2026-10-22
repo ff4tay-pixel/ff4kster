@@ -309,12 +309,69 @@ sub SnapshotOriginalRows()
    orig_rows(k, i) = EntryRow(kinds(k), i)
   next
  next
+ for i as Integer = 1 to total_commands
+  orig_menucommands(i) = menucommands(i)
+ next
  AITakeSnap(ai_original)
 
 end sub
 
 
+function CommandChanges(i as Integer) as String
+
+ 'What differs in a command since the ROM was loaded, in a few words (empty if nothing). The editors' own
+ ' "changed" mark only knows the CSV fields, this one knows every field of a command.
+
+ dim result as String
+ dim name_changed as Boolean
+ dim stances as Boolean
+ dim parameters as Boolean
+ dim code as Boolean
+
+ with menucommands(i)
+  name_changed = (.name <> orig_menucommands(i).name)
+  stances = (.charging_stance <> orig_menucommands(i).charging_stance or .action_stance <> orig_menucommands(i).action_stance)
+  stances = stances or .action_stance2 <> orig_menucommands(i).action_stance2 or .action_stance3 <> orig_menucommands(i).action_stance3
+  for j as Integer = 1 to 8
+   if .spell(j) <> orig_menucommands(i).spell(j) or .success(j) <> orig_menucommands(i).success(j) then parameters = true
+   if .misc_bytes(j) <> orig_menucommands(i).misc_bytes(j) then parameters = true
+  next
+  for j as Integer = 1 to 5
+   if .message(j) <> orig_menucommands(i).message(j) then parameters = true
+  next
+  if .item_consumed <> orig_menucommands(i).item_consumed or .item_effect <> orig_menucommands(i).item_effect then parameters = true
+  if .item_visual <> orig_menucommands(i).item_visual or .regen_amount <> orig_menucommands(i).regen_amount then parameters = true
+  if .regen_freeze <> orig_menucommands(i).regen_freeze or .disable_actor <> orig_menucommands(i).disable_actor then parameters = true
+  if .cover_actor <> orig_menucommands(i).cover_actor or .cover_by_job <> orig_menucommands(i).cover_by_job then parameters = true
+  for j as Integer = 1 to 2
+   if .code_choice(j) <> orig_menucommands(i).code_choice(j) then code = true
+  next
+  if .reversed <> orig_menucommands(i).reversed or .behaves_like <> orig_menucommands(i).behaves_like then code = true
+  if .extra_delay <> orig_menucommands(i).extra_delay or .jump_wait <> orig_menucommands(i).jump_wait then code = true
+  if .jump_air <> orig_menucommands(i).jump_air or .throw_stat <> orig_menucommands(i).throw_stat then code = true
+  if .throw_cap <> orig_menucommands(i).throw_cap or .aim_target_stat <> orig_menucommands(i).aim_target_stat then code = true
+  if .aim_user_stat <> orig_menucommands(i).aim_user_stat or .aim_target_set <> orig_menucommands(i).aim_target_set then code = true
+  if .aim_user_set <> orig_menucommands(i).aim_user_set then code = true
+  if .recall_needs_mp <> orig_menucommands(i).recall_needs_mp or .recall_uses_mp <> orig_menucommands(i).recall_uses_mp then code = true
+  if name_changed then result += ", name"
+  if .target_byte <> orig_menucommands(i).target_byte or .target <> orig_menucommands(i).target then result += ", target"
+  if .delay <> orig_menucommands(i).delay then result += ", delay"
+  if .disabling_persistent <> orig_menucommands(i).disabling_persistent or .disabling_temporary <> orig_menucommands(i).disabling_temporary then result += ", statuses"
+  if stances then result += ", stances"
+  if parameters then result += ", parameters"
+  if code then result += ", code"
+ end with
+
+ return mid(result, 3)
+
+end function
+
+
 function EntryModified(kind as String, i as Integer) as Boolean
+
+ if kind = "commands" then
+  if CommandChanges(i) <> "" then return true
+ end if
 
  return EntryRow(kind, i) <> orig_rows(KindIndex(kind), i)
 

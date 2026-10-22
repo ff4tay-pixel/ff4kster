@@ -91,6 +91,8 @@ dim shared shops(total_shops) as Shop
 dim shared jobs(total_jobs) as Job
 dim shared characters(total_characters) as Character
 dim shared menucommands(total_commands) as MenuCommand
+dim shared orig_menucommands(total_commands) as MenuCommand 'the commands as they were when the ROM was loaded
+dim shared internal_command_names(4) as String 'names of the 4 commands after the 26 (change row, defend, show, off)
 dim shared actors(total_actors) as Actor
 dim shared events(total_events) as Event
 dim shared npcs(total_npcs) as NPC

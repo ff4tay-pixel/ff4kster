@@ -19,10 +19,8 @@ sub EditCommands()
  next
  
  'Set up command editing menu
- edit_command.AddOption(FF4Text("Ranges"))
- edit_command.AddOption(FF4Text("Information"))
- edit_command.AddOption(FF4Text("Parameters"))
- edit_command.x = 78 - edit_command.options.Width()
+ dim choice as String
+ dim goto_command as Integer
  
  'Set up name input window
  name_input = BlueTextInput(select_command.options.Width() + 15, 5)
@@ -94,16 +92,23 @@ sub EditCommands()
   
   if not select_command.cancelled then
   
-   if MenuCommand.HasParameters(select_command.selected) then
-    edit_command.ChangeOption(3, FF4Text("Parameters"), 15)
-   else
-    edit_command.Remove(3)
-   end if
-   
+   'The menu is built each time: Parameters only exists for commands that have some, and the last two
+   ' entries are about all commands, not the selected one
+   edit_command.ClearAll()
+   edit_command.AddOption(FF4Text("Ranges"))
+   edit_command.AddOption(FF4Text("Information"))
+   if MenuCommand.HasParameters(select_command.selected) then edit_command.AddOption(FF4Text("Parameters"))
+   edit_command.AddOption(FF4Text("Overview of all commands"))
+   edit_command.AddOption(FF4Text("Internal command names"))
+   edit_command.x = 78 - edit_command.options.Width()
+   edit_command.top_row = 1
+   edit_command.ChangeSelected(1)
+
    edit_command.UserSelect()
    if not edit_command.cancelled then
-    select case edit_command.selected
-     case 1 'Ranges
+    choice = FF4Name(edit_command.options.ItemAt(edit_command.selected))
+    select case choice
+     case "Ranges"
       do
        edit_ranges.UserSelect()
        if not edit_ranges.cancelled then
@@ -164,7 +169,7 @@ sub EditCommands()
        edit_ranges.Display()
       loop until edit_ranges.cancelled
 
-     case 2 'Information
+     case "Information"
 
       do
 
@@ -281,8 +286,15 @@ sub EditCommands()
        
       loop until edit_info.cancelled
       
-     case 3 'Parameters
+     case "Parameters"
       edit_parameters.UserSelect()
+
+     case "Overview of all commands"
+      goto_command = CommandOverview()
+      if goto_command > 0 then select_command.ChangeSelected(goto_command)
+
+     case "Internal command names"
+      EditInternalNames()
 
     end select
 
