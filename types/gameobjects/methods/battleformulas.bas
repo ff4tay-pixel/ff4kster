@@ -399,6 +399,31 @@ sub BattleFormulas.ReadFromROM()
  'poison: the max HP is divided by a call to one of the Lsr routines, sap: 2 HP, sleep and paralyze: see below
  poison_known = (ByteAt(&h1AB2F) = &hBD and ByteAt(&h1AB32) = &h20 and ByteAt(&h1AB34) = &h84 and ByteAt(&h1AB33) >= &h82 and ByteAt(&h1AB33) <= &h87)
  poison_div = &h87 - ByteAt(&h1AB33) + 1
+ 'The wait between two ticks of poison (and of petrify, which uses the same routine, TimerDur_06 in
+ ' battle/timer_dur.asm) is the VIT of a character plus 20, or the level plus 10 plus 20 of a monster, in ticks
+ ' of the battle loop at normal speed. The VIT is the operand of a lda of the unit ($2016,x), the 20 an adc #imm.
+ wait_known = (ByteAt(&h1A117) = &hBD and ByteAt(&h1A119) = &h20 and ByteAt(&h1A11A) = &h18 and ByteAt(&h1A11B) = &h69)
+ wait_stat = 0
+ select case ByteAt(&h1A118)
+  case &h02: wait_stat = 1
+  case &h14: wait_stat = 2
+  case &h15: wait_stat = 3
+  case &h16: wait_stat = 4
+  case &h17: wait_stat = 5
+  case &h18: wait_stat = 6
+ end select
+ if wait_stat = 0 then wait_known = false
+ wait_const = ByteAt(&h1A11C)
+ 'HP leak is taken by SapRegenEffect (battle/timer.asm), called once for every tick of the battle loop: a counter
+ ' is compared with 1. Regen is taken when another counter, that is compared with 5 after it is raised, has
+ ' counted 6 passes. How long HP leak lasts is TimerDur_09: (WIS plus WIL) x 2 plus 30 for a character.
+ sap_every_known = (ByteAt(&h1AC15) = &hC9)
+ sap_every = ByteAt(&h1AC16)
+ regen_known = (ByteAt(&h1ACA6) = &hC9)
+ regen_every = ByteAt(&h1ACA7) + 1
+ sap_len_known = (ByteAt(&h1A15D) = &hA9 and ByteAt(&h1A16F) = &h69)
+ sap_len_mult = ByteAt(&h1A15E)
+ sap_len_const = ByteAt(&h1A170)
  sap_known = (ByteAt(&h1AC54) = &hA9 and ByteAt(&h1AC56) = &h9D)
  sap_damage = ByteAt(&h1AC55)
  sleep_known = (ByteAt(&h1A0E1) = &hA9 and ByteAt(&h1A0E7) = &hA9 and ByteAt(&h1A0FC) = &hA2 and ByteAt(&h1A0E0) = &h38)
@@ -551,6 +576,19 @@ sub BattleFormulas.WriteToROM()
  next
  if poison_known then WriteByte(&h1AB33, &h87 - poison_div + 1)
  if sap_known then WriteByte(&h1AC55, sap_damage)
+ if wait_known then
+  select case wait_stat
+   case 1: WriteByte(&h1A118, &h02)
+   case else: WriteByte(&h1A118, &h14 + wait_stat - 2)
+  end select
+  WriteByte(&h1A11C, wait_const)
+ end if
+ if sap_every_known then WriteByte(&h1AC16, sap_every)
+ if regen_known then WriteByte(&h1ACA7, regen_every - 1)
+ if sap_len_known then
+  WriteByte(&h1A15E, sap_len_mult)
+  WriteByte(&h1A170, sap_len_const)
+ end if
  if sleep_known then
   WriteByte(&h1A0E2, sleep_base mod &h100)
   WriteByte(&h1A0E8, sleep_base \ &h100)

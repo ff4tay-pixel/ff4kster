@@ -23,6 +23,16 @@ type BattleFormulas
  poison_div as UByte 'poison takes the max HP divided by 2 (1), 4, 8 (3, original), 16, 32 or 64 (6) every tick
  poison_known as Boolean
  sap_damage as UByte 'the HP an HP leak takes every tick, 2 in the original
+ wait_known as Boolean 'the wait between the ticks of poison: a stat of the character plus a number, in ticks
+ wait_stat as UByte '1 level, 2 STR ... 6 WIL, the stat of a character (a monster uses its level plus 10)
+ wait_const as UByte 'the number that is added, 20 in the original
+ sap_every_known as Boolean 'HP leak takes its HP every this many ticks, 1 in the original
+ sap_every as UByte
+ sap_len_known as Boolean 'how long HP leak lasts: the sum of the WIS and the WIL of the character times a number plus a number
+ sap_len_mult as UByte '2 in the original
+ sap_len_const as UByte '30 in the original
+ regen_known as Boolean 'the regen of the party heals every this many ticks, 6 in the original
+ regen_every as UByte
  sap_known as Boolean
  sleep_known as Boolean 'sleep and paralyze last (base minus multiplier x spirit) divided by a number, in ticks
  sleep_base as UInteger 'the base, 300 in the original

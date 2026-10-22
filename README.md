@@ -1053,7 +1053,12 @@ blind attacker has its hit rate halved and a blind target its magic defense rate
 and a target with focus ignores its magic defense multiplier. The hit rate and
 evasion rules can be halved or unchanged, the others x0.5, x1 or x2. Barrier and
 Image, which block hits, and the back row, which is not a status, are not here.
-Under them are three timers: poison takes the max HP divided by 8 every tick
+Under them are the timers (a tick is one pass of the battle loop, how long it lasts
+depends on the battle speed): the wait between two ticks of poison, which is the
+VIT of a character plus 20 ticks (a monster uses its level plus 10 plus 20; petrify
+uses the same wait), the wait between two HP leak ticks (every tick), how long HP
+leak lasts (the WIS plus the WIL of a character times 2 plus 30), and how often
+Regen heals (every 6 ticks). Then the three timers: poison takes the max HP divided by 8 every tick
 (2 to 64, at least 1 HP), HP leak takes 2 HP every tick, and sleep and paralyze
 last (300 minus 4 times the spirit of the target) divided by 6 ticks, each of
 the four numbers can be changed (the 4 can be 1, 2 or 4).
