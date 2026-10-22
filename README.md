@@ -976,7 +976,7 @@ Wisdom and Will, the original), which is also the stat of the hit rate, and
 the number of hits of summons and spells cast from items. The base damage, the
 random part and the damage cap are shared with the other formulas.
 
-Character stats: how the game works out the stats of the party members when a
+Stats and timers: how the game works out the stats of the party members when a
 battle starts (monsters have stats of their own that are stored with them and
 are not changed here). Enter opens one screen with the formulas written out,
 for example "Attack multiplier: STR / 8 plus AGI / 16 plus 1", where the fields
@@ -1006,6 +1006,24 @@ a wait that depends on the unit's own agility only. A bigger top number or a
 smaller bottom makes everyone slower. Adding a number needs a small routine
 that the editor puts in the unused bytes at the end of the battle code bank,
 which it clears again when the number is 0.
+
+Count (Doom, the spell that kills after a countdown): the spell's Power, in the
+Spells editor, is the number it counts down from. The game steps it down once
+every 2 ticks of its timer loop, while poison, stop, sap and the other timers
+step on every tick, so Count is half as fast as they are. "Count, doom counts
+down once every 2 ticks" on the stats and timers screen changes that 2 (1 is as
+fast as the other timers, 99 is very slow); a tick is as long as the battle
+speed makes it. "when it ends the unit gets Dead" is the status a unit gets
+when its Count reaches 0: dead in the original, or stone, toad, mini, pig, mute,
+blind or poison.
+
+Armor (also called Protect) and Shell: Armor adds a number to the defense of the
+target and Shell adds one to its magic defense, 5 and 3 in the original game.
+Each cast adds them again, up to 255, and the numbers can be changed on the
+stats and timers screen (0 to 255). Any spell given the same effect in the
+Spells editor does the same. The game makes both
+do nothing in the final battle with Zeromus (battle number 01B7); the two
+Zeromus lines on the same screen switch that off, so they work there too.
 
 Summon Book: the item of that name calls one of ten summons at random. Each
 has its summon and whether it hits all targets or one random target.
@@ -1827,7 +1845,7 @@ VERSION HISTORY
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Recall can skip its MP check and its MP cost
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
-    - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %) and the turn timer
+    - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the turn timer, the Count (doom) timer and what Armor and Shell add
     - Battle Formulas editor: Fight, Kick, Dark Wave and Throw formulas (moved from Commands), spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book
     - Commands: overview of all commands with what changed, and the names of the four internal commands
     - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)

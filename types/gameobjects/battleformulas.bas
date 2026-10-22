@@ -13,6 +13,15 @@ type BattleFormulas
  term_div(12) as UByte 'and what they are divided by: 1 nothing, 2 /2, 3 /4 ... 7 /64, 0 custom code
  plus_known as Boolean 'the plus 1 of the attack multiplier can be switched
  plus_on as Boolean
+ buff_known as Boolean 'Armor (protect) and Shell: the numbers they add to the defense and to the magic defense
+ protect_add as UByte 'added to the defense of the target by magic effect $0d, 5 in the original
+ shell_add as UByte 'added to the magic defense by magic effect $0e, 3 in the original
+ zeromus_known as Boolean 'false if the check of the Zeromus battle is not the original or switched off
+ protect_zeromus as Boolean 'Armor also works in the Zeromus battle (the original game skips it there)
+ shell_zeromus as Boolean
+ doom_known as Boolean 'Count (doom): the ticks of the timer loop for one step of the count, and what the end of it does
+ doom_ticks as UByte 'one step of the count every this many ticks, 2 in the original
+ doom_status as UByte 'the status the end of the count gives: 1 dead (original), 2 stone, 3 toad, 4 mini, 5 pig, 6 mute, 7 blind, 8 poison
  yang_known as Boolean 'Yang's attack: level x 2 plus STR / 4 plus 2
  yang_stat as UByte 'the first term, a stat (1 level ... 6 WIL)
  yang_mult as UByte 'times 2 (1, original) or times 1 (2)

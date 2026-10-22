@@ -198,6 +198,32 @@ sub BattleFormulas.ReadFromROM()
  next
  plus_known = (ByteAt(&h19E41) = &h1A or ByteAt(&h19E41) = &hEA)
  plus_on = (ByteAt(&h19E41) = &h1A)
+ 'Armor (magic effect $0d) adds a number to the defense of the target ($272a, 255 at most) and Shell (effect $0e)
+ ' to its magic defense base ($2724): adc #imm in the code of battle/magic.asm.
+ buff_known = (ByteAt(&h1DA66) = &hAD and ByteAt(&h1DA68) = &h27 and ByteAt(&h1DA69) = &h69 and ByteAt(&h1DA8A) = &hAD and ByteAt(&h1DA8C) = &h27 and ByteAt(&h1DA8D) = &h69)
+ protect_add = ByteAt(&h1DA6A)
+ 'Both effects skip the battle with the number $01B7, Zeromus: after lda $1801 a bne (D0 0D) jumps over the
+ ' addition. Two nops make it work there.
+ zeromus_known = (ByteAt(&h1DA60) = &hAD and ByteAt(&h1DA62) = &h18 and ByteAt(&h1DA65) = &h18 and ByteAt(&h1DA84) = &hAD and ByteAt(&h1DA86) = &h18 and ByteAt(&h1DA89) = &h18)
+ zeromus_known = zeromus_known and ((ByteAt(&h1DA63) = &hD0 and ByteAt(&h1DA64) = &h0D) or (ByteAt(&h1DA63) = &hEA and ByteAt(&h1DA64) = &hEA))
+ zeromus_known = zeromus_known and ((ByteAt(&h1DA87) = &hD0 and ByteAt(&h1DA88) = &h0D) or (ByteAt(&h1DA87) = &hEA and ByteAt(&h1DA88) = &hEA))
+ protect_zeromus = (ByteAt(&h1DA63) = &hEA)
+ shell_zeromus = (ByteAt(&h1DA87) = &hEA)
+ shell_add = ByteAt(&h1DA8E)
+
+ 'Count (doom, magic effect $1c in battle/magic.asm): the spell's power is the starting count and the timer
+ ' loop (battle/battle.asm) steps the count down once every "extra doom counter" ticks, a counter of 2 per
+ ' unit that is set when the battle starts and again every time it reaches 0. Both are an immediate in the
+ ' code. When the count reaches 0 TimerEffect_06 (battle/timer.asm) gives the unit status 1 bit $80, dead.
+ doom_known = (ByteAt(&h184BE) = &hA9 and ByteAt(&h19911) = &hA9 and ByteAt(&h19913) = 0 and ByteAt(&h184BF) = ByteAt(&h19912))
+ doom_known = doom_known and ByteAt(&h1AC02) = &h09
+ doom_ticks = ByteAt(&h184BF)
+ doom_status = 0
+ for c as Integer = 1 to 8
+  if ByteAt(&h1AC03) = (&h80 shr (c - 1)) then doom_status = c
+ next
+ if doom_status = 0 then doom_known = false
+
  'Yang's attack: lda level, asl (x2) or nop, clc, adc strength term, adc #2
  yang_known = (ByteAt(&h19E9F) = &hAD and ByteAt(&h19EA1) = &h39 and ByteAt(&h19EA3) = &h18 and ByteAt(&h19EA4) = &h65)
  yang_known = yang_known and ByteAt(&h19EA5) = &hAA and ByteAt(&h19EA6) = &h69 and (ByteAt(&h19EA2) = &h0A or ByteAt(&h19EA2) = &hEA)
@@ -281,6 +307,27 @@ sub BattleFormulas.WriteToROM()
  next
  if plus_known then
   if plus_on then WriteByte(&h19E41, &h1A) else WriteByte(&h19E41, &hEA)
+ end if
+ if buff_known then
+  WriteByte(&h1DA6A, protect_add)
+  WriteByte(&h1DA8E, shell_add)
+ end if
+ if zeromus_known then
+  if protect_zeromus then
+   WriteByte(&h1DA63, &hEA): WriteByte(&h1DA64, &hEA)
+  else
+   WriteByte(&h1DA63, &hD0): WriteByte(&h1DA64, &h0D)
+  end if
+  if shell_zeromus then
+   WriteByte(&h1DA87, &hEA): WriteByte(&h1DA88, &hEA)
+  else
+   WriteByte(&h1DA87, &hD0): WriteByte(&h1DA88, &h0D)
+  end if
+ end if
+ if doom_known then
+  WriteByte(&h184BF, doom_ticks)
+  WriteByte(&h19912, doom_ticks)
+  WriteByte(&h1AC03, &h80 shr (doom_status - 1))
  end if
  if yang_known then
   WriteByte(&h19EA0, &h65 + yang_stat - 1)

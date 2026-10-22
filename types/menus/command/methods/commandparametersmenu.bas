@@ -242,9 +242,11 @@ sub CommandParametersMenu.Display()
    end if
    fight_menu.ChangeOption(9, temp, 15)
    fight_menu.Display()
-   WriteText(FF4Text("Aim, Jump and Focus use these too."), x + 1, y + 11, 14)
-   WriteText(FF4Text("Half steps change the damage code, so they work for"), x + 1, y + 12, 14)
-   WriteText(FF4Text("all attacks and spells. Off: x1.5 acts as x1."), x + 1, y + 13, 14)
+   BlueBox(x, y + 12, 51, 3)
+   WriteText(FF4Text(" Notes "), x + 1, y + 12, 14)
+   WriteText(FF4Text("Aim, Jump and Focus use these too."), x + 1, y + 13, 15)
+   WriteText(FF4Text("Half steps change the damage code, so they work for"), x + 1, y + 14, 15)
+   WriteText(FF4Text("all attacks and spells. Off: x1.5 acts as x1."), x + 1, y + 15, 15)
  
   case 8 'Recall
    for i as Integer = 1 to 8
