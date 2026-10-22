@@ -5,6 +5,8 @@ dim shared font(&hFF) as Any ptr
 dim shared asc2ff4 as String
 dim shared warning as Boolean
 dim shared idle_hook as sub() 'called by menus while they wait for a key (for animated previews)
+dim shared key_hook as sub(key as UInteger) 'called by menus with every key they get (the Battle Formulas editor: undo, revert)
+dim shared orig_formulas as BattleFormulas 'the battle formulas as they were when the ROM was loaded
 dim shared modified as Boolean
 dim shared help_entry as Integer 'main menu entry of the open editor, so F1 can show its keys (0 = none)
 dim shared saved_image as String 'what the ROM image looked like at load or at the last save; "modified" means the data now applies differently

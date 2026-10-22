@@ -84,6 +84,8 @@ sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
    HelpLine(lines(), n, "Enter on a setting changes it, Esc goes back.")
    HelpLine(lines(), n, "A setting that says custom code was changed by")
    HelpLine(lines(), n, "something else, it is left alone.")
+   HelpLine(lines(), n, "Ctrl-R reverts the line, Ctrl-Z undoes the last")
+   HelpLine(lines(), n, "change, Space opens a menu with both.")
   case 13 to 14
    HelpLine(lines(), n, "Enter opens the entry's editor.")
    HelpLine(lines(), n, "Yellow names are changed since load.")

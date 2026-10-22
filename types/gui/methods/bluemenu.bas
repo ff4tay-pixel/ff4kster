@@ -211,6 +211,7 @@ function BlueMenu.UserInput() as Boolean
   if len(key) > 1 then key_code = key_code * &h100 + 255
  end if
  last_key = key_code
+ if cast(Any ptr, key_hook) <> 0 then key_hook(key_code)
  result = ProcessKey(key_code)
 
  return result

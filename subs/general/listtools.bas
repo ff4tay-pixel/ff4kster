@@ -312,6 +312,7 @@ sub SnapshotOriginalRows()
  for i as Integer = 1 to total_commands
   orig_menucommands(i) = menucommands(i)
  next
+ orig_formulas = formulas
  AITakeSnap(ai_original)
 
 end sub

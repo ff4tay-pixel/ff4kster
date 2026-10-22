@@ -915,9 +915,16 @@ NNh" because nothing in the game uses them.
 BATTLE FORMULAS
 ---------------
 
-This editor has the formulas the battle uses to work out damage. The list on
-the left has a line for each formula, the settings of the highlighted line are
-shown on the right, and Enter on a line changes them (Esc goes back). Most of
+This editor has the formulas and numbers the battle uses. The list on the left
+has a line for each group, in this order: the commands Fight, Kick, Dark Wave and
+Throw; the spells (Spell damage, Armor and Shell, Dispel and Black Hole, the
+Summon Book); the stats of the party (Party stats); the statuses (Weakening
+statuses, Status adjustments); and the Timers. The settings of the highlighted
+line are shown on the right, and Enter on a line changes them (Esc goes back).
+A line of the list that has changes is yellow. Ctrl-R puts the highlighted line
+(or the line whose menus or page are open) back the way it was when the ROM was
+loaded, after asking, Ctrl-Z undoes the last change, and Space opens a menu with
+both, so no key has to be learned. Most of
 them are not data bytes but small pieces of the game's code: the editor swaps
 a few bytes for another known sequence of the same length (found in the battle
 code of the disassembly, everything8215/ff4), and offers only those known
@@ -976,7 +983,34 @@ Wisdom and Will, the original), which is also the stat of the hit rate, and
 the number of hits of summons and spells cast from items. The base damage, the
 random part and the damage cap are shared with the other formulas.
 
-Stats and timers: how the game works out the stats of the party members when a
+Armor and Shell: Armor (also called Protect) adds a number to the defense of the
+target and Shell adds one to its magic defense, 5 and 3 in the original game.
+Each cast adds them again, up to 255, and the numbers can be changed (0 to 255).
+Any spell given the same effect in the Spells editor does the same, and so does
+the Brace command, which casts Armor. The game makes both do nothing in the
+final battle with Zeromus (battle number 01B7); the two Zeromus lines switch that
+off, so they work there too.
+
+Dispel and Black Hole: two spell effects that take statuses off their target.
+The window lists the statuses with a column for each effect, and Enter on a
+cell switches removes and keeps. The statuses are curse, float, paralyze, sleep,
+charm, berserk, HP leak (sap), reflect (Wall), barrier and image (Blink). The
+original Dispel removes berserk, HP leak, reflect, barrier and image, and the
+original Black Hole removes float, berserk, reflect, barrier and image. Black
+Hole also puts the speed of the target back to normal, which ends haste and
+slow, and that can be switched off. Every spell that has the effect in the
+Spells editor does it (Disrupt and Blk.Hole use Black Hole). The petrify, hide,
+cover and low HP bits are not offered. A cell shows ? if other changes have
+altered the code of the effect.
+
+Summon Book: the item of that name calls one of ten summons at random. Each
+has its summon and whether it hits all targets or one random target.
+
+A spell cast from a weapon also skips the tries and counts a fixed number of
+hits: the weapon's Power, which is in the Casts box of the Weapons editor.
+
+
+Party stats: how the game works out the stats of the party members when a
 battle starts (monsters have stats of their own that are stored with them and
 are not changed here). Enter opens one screen with the formulas written out,
 for example "Attack multiplier: STR / 8 plus AGI / 16 plus 1", where the fields
@@ -992,6 +1026,38 @@ level term of the attack hit rate and attack power is one term, and so is the
 strength term of the attack power and Yang's attack, so changing it on one
 line changes the other. A field shows ? when other changes have altered that
 code, and it is left alone.
+
+Weakening statuses: the statuses that change the damage formulas, written as rules
+with the statuses in yellow. In the original game Toad and Mini do all of
+these: an attacker with them does 1 attack power and cannot crit, inflicts no
+status and uses up no arrows; a target with them takes double the attack power
+and has no defense and no defense multiplier. In spells Toad alone makes the
+magic defense multiplier of a target 0 (focus does too). Pig changes no
+damage in the original game. Each rule has a set of statuses, any of Poison,
+Blind, Mute, Pig, Mini, Toad, Stone and Dead, so a poisoned target can take
+double damage instead of a mini one, or a pig can be a weak attacker; none
+switches a rule off. The attack power of a weak attacker (1) can be changed,
+and so can what the attack power of a hurt target is multiplied by (x0.5, x1
+or x2) and whether its defense becomes 0. Which statuses stop a unit from using
+commands is under Information in the Commands editor, and which spells a Toad
+or a Pig can cast is built into the game and not changed here.
+
+Status adjustments: the other places where a status changes the numbers, written as
+rules like the ones of Weakening statuses, but each rule can have statuses of any
+of the four status lists (persistent, temporary, system and hidden): the status
+byte of the rule is changed together with the statuses. The rules are, in the
+original game: a blind attacker has its hit rate halved and a blind target its
+evasion; berserk adds 50% to the attack power (the 50% is built into the game,
+the statuses can change); jump or focus doubles the attack power of the
+attacker; curse halves the attack power of the attacker and the defense of the
+target; defend doubles and focus halves the defense of the target; in spells a
+blind attacker has its hit rate halved and a blind target its magic defense rate,
+and a target with focus ignores its magic defense multiplier. The hit rate and
+evasion rules can be halved or unchanged, the others x0.5, x1 or x2. Barrier and
+Image, which block hits, and the back row, which is not a status, are not here.
+
+Timers: the timers of the battle, on one screen. A tick is one pass of the
+battle loop, how long it lasts depends on the battle speed.
 
 The turn wait is how long every unit, monsters too, waits between its actions.
 The game works it out as the anchor's agility times 50, divided by the unit's
@@ -1011,75 +1077,21 @@ Count (Doom, the spell that kills after a countdown): the spell's Power, in the
 Spells editor, is the number it counts down from. The game steps it down once
 every 2 ticks of its timer loop, while poison, stop, sap and the other timers
 step on every tick, so Count is half as fast as they are. "Count, doom counts
-down once every 2 ticks" on the stats and timers screen changes that 2 (1 is as
+down once every 2 ticks" changes that 2 (1 is as
 fast as the other timers, 99 is very slow); a tick is as long as the battle
 speed makes it. "when it ends the unit gets Dead" is the status a unit gets
 when its Count reaches 0: dead in the original, or stone, toad, mini, pig, mute,
 blind or poison.
 
-Armor (also called Protect) and Shell: Armor adds a number to the defense of the
-target and Shell adds one to its magic defense, 5 and 3 in the original game.
-Each cast adds them again, up to 255, and the numbers can be changed on the
-stats and timers screen (0 to 255). Any spell given the same effect in the
-Spells editor does the same. The game makes both
-do nothing in the final battle with Zeromus (battle number 01B7); the two
-Zeromus lines on the same screen switch that off, so they work there too.
-
-Status and damage: the statuses that change the damage formulas, written as rules
-with the statuses in yellow. In the original game Toad and Mini do all of
-these: an attacker with them does 1 attack power and cannot crit, inflicts no
-status and uses up no arrows; a target with them takes double the attack power
-and has no defense and no defense multiplier. In spells Toad alone makes the
-magic defense multiplier of a target 0 (focus does too). Pig changes no
-damage in the original game. Each rule has a set of statuses, any of Poison,
-Blind, Mute, Pig, Mini, Toad, Stone and Dead, so a poisoned target can take
-double damage instead of a mini one, or a pig can be a weak attacker; none
-switches a rule off. The attack power of a weak attacker (1) can be changed,
-and so can what the attack power of a hurt target is multiplied by (x0.5, x1
-or x2) and whether its defense becomes 0. Which statuses stop a unit from using
-commands is under Information in the Commands editor, and which spells a Toad
-or a Pig can cast is built into the game and not changed here.
-
-Status modifiers: the other places where a status changes the numbers, written as
-rules like the ones of Status and damage, but each rule can have statuses of any
-of the four status lists (persistent, temporary, system and hidden): the status
-byte of the rule is changed together with the statuses. The rules are, in the
-original game: a blind attacker has its hit rate halved and a blind target its
-evasion; berserk adds 50% to the attack power (the 50% is built into the game,
-the statuses can change); jump or focus doubles the attack power of the
-attacker; curse halves the attack power of the attacker and the defense of the
-target; defend doubles and focus halves the defense of the target; in spells a
-blind attacker has its hit rate halved and a blind target its magic defense rate,
-and a target with focus ignores its magic defense multiplier. The hit rate and
-evasion rules can be halved or unchanged, the others x0.5, x1 or x2. Barrier and
-Image, which block hits, and the back row, which is not a status, are not here.
-Under them are the timers (a tick is one pass of the battle loop, how long it lasts
-depends on the battle speed): the wait between two ticks of poison, which is the
-VIT of a character plus 20 ticks (a monster uses its level plus 10 plus 20; petrify
-uses the same wait), the wait between two HP leak ticks (every tick), how long HP
-leak lasts (the WIS plus the WIL of a character times 2 plus 30), and how often
-Regen heals (every 6 ticks). Then the three timers: poison takes the max HP divided by 8 every tick
-(2 to 64, at least 1 HP), HP leak takes 2 HP every tick, and sleep and paralyze
-last (300 minus 4 times the spirit of the target) divided by 6 ticks, each of
-the four numbers can be changed (the 4 can be 1, 2 or 4).
-
-Dispel and Black Hole: two spell effects that take statuses off their target.
-The window lists the statuses with a column for each effect, and Enter on a
-cell switches removes and keeps. The statuses are curse, float, paralyze, sleep,
-charm, berserk, HP leak (sap), reflect (Wall), barrier and image (Blink). The
-original Dispel removes berserk, HP leak, reflect, barrier and image, and the
-original Black Hole removes float, berserk, reflect, barrier and image. Black
-Hole also puts the speed of the target back to normal, which ends haste and
-slow, and that can be switched off. Every spell that has the effect in the
-Spells editor does it (Disrupt and Blk.Hole use Black Hole). The petrify, hide,
-cover and low HP bits are not offered. A cell shows ? if other changes have
-altered the code of the effect.
-
-Summon Book: the item of that name calls one of ten summons at random. Each
-has its summon and whether it hits all targets or one random target.
-
-A spell cast from a weapon also skips the tries and counts a fixed number of
-hits: the weapon's Power, which is in the Casts box of the Weapons editor.
+Poison, HP leak, Regen, and sleep and paralyze: poison takes the max HP divided
+by 8 every tick (2 to 64, at least 1 HP) and waits the VIT of a character plus 20
+ticks between its ticks (a monster uses its level plus 10 plus 20; petrify uses
+the same wait), and both the stat and the 20 can be changed. HP leak takes 2 HP
+every tick (the HP and the number of ticks can be changed) and lasts the sum of
+the WIS and the WIL of a character times 2 plus 30 ticks (both numbers can be
+changed). Regen heals every 6 ticks. Sleep and paralyze last (300 minus 4 times
+the spirit of the target) divided by 6 ticks, and the 300, the 4 (1, 2 or 4) and
+the 6 can be changed.
 
 
 ACTORS
@@ -1895,7 +1907,7 @@ VERSION HISTORY
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Recall can skip its MP check and its MP cost
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
-    - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the turn timer, the Count (doom) timer, what Armor and Shell add, what Dispel and Black Hole remove, the statuses that change the damage and the other status modifiers
+    - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the Armor and Shell numbers, what Dispel and Black Hole remove, the statuses that weaken a unit and the other status adjustments, and the timers (turn wait, Count, poison, HP leak, Regen, sleep)
     - Battle Formulas editor: Fight, Kick, Dark Wave and Throw formulas (moved from Commands), spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book
     - Commands: overview of all commands with what changed, and the names of the four internal commands
     - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)
