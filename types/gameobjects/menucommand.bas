@@ -40,6 +40,8 @@ type MenuCommand
  recall_cost_known as Boolean 'Recall: same for the code that makes it spend MP
  recall_needs_mp as Boolean 'Recall does nothing if the user has less MP than the spell costs
  recall_uses_mp as Boolean 'Recall takes the spell's MP
+ halfsteps_known as Boolean 'Fight: false if the damage multiplier routine is not the original or the half step one
+ halfsteps_on as Boolean 'Fight: the damage multiplier routine understands half steps (x1.5, x2.5, x3.5)
  behaves_like as UByte 'command 22 only: the command whose routine it runs (0 = none)
 
  declare static function ReverseParts(index as UByte) as Integer
@@ -58,6 +60,8 @@ type MenuCommand
  declare static function HasParameters(index as UByte) as Boolean
  declare static function TargetsCorrectly(index as UByte) as Boolean
  
+ declare sub ReadHalfSteps()
+ declare sub WriteHalfSteps()
  declare sub ReadRecall()
  declare sub WriteRecall()
  declare sub ReadThrow()

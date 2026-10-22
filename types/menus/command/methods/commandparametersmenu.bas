@@ -66,6 +66,20 @@ constructor CommandParametersMenu(starting_x as UByte = 0, starting_y as UByte =
  multiplier_menu.AddOption(FF4Text("x3.5"))
  multiplier_menu.AddOption(FF4Text("x4"))
  
+ whole_menu.max_rows = 1
+ whole_menu.AddOption(FF4Text("x0"))
+ whole_values(1) = 0
+ whole_menu.AddOption(FF4Text("x0.5"))
+ whole_values(2) = 1
+ whole_menu.AddOption(FF4Text("x1"))
+ whole_values(3) = 2
+ whole_menu.AddOption(FF4Text("x2"))
+ whole_values(4) = 4
+ whole_menu.AddOption(FF4Text("x3"))
+ whole_values(5) = 6
+ whole_menu.AddOption(FF4Text("x4"))
+ whole_values(6) = 8
+
  stat_menu.max_rows = 1
  stat_menu.AddOption(FF4Text("Flags 1"))
  stat_menu.AddOption(FF4Text("Flags 2"))
@@ -184,6 +198,22 @@ constructor CommandParametersMenu(starting_x as UByte = 0, starting_y as UByte =
 end constructor
 
 
+function CommandParametersMenu.MultiplierText(value as Integer) as String
+
+ 'A multiplier as the Fight screen shows it. Without half steps in the code an odd value does what the
+ ' whole step below it does, and the screen says so.
+
+ dim result as String = multiplier_menu.options.ItemAt(value + 1)
+
+ if value mod 2 = 1 and value > 1 and not menucommands(1).halfsteps_on then
+  result += FF4Text(", acts as x" + str(value \ 2))
+ end if
+
+ return result
+
+end function
+
+
 sub CommandParametersMenu.Display()
 
  'Updates the corresponding command's parameter menu to contain the
@@ -194,15 +224,26 @@ sub CommandParametersMenu.Display()
  select case id
  
   case 1 'Fight
-   fight_menu.ChangeOption(1, FF4Text("Extra-Weak to element:  ") + multiplier_menu.options.ItemAt(menucommands(1).misc_bytes(1) + 1), 15)
-   fight_menu.ChangeOption(2, FF4Text("Weak to element:        ") + multiplier_menu.options.ItemAt(menucommands(1).misc_bytes(2) + 1), 15)
-   fight_menu.ChangeOption(3, FF4Text("Immune to element:      ") + multiplier_menu.options.ItemAt(menucommands(1).misc_bytes(3) + 1), 15)
-   fight_menu.ChangeOption(4, FF4Text("Resists element:        ") + multiplier_menu.options.ItemAt(menucommands(1).misc_bytes(4) + 1), 15)
-   fight_menu.ChangeOption(5, FF4Text("Hurts race:             ") + multiplier_menu.options.ItemAt(menucommands(1).misc_bytes(5) + 1), 15)
-   fight_menu.ChangeOption(6, FF4Text("Resists race:           ") + multiplier_menu.options.ItemAt(menucommands(1).misc_bytes(6) + 1), 15)
+   fight_menu.ChangeOption(1, FF4Text("Extra-Weak to element:  ") + MultiplierText(menucommands(1).misc_bytes(1)), 15)
+   fight_menu.ChangeOption(2, FF4Text("Weak to element:        ") + MultiplierText(menucommands(1).misc_bytes(2)), 15)
+   fight_menu.ChangeOption(3, FF4Text("Immune to element:      ") + MultiplierText(menucommands(1).misc_bytes(3)), 15)
+   fight_menu.ChangeOption(4, FF4Text("Resists element:        ") + MultiplierText(menucommands(1).misc_bytes(4)), 15)
+   fight_menu.ChangeOption(5, FF4Text("Hurts race:             ") + MultiplierText(menucommands(1).misc_bytes(5)), 15)
+   fight_menu.ChangeOption(6, FF4Text("Resists race:           ") + MultiplierText(menucommands(1).misc_bytes(6)), 15)
    fight_menu.ChangeOption(7, FF4Text("Add status - Attacker's ") + Pad(stat_menu.options.ItemAt((menucommands(1).misc_bytes(7) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
    fight_menu.ChangeOption(8, FF4Text("           Vs. Target's ") + stat_menu.options.ItemAt(menucommands(1).misc_bytes(8) + 1), 15)
+   if not menucommands(1).halfsteps_known then
+    temp = FF4Text("Half steps x1.5 x2.5 x3.5: custom code")
+   elseif menucommands(1).halfsteps_on then
+    temp = FF4Text("Half steps x1.5 x2.5 x3.5: On ")
+   else
+    temp = FF4Text("Half steps x1.5 x2.5 x3.5: Off")
+   end if
+   fight_menu.ChangeOption(9, temp, 15)
    fight_menu.Display()
+   WriteText(FF4Text("Aim, Jump and Focus use these too."), x + 1, y + 11, 14)
+   WriteText(FF4Text("Half steps change the damage code, so they work for"), x + 1, y + 12, 14)
+   WriteText(FF4Text("every attack and spell. Off: x1.5 acts as x1, x2.5 as x2."), x + 1, y + 13, 14)
  
   case 8 'Recall
    for i as Integer = 1 to 8
@@ -451,10 +492,25 @@ sub CommandParametersMenu.UserSelect()
     if not fight_menu.cancelled then
      select case fight_menu.selected
       case 1 to 6
-       multiplier_menu.ChangeSelected(menucommands(1).misc_bytes(fight_menu.selected) + 1)
-       multiplier_menu.y = y + fight_menu.selected - 1
-       multiplier_menu.UserSelect()
-       if not multiplier_menu.cancelled then menucommands(1).misc_bytes(fight_menu.selected) = multiplier_menu.selected - 1
+       if menucommands(1).halfsteps_on then
+        multiplier_menu.ChangeSelected(menucommands(1).misc_bytes(fight_menu.selected) + 1)
+        multiplier_menu.y = y + fight_menu.selected - 1
+        multiplier_menu.UserSelect()
+        if not multiplier_menu.cancelled then menucommands(1).misc_bytes(fight_menu.selected) = multiplier_menu.selected - 1
+       else
+        'only the whole steps work: x0, x0.5, x1, x2, x3 and x4 (0, 1, 2, 4, 6 and 8)
+        whole_menu.x = x + 24
+        whole_menu.y = y + fight_menu.selected - 1
+        whole_menu.top_row = 1
+        whole_menu.ChangeSelected(1)
+        for k as Integer = 1 to 6
+         if whole_values(k) = menucommands(1).misc_bytes(fight_menu.selected) \ 2 * 2 or (whole_values(k) = 1 and menucommands(1).misc_bytes(fight_menu.selected) = 1) then whole_menu.ChangeSelected(k)
+        next
+        whole_menu.UserSelect()
+        if not whole_menu.cancelled then menucommands(1).misc_bytes(fight_menu.selected) = whole_values(whole_menu.selected)
+       end if
+      case 9 'half steps in the damage code
+       if menucommands(1).halfsteps_known then menucommands(1).halfsteps_on = not menucommands(1).halfsteps_on
       case 7 to 8
        stat_menu.ChangeSelected((menucommands(1).misc_bytes(fight_menu.selected) + 1) mod &h80)
        stat_menu.y = y + fight_menu.selected - 1

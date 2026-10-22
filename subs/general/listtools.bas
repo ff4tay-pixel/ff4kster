@@ -352,6 +352,7 @@ function CommandChanges(i as Integer) as String
   if .throw_cap <> orig_menucommands(i).throw_cap or .aim_target_stat <> orig_menucommands(i).aim_target_stat then code = true
   if .aim_user_stat <> orig_menucommands(i).aim_user_stat or .aim_target_set <> orig_menucommands(i).aim_target_set then code = true
   if .aim_user_set <> orig_menucommands(i).aim_user_set then code = true
+  if .halfsteps_on <> orig_menucommands(i).halfsteps_on then code = true
   if .recall_needs_mp <> orig_menucommands(i).recall_needs_mp or .recall_uses_mp <> orig_menucommands(i).recall_uses_mp then code = true
   if name_changed then result += ", name"
   if .target_byte <> orig_menucommands(i).target_byte or .target <> orig_menucommands(i).target then result += ", target"

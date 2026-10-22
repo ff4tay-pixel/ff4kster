@@ -172,6 +172,39 @@ sub MenuCommand.WriteReverse(index as UByte)
 end sub
 
 
+sub MenuCommand.ReadHalfSteps()
+
+ 'The routine that applies an elemental or race multiplier to the damage (ApplyDmgMult in battle/damage.asm)
+ ' shifts the multiplier right once before using it, so the half steps x1.5, x2.5 and x3.5 (3, 5 and 7)
+ ' act as x1, x2 and x3. The replacement multiplies by the whole value and then halves the 32 bit result:
+ ' the same damage for every value the game uses (0, 1, 2, 4, 8) and a real x1.5, x2.5 and x3.5. It is
+ ' called by CalcDmg only, so it also applies to spells. It is 3 bytes shorter, the rest are nops.
+
+ halfsteps_on = false
+ halfsteps_known = false
+ if BytesAre(&h1CC51, "D00564A464A5604AD00546A566A460AA8E3D39A6A48E3F3920B983AE413986A460") then halfsteps_known = true
+ if BytesAre(&h1CC51, "AA8E3D39A6A48E3F3920B9834E44396E43396E42396E4139AE413986A460EAEAEA") then
+  halfsteps_known = true
+  halfsteps_on = true
+ end if
+
+end sub
+
+
+sub MenuCommand.WriteHalfSteps()
+
+ dim bytes_text as String
+
+ if not halfsteps_known then exit sub
+
+ if halfsteps_on then bytes_text = "AA8E3D39A6A48E3F3920B9834E44396E43396E42396E4139AE413986A460EAEAEA" else bytes_text = "D00564A464A5604AD00546A566A460AA8E3D39A6A48E3F3920B983AE413986A460"
+ for i as Integer = 0 to len(bytes_text) \ 2 - 1
+  WriteByte(&h1CC51 + i, val("&h" + mid(bytes_text, i * 2 + 1, 2)))
+ next
+
+end sub
+
+
 sub MenuCommand.ReadRecall()
 
  'Recall picks a random spell and then (Cmd_07 in battle/cmd.asm) does nothing at all if the user has
@@ -526,6 +559,7 @@ sub MenuCommand.ReadFromROM(index as UByte)
  charging_stance = ByteAt(&hB7E60 + (index - 1))
  ReadCode(index)
  if index = 8 then ReadRecall()
+ if index = 1 then ReadHalfSteps()
  action_stance = &hFF
  action_stance2 = &hFF
  action_stance3 = &hFF
@@ -722,6 +756,7 @@ sub MenuCommand.WriteToROM(index as UByte)
  WriteByte(&hB7E60 + (index - 1), charging_stance)
  WriteCode(index)
  if index = 8 then WriteRecall()
+ if index = 1 then WriteHalfSteps()
  
  select case index
  

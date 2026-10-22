@@ -919,6 +919,25 @@ action still carries the original command's name. White, Black, Call and
 Ninja cannot be chosen because the spell menu runs them, not a routine. Type
 a few letters in the list to jump to a command.
 
+Fight's parameters are the elemental multipliers (extra weak, weak, immune,
+resists), the race multipliers (hurts race, resists race) and the two stats used
+to work out the chance of adding a status: the attacker's stat minus the
+target's stat. A multiplier of x1 is the normal damage. Aim, Jump (when it
+lands) and Focus (its attack) run the same routine, so these parameters apply
+to them as well. Kick, Dark Wave and spells have their own formulas.
+
+Only the multipliers x0, x0.5, x1, x2, x3 and x4 work in the original game: its
+damage routine shifts the stored number right before using it, so x1.5, x2.5
+and x3.5 act as x1, x2 and x3. The "Half steps" line on the Fight screen
+replaces that routine with one that multiplies by the whole stored number and
+then halves the result. For every multiplier the game uses (x0, x0.5, x1, x2,
+x4) the damage is exactly the same as before, and x1.5, x2.5 and x3.5 become
+real. The routine is shared by every attack and spell, so it changes the damage
+code for all of them, but nothing in the game uses a half step by itself, so
+nothing changes until you pick one. With Half steps off the picker offers only
+the six working multipliers, and a half step already in the ROM is shown as
+"acts as" the whole step it really does.
+
 Commands such as Sing and Fight have "If" lines that test one byte of the
 battle properties of the unit that uses the command (128 bytes each, the list
 is in the order of those bytes). Their names come from the disassembly
@@ -1740,6 +1759,7 @@ VERSION HISTORY
     - Commands: Aim can use any stat of the target and the user, Boast and Cry can be reversed (raise or lower)
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Recall can skip its MP check and its MP cost
+    - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
     - Commands: overview of all commands with what changed, and the names of the four internal commands
     - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)
     - Commands: the unused command 22 can "Behave like" another command (runs its routine and animation)

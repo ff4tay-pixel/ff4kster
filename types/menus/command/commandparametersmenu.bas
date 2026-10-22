@@ -8,6 +8,8 @@ type CommandParametersMenu
  success_input as BlueNumberInput
  slot_menu as BlueMenu
  multiplier_menu as BlueMenu
+ whole_menu as BlueMenu 'the multipliers that work without half steps
+ whole_values(6) as UByte
  stat_menu as BlueMenu
  message_menu as BlueMenu
  actor_menu as BlueMenu
@@ -35,6 +37,7 @@ type CommandParametersMenu
 
  declare constructor(starting_x as UByte = 0, starting_y as UByte = 0)
  
+ declare function MultiplierText(value as Integer) as String
  declare sub Display()
  declare sub SetTo(index as UByte)
  declare sub UserSelect()
