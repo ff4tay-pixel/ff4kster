@@ -3,6 +3,8 @@ function MenuCommand.HasParameters(index as UByte) as Boolean
  dim temp as Boolean
  
  select case index
+  case 1, 6, 15
+   temp = true
   case 14, 24, 26
    temp = true
   case 8 to 12
@@ -829,6 +831,8 @@ sub MenuCommand.ReadFromROM(index as UByte)
     regen_freeze = true
    end if
    message(1) = ByteAt(&h1E633)
+   regen_every_known = (ByteAt(&h1ACA6) = &hC9)
+   regen_every = ByteAt(&h1ACA7) + 1
  
  end select
 
@@ -1174,6 +1178,7 @@ sub MenuCommand.WriteToROM(index as UByte)
    WriteByte(&h148E1, action_stance)
    
   case 26 'Regen
+   if regen_every_known then WriteByte(&h1ACA7, regen_every - 1)
    WriteByte(&h1E5FE, regen_amount)
    WriteByte(&hA0089 + &h22, extra_delay)
    if regen_freeze then

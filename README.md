@@ -762,6 +762,12 @@ might intuitively think of as a character in the game; it has a name, battle
 menu, starting equipment, and a link back to its associated character (the
 starting stats and levelups).
 
+The starting data also has the critical hit rate (a percentage, 0 to 99) and the
+critical hit bonus (0 to 255) of the character. A critical hit is a random number
+below the rate, and it adds the bonus to the damage. Equipment changes them in
+battle (a bow triples the rate), and Battle Formulas, Critical hits, changes what
+the bonus does. A game that is already saved keeps the values it has.
+
 The levelups from the character's starting level to level 70 each consist of
 a set of stats which will increase, the amount by which they will each
 increase, a Max HP bonus, a Max MP bonus, and an increase in the amount of
@@ -838,8 +844,10 @@ to. Information has the command's name, target, delay index, the persistent
 and temporary statuses that disable it, and the waiting and acting stances.
 Parameters shows the details that go with the command if it has any that can
 be edited (for example base values, multipliers and the stats and elements
-involved). The damage formulas of Fight, Kick, Dark Wave and Throw
-are not here, they are in the Battle Formulas editor.
+involved). Fight, Kick, Dark Wave and Throw have their damage formulas
+here, and Regen the ticks between its heals; the Battle Formulas editor is for
+what is not one command's own (spells, the stats of the party, statuses,
+timers and critical hits).
 
 The menu you get with Enter on a command also has two entries that are about
 all commands. "Overview of all commands" is one screen with every command: its
@@ -872,6 +880,43 @@ shown as custom code, not changed, if other changes have altered those bytes.
 Jump and Throw have the message shown when they fail. Jump also has the ticks
 it waits before leaving and the ticks it stays in the air (4 each in the
 original game; a tick is the game's smallest timer step).
+
+Fight has the elemental multipliers (extra weak, weak, immune, resists), the
+race multipliers (hurts race, resists race) and the two stats used to work out
+the chance of adding a status: the attacker's stat minus the target's stat. A
+multiplier of x1 is the normal damage. Aim, Jump (when it lands) and Focus (its
+attack) run the same routine, so these apply to them as well. Kick, Dark Wave
+and spells have their own formulas.
+
+Only the multipliers x0, x0.5, x1, x2, x3 and x4 work in the original game: its
+damage routine shifts the stored number right before using it, so x1.5, x2.5
+and x3.5 act as x1, x2 and x3. The "Half steps" line on the Fight screen
+replaces that routine with one that multiplies by the whole stored number and
+then halves the result. For every multiplier the game uses (x0, x0.5, x1, x2,
+x4) the damage is exactly the same as before, and x1.5, x2.5 and x3.5 become
+real. The routine is shared by every attack and spell, so it changes the damage
+code for all of them, but nothing in the game uses a half step by itself, so
+nothing changes until you pick one. With Half steps off the picker offers only
+the six working multipliers, and a half step already in the ROM is shown as
+"acts as" the whole step it really does.
+
+Dark Wave: the HP the user loses (1/2 to 1/64 of max HP, or none; the
+original is 1/8) and the damage to undead targets (full, half, or the original
+quarter). Kick: the attack multiplier used (half, the original, full, or
+double). Both have "Base damage, both": Kick and Dark Wave work out damage
+with the same instructions (attack multiplier times attack power, divided by
+2, plus a random amount), and this setting scales that part: x0.25, x0.5
+(original), x1, x1.5, x2, x3, x4 or x8. It changes both commands, so the two
+screens always show the same choice. The original code has room for only x0.5,
+x1 and x2. For the others the editor writes a short routine of its own into
+the unused bytes at the end of the battle code bank and makes the damage
+calculation call it, and the result stops at 65535. Choosing x0.5, x1 or x2
+again puts the original code back and clears the routine.
+
+Throw (dart): on its Parameters screen, under the failure message, the damage is the thrown item's attack power times one of the
+user's stats (the level in the original game) plus a random amount, at most
+9999. You can pick the stat, whether the random amount is 0 to 98 (original),
+none or 0 to 255, and the largest damage (1 to 9999).
 
 Steal (Sneak) has the base chance, the stat of the user that is added and the stat
 of the target that is taken off, which item of the monster is stolen, and its three
@@ -929,11 +974,11 @@ NNh" because nothing in the game uses them.
 BATTLE FORMULAS
 ---------------
 
-This editor has the formulas and numbers the battle uses. The list on the left
-has a line for each group, in this order: the commands Fight, Kick, Dark Wave and
-Throw, then Critical hits; the spells (Spell damage, Armor and Shell, Dispel and Black Hole, the
+This editor has the formulas and numbers the battle uses that are not the
+settings of one command (those are in the Commands editor, under Parameters). The list on the left
+has a line for each group, in this order: the spells (Spell damage, Armor and Shell, Dispel and Black Hole, the
 Summon Book); the stats of the party (Party stats, First slot bonus, Back row); the statuses (Weakening
-statuses, Status adjustments); and the Timers. The settings of the highlighted
+statuses, Status adjustments); the Timers; and the Critical hits. The settings of the highlighted
 line are shown on the right, and Enter on a line changes them (Esc goes back).
 A line of the list that has changes is yellow. Ctrl-R puts the highlighted line
 (or the line whose menus or page are open) back the way it was when the ROM was
@@ -946,43 +991,6 @@ sequences. If other changes have altered those bytes the setting says custom
 code, not changed, and the editor leaves it alone until you pick one of the
 choices. Nothing here changes the game until you pick something other than the
 original choice, and nothing is written until Save ROM.
-
-Fight has the elemental multipliers (extra weak, weak, immune, resists), the
-race multipliers (hurts race, resists race) and the two stats used to work out
-the chance of adding a status: the attacker's stat minus the target's stat. A
-multiplier of x1 is the normal damage. Aim, Jump (when it lands) and Focus (its
-attack) run the same routine, so these apply to them as well. Kick, Dark Wave
-and spells have their own formulas.
-
-Only the multipliers x0, x0.5, x1, x2, x3 and x4 work in the original game: its
-damage routine shifts the stored number right before using it, so x1.5, x2.5
-and x3.5 act as x1, x2 and x3. The "Half steps" line on the Fight screen
-replaces that routine with one that multiplies by the whole stored number and
-then halves the result. For every multiplier the game uses (x0, x0.5, x1, x2,
-x4) the damage is exactly the same as before, and x1.5, x2.5 and x3.5 become
-real. The routine is shared by every attack and spell, so it changes the damage
-code for all of them, but nothing in the game uses a half step by itself, so
-nothing changes until you pick one. With Half steps off the picker offers only
-the six working multipliers, and a half step already in the ROM is shown as
-"acts as" the whole step it really does.
-
-Dark Wave: the HP the user loses (1/2 to 1/64 of max HP, or none; the
-original is 1/8) and the damage to undead targets (full, half, or the original
-quarter). Kick: the attack multiplier used (half, the original, full, or
-double). Both have "Base damage, both": Kick and Dark Wave work out damage
-with the same instructions (attack multiplier times attack power, divided by
-2, plus a random amount), and this setting scales that part: x0.25, x0.5
-(original), x1, x1.5, x2, x3, x4 or x8. It changes both commands, so the two
-screens always show the same choice. The original code has room for only x0.5,
-x1 and x2. For the others the editor writes a short routine of its own into
-the unused bytes at the end of the battle code bank and makes the damage
-calculation call it, and the result stops at 65535. Choosing x0.5, x1 or x2
-again puts the original code back and clears the routine.
-
-Throw (dart): the damage is the thrown item's attack power times one of the
-user's stats (the level in the original game) plus a random amount, at most
-9999. You can pick the stat, whether the random amount is 0 to 98 (original),
-none or 0 to 255, and the largest damage (1 to 9999).
 
 Spell damage: the base damage of a spell is its power times 4 (times 8 for a
 summon) plus a random part of up to half of that. It is multiplied by the hits
@@ -1060,8 +1068,9 @@ unchanged or doubled, the defense of the target x0.5, x1 or x2, and the two
 exceptions (the flag and jumping) can be switched off for each of the two hit
 rate rules. They are for Fight, Aim, Jump and Focus; spells ignore the back row.
 
-Critical hits: the critical hit rate and bonus belong to the character (the game
-takes them from the character data, not from the weapon; a bow triples the rate
+Critical hits: the critical hit rate and bonus belong to the character (set under
+Characters, Edit starting data, as "Crit rate" and "Crit bonus"; they are not
+the weapon's; a bow triples the rate
 and adds the arrow's attack to the bonus, two weapons double the rate). In the
 original game a critical hit adds the bonus to the damage before the defense is
 taken off. The page lets the damage be multiplied first (a number divided by 4,
@@ -1126,13 +1135,13 @@ speed makes it. "when it ends the unit gets Dead" is the status a unit gets
 when its Count reaches 0: dead in the original, or stone, toad, mini, pig, mute,
 blind or poison.
 
-Poison, HP leak, Regen, and sleep and paralyze: poison takes the max HP divided
+Poison, HP leak, and sleep and paralyze: poison takes the max HP divided
 by 8 every tick (2 to 64, at least 1 HP) and waits the VIT of a character plus 20
 ticks between its ticks (a monster uses its level plus 10 plus 20; petrify uses
 the same wait), and both the stat and the 20 can be changed. HP leak takes 2 HP
 every tick (the HP and the number of ticks can be changed) and lasts the sum of
 the WIS and the WIL of a character times 2 plus 30 ticks (both numbers can be
-changed). Regen heals every 6 ticks. Sleep and paralyze last (300 minus 4 times
+changed). Sleep and paralyze last (300 minus 4 times
 the spirit of the target) divided by 6 ticks, and the 300, the 4 (1, 2 or 4) and
 the 6 can be changed.
 
@@ -1948,13 +1957,15 @@ VERSION HISTORY
     - Commands: the unknown bytes in the If lists are named from the disassembly (or shown as unused bytes)
     - Commands: Dark Wave and Kick have code settings (HP cost, damage to undead, Kick multiplier, shared base damage) and Peep has one (bosses)
     - Commands: Aim can use any stat of the target and the user, Boast and Cry can be reversed (raise or lower)
+    - Commands: Regen has the ticks between its heals
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Recall can skip its MP check and its MP cost
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
     - Battle Formulas: the damage of critical hits (multiplier and bonus)
+    - Characters: the starting data has the critical hit rate and bonus
     - Commands: Steal has its lowest and highest chance, the chance of being caught and what a caught thief loses
-    - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the Armor and Shell numbers, what Dispel and Black Hole remove, the bonus of the first slot, the back row, the statuses that weaken a unit and the other status adjustments, and the timers (turn wait, Count, poison, HP leak, Regen, sleep)
-    - Battle Formulas editor: Fight, Kick, Dark Wave and Throw formulas (moved from Commands), spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book
+    - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the Armor and Shell numbers, what Dispel and Black Hole remove, the bonus of the first slot, the back row, the statuses that weaken a unit and the other status adjustments, and the timers (turn wait, Count, poison, HP leak, sleep)
+    - Battle Formulas editor: spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book
     - Commands: overview of all commands with what changed, and the names of the four internal commands
     - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)
     - Commands: the unused command 22 can "Behave like" another command (runs its routine and animation)

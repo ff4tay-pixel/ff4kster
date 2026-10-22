@@ -11,6 +11,8 @@ type Character
  stat(5) as UByte
  xp as UInteger
  tnl as UInteger
+ crit_rate as UByte 'the critical hit rate in percent, see Battle Formulas, Critical hits
+ crit_bonus as UByte 'the damage added to a critical hit
  levelup(70) as LevelUpBonus
  after70(8) as StatLevelUp
  

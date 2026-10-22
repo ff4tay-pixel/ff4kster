@@ -31,8 +31,7 @@ type CommandParametersMenu
  aim_menu as BlueMenu 'Aim: which stats it changes
  code_menu as BlueMenu 'Dark Wave and Kick: the code settings
  code_choice_menu as BlueMenu
- throw_menu as BlueMenu 'the Throw damage formula (id 123, in the Battle Formulas editor)
- fail_menu as BlueMenu 'Jump and Throw: the message when the action fails
+ fail_menu as BlueMenu 'Jump and Throw: the message when the action fails, Throw also has its damage formula here
  source_menu as BlueMenu
  source_ids(26) as UByte
 
@@ -41,6 +40,7 @@ type CommandParametersMenu
  declare function MultiplierText(value as Integer) as String
  declare sub Display()
  declare sub SetTo(index as UByte)
+ declare sub EditThrowRow(row as Integer)
  declare sub UserSelect()
 
 end type

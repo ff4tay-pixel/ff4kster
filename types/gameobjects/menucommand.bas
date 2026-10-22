@@ -16,6 +16,8 @@ type MenuCommand
  item_consumed as UByte
  item_effect as UByte
  item_visual as UByte
+ regen_every_known as Boolean 'Regen: false if the code that counts the ticks of the status is not the original
+ regen_every as UByte 'Regen: the status heals once every this many ticks, 6 in the original
  regen_amount as UByte
  regen_freeze as Boolean
  disable_actor as UByte

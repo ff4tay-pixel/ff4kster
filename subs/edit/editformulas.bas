@@ -1,10 +1,8 @@
-'The Battle Formulas editor: the damage formulas of the commands (Fight, Kick, Dark Wave, Throw), the spell
-' damage formula, the Summon Book. The settings of the
-' commands live in menucommands and are shown by CommandParametersMenu (ids 1, 15, 6 and 123), the spell
-' settings are in the formulas object.
+'The Battle Formulas editor: the spell damage formula, the Summon Book, the stats of the party, the statuses, the
+' timers and the critical hits. The settings of a command (its formula, its ticks) belong to the command and are in
+' the Commands editor, they are not here. All the settings here are in the formulas object.
 
 dim shared fml_hub as BlueMenu
-dim shared fml_params as CommandParametersMenu
 dim shared fml_spells as BlueMenu 'spell damage, 5 rows
 dim shared fml_book as BlueMenu 'the Summon Book, 2 columns
 dim shared fml_number as BlueNumberInput
@@ -222,7 +220,6 @@ sub FsLayout()
   "|and waits |@IS| plus |@IC| ticks between its ticks", _
   "HP leak, sap|loses |@SD| HP every |@SE| ticks", _
   "|and lasts WIS plus WIL x |@SL| plus |@SK| ticks", _
-  "Regen|heals every |@RG| ticks", _
   "Sleep, paralyze|last |@LB| minus |@LM| x spirit, divided by |@LV| ticks"}
  dim page6(1 to 8) as String = { _
   "Attacker, hit rate|when the attacker is |@FW1", _
@@ -381,7 +378,6 @@ function FsFieldText(code as String) as String
   case "SE": if not formulas.sap_every_known then return "?" else return str(formulas.sap_every)
   case "SL": if not formulas.sap_len_known then return "?" else return str(formulas.sap_len_mult)
   case "SK": if not formulas.sap_len_known then return "?" else return str(formulas.sap_len_const)
-  case "RG": if not formulas.regen_known then return "?" else return str(formulas.regen_every)
   case "LB": if not formulas.sleep_known then return "?" else return str(formulas.sleep_base)
   case "LM": if not formulas.sleep_known then return "?" else return MenuCommand.CodeItem("1|2|4", formulas.sleep_mult)
   case "LV": if not formulas.sleep_known then return "?" else return str(formulas.sleep_div)
@@ -462,7 +458,7 @@ sub FsDraw()
  dim shown as String
  dim field_number as Integer
  dim page_titles(1 to 8) as String = {" Formulas of the stats of the party in battle ", " Statuses that weaken a unit ", " Other adjustments of the statuses ", " Armor and Shell ", " Timers ", " Bonus of the first slot ", " The back row ", " Critical hits of Fight "}
- dim page_heights(1 to 9) as Integer = {17, 22, 33, 10, 19, 13, 11, 7}
+ dim page_heights(1 to 9) as Integer = {17, 22, 33, 10, 17, 13, 11, 7}
  dim page_texts(1 to 8) as String = {"Monsters have stats of their own that are not changed here.", _
   "Each rule is for a set of statuses of the unit: none switches the rule off.", _
   "Each rule is for a set of statuses of the unit: none switches the rule off.", _
@@ -738,14 +734,6 @@ sub FsEditField(code as String)
     fml_number.UserSelect()
     formulas.sap_len_const = fml_number.number
    end if
-  case "RG"
-   if formulas.regen_known then
-    fml_number.x = px: fml_number.y = py
-    fml_number.min_value = 1: fml_number.max_value = 255
-    fml_number.starting_number = formulas.regen_every
-    fml_number.UserSelect()
-    formulas.regen_every = fml_number.number
-   end if
   case "LB"
    if formulas.sleep_known then
     fml_number.x = px: fml_number.y = py
@@ -875,7 +863,6 @@ sub FsHint()
     case "SE": message = "Enter types after how many ticks HP leak takes its HP, 1 in the original."
     case "SL": message = "Enter types what WIS plus WIL is multiplied by for the length, 2 originally."
     case "SK": message = "Enter types the number added to the length of HP leak, 30 in the original."
-    case "RG": message = "Enter types after how many ticks Regen heals, 6 in the original."
     case "LB": message = "Enter types the base of the length of sleep and paralyze, 300 in the original."
     case "LM": message = "Enter picks what the spirit is multiplied by, 4 in the original."
     case "LV": message = "Enter types the number the length is divided by, 6 in the original."
@@ -899,7 +886,6 @@ declare sub FmlShow(entry as Integer)
 const fml_undo_max = 40
 dim shared fml_undo_entry(1 to fml_undo_max) as Integer 'the list line that each saved copy is of
 dim shared fml_undo_f(1 to fml_undo_max) as BattleFormulas
-dim shared fml_undo_c(1 to fml_undo_max) as MenuCommand 'the command of lines 1 to 4, if it has one
 dim shared fml_undo_count as Integer
 dim shared fml_hook_entry as Integer 'the line of the list whose menus are open, 0: the keys are not handled
 dim shared fml_in_hook as Boolean
@@ -907,50 +893,23 @@ dim shared fml_in_hook as Boolean
 
 function FmlEntryOf(row as Integer) as Integer
 
- 'The setting group (the entry numbers used everywhere) that a row of the list shows. The group added last,
- ' 15 critical hits, is listed after the commands.
+ 'The setting group (the entry numbers used everywhere) that a row of the list shows: the rows 1 to 10 are the
+ ' groups 5 to 14, and the last row, the critical hits, is group 15.
 
- select case row
-  case 5: return 15
-  case is > 5: return row - 1
- end select
+ if row = 11 then return 15
 
- return row
+ return row + 4
 
 end function
 
 
-function FmlCmdIndex(entry as Integer) as Integer
-
- 'The command that a line of the list (1 Fight, 2 Kick, 3 Dark Wave, 4 Throw) edits, 0 for the other lines.
-
- select case entry
-  case 1: return 1
-  case 2: return 15
-  case 3: return 6
-  case 4: return 23
- end select
-
- return 0
-
-end function
-
-
-function FmlGroupData(entry as Integer, f as BattleFormulas ptr, c as MenuCommand ptr) as String
+function FmlGroupData(entry as Integer, f as BattleFormulas ptr) as String
 
  'All the settings of a line of the list as one text, to see if they differ from another copy.
 
  dim s as String
 
  select case entry
-  case 1
-   for i as Integer = 1 to 8
-    s += str(c->misc_bytes(i)) + ","
-   next
-   s += str(c->halfsteps_on)
-  case 2: s = str(c->code_choice(1)) + "," + str(c->code_choice(2))
-  case 3: s = str(c->code_choice(1)) + "," + str(c->code_choice(2)) + "," + str(c->code_choice(3))
-  case 4: s = str(c->throw_stat) + "," + str(c->throw_cap) + "," + str(c->code_choice(1))
   case 5: s = str(f->power_choice) + "," + str(f->summon_choice) + "," + str(f->divisor_choice) + "," + str(f->stats_choice) + "," + str(f->fixed_hits)
   case 6: s = str(f->protect_add) + "," + str(f->shell_add) + "," + str(f->protect_zeromus) + "," + str(f->shell_zeromus)
   case 7: s = str(f->dispel_s2) + "," + str(f->dispel_s4) + "," + str(f->hole_s2) + "," + str(f->hole_s4) + "," + str(f->hole_speed)
@@ -984,7 +943,7 @@ function FmlGroupData(entry as Integer, f as BattleFormulas ptr, c as MenuComman
   case 14
    s = str(f->speed_anchor) + "," + str(f->speed_num) + "," + str(f->speed_mul) + "," + str(f->speed_add) + "," + str(f->doom_ticks) + "," + str(f->doom_status) + ","
    s += str(f->poison_div) + "," + str(f->wait_stat) + "," + str(f->wait_const) + "," + str(f->sap_damage) + "," + str(f->sap_every) + ","
-   s += str(f->sap_len_mult) + "," + str(f->sap_len_const) + "," + str(f->regen_every) + "," + str(f->sleep_base) + "," + str(f->sleep_mult) + "," + str(f->sleep_div)
+   s += str(f->sap_len_mult) + "," + str(f->sap_len_const) + "," + str(f->sleep_base) + "," + str(f->sleep_mult) + "," + str(f->sleep_div)
  end select
 
  return s
@@ -992,23 +951,12 @@ function FmlGroupData(entry as Integer, f as BattleFormulas ptr, c as MenuComman
 end function
 
 
-sub FmlGroupCopy(entry as Integer, df as BattleFormulas ptr, sf as BattleFormulas ptr, dc as MenuCommand ptr, sc as MenuCommand ptr)
+sub FmlGroupCopy(entry as Integer, df as BattleFormulas ptr, sf as BattleFormulas ptr)
 
  'Copies the settings of a line of the list from one copy to another. The flags that say whether the code is
  ' the original come from the ROM and are not copied.
 
  select case entry
-  case 1
-   for i as Integer = 1 to 8
-    dc->misc_bytes(i) = sc->misc_bytes(i)
-   next
-   dc->halfsteps_on = sc->halfsteps_on
-  case 2
-   dc->code_choice(1) = sc->code_choice(1): dc->code_choice(2) = sc->code_choice(2)
-  case 3
-   dc->code_choice(1) = sc->code_choice(1): dc->code_choice(2) = sc->code_choice(2): dc->code_choice(3) = sc->code_choice(3)
-  case 4
-   dc->throw_stat = sc->throw_stat: dc->throw_cap = sc->throw_cap: dc->code_choice(1) = sc->code_choice(1)
   case 5
    df->power_choice = sf->power_choice: df->summon_choice = sf->summon_choice: df->divisor_choice = sf->divisor_choice
    df->stats_choice = sf->stats_choice: df->fixed_hits = sf->fixed_hits
@@ -1052,42 +1000,16 @@ sub FmlGroupCopy(entry as Integer, df as BattleFormulas ptr, sf as BattleFormula
    df->speed_anchor = sf->speed_anchor: df->speed_num = sf->speed_num: df->speed_mul = sf->speed_mul: df->speed_add = sf->speed_add
    df->doom_ticks = sf->doom_ticks: df->doom_status = sf->doom_status: df->poison_div = sf->poison_div
    df->wait_stat = sf->wait_stat: df->wait_const = sf->wait_const: df->sap_damage = sf->sap_damage: df->sap_every = sf->sap_every
-   df->sap_len_mult = sf->sap_len_mult: df->sap_len_const = sf->sap_len_const: df->regen_every = sf->regen_every
+   df->sap_len_mult = sf->sap_len_mult: df->sap_len_const = sf->sap_len_const:
    df->sleep_base = sf->sleep_base: df->sleep_mult = sf->sleep_mult: df->sleep_div = sf->sleep_div
  end select
-
- 'the base damage of Kick and Dark Wave is the same bytes: both commands keep the same choice
- if entry = 2 then menucommands(6).code_choice(3) = menucommands(15).code_choice(2)
- if entry = 3 then menucommands(15).code_choice(2) = menucommands(6).code_choice(3)
 
 end sub
 
 
-function FmlLiveCommand(entry as Integer) as MenuCommand ptr
-
- dim index as Integer = FmlCmdIndex(entry)
-
- if index = 0 then return 0
-
- return @menucommands(index)
-
-end function
-
-
-function FmlOriginalCommand(entry as Integer) as MenuCommand ptr
-
- dim index as Integer = FmlCmdIndex(entry)
-
- if index = 0 then return 0
-
- return @orig_menucommands(index)
-
-end function
-
-
 function FmlGroupChanged(entry as Integer) as Boolean
 
- return FmlGroupData(entry, @formulas, FmlLiveCommand(entry)) <> FmlGroupData(entry, @orig_formulas, FmlOriginalCommand(entry))
+ return FmlGroupData(entry, @formulas) <> FmlGroupData(entry, @orig_formulas)
 
 end function
 
@@ -1097,25 +1019,23 @@ sub FmlUndoPush(entry as Integer)
  'Saves a copy of a line of the list before something in it changes. Ctrl-Z gives the newest one back. A copy
  ' that is the same as the one before it is not saved.
 
- dim now_text as String = FmlGroupData(entry, @formulas, FmlLiveCommand(entry))
+ dim now_text as String = FmlGroupData(entry, @formulas)
 
  if fml_undo_count > 0 then
   if fml_undo_entry(fml_undo_count) = entry then
-   if FmlGroupData(entry, @fml_undo_f(fml_undo_count), @fml_undo_c(fml_undo_count)) = now_text then exit sub
+   if FmlGroupData(entry, @fml_undo_f(fml_undo_count)) = now_text then exit sub
   end if
  end if
  if fml_undo_count = fml_undo_max then
   for i as Integer = 2 to fml_undo_max
    fml_undo_entry(i - 1) = fml_undo_entry(i)
    fml_undo_f(i - 1) = fml_undo_f(i)
-   fml_undo_c(i - 1) = fml_undo_c(i)
   next
   fml_undo_count -= 1
  end if
  fml_undo_count += 1
  fml_undo_entry(fml_undo_count) = entry
  fml_undo_f(fml_undo_count) = formulas
- if FmlCmdIndex(entry) > 0 then fml_undo_c(fml_undo_count) = *FmlLiveCommand(entry)
 
 end sub
 
@@ -1132,8 +1052,8 @@ function FmlUndo() as Integer
   n = fml_undo_count
   entry = fml_undo_entry(n)
   fml_undo_count -= 1
-  if FmlGroupData(entry, @fml_undo_f(n), @fml_undo_c(n)) <> FmlGroupData(entry, @formulas, FmlLiveCommand(entry)) then
-   FmlGroupCopy(entry, @formulas, @fml_undo_f(n), FmlLiveCommand(entry), @fml_undo_c(n))
+  if FmlGroupData(entry, @fml_undo_f(n)) <> FmlGroupData(entry, @formulas) then
+   FmlGroupCopy(entry, @formulas, @fml_undo_f(n))
    return entry
   end if
  loop
@@ -1148,7 +1068,6 @@ sub FmlRefresh(entry as Integer)
  'Draws the open menus of a line of the list again after undo or revert changed its settings.
 
  select case entry
-  case 1 to 4: fml_params.Display()
   case 5: FmlSpellRows(): fml_spells.Display()
   case 7: FmlRemovalRows(): fml_removal.Display()
   case 8: FmlBookRows(): fml_book.Display()
@@ -1180,7 +1099,7 @@ sub FmlDoRevert(entry as Integer)
  end if
  if ConfirmBox("Revert this line to the loaded ROM?") then
   FmlUndoPush(entry)
-  FmlGroupCopy(entry, @formulas, @orig_formulas, FmlLiveCommand(entry), FmlOriginalCommand(entry))
+  FmlGroupCopy(entry, @formulas, @orig_formulas)
   FmlRefresh(entry)
  end if
 
@@ -1287,20 +1206,20 @@ end sub
 
 sub FsNotes5()
 
- BlueBox(1, 24, 76, 14)
- WriteText(FF4Text(" Notes "), 2, 24, 14)
- WriteText(FF4Text("Ctrl-R reverts this page to the loaded ROM, Ctrl-Z undoes, Space shows both."), 2, 38, 15)
- WriteText(FF4Text("The turn wait is for every unit, monsters too: a unit waits the top line"), 2, 25, 15)
- WriteText(FF4Text("divided by the line below it. The anchor is the actor that Cover disables"), 2, 26, 15)
- WriteText(FF4Text("if present, else the actor that covers, else the first party member. Both"), 2, 27, 15)
- WriteText(FF4Text("are set under Cover in the Commands editor."), 2, 28, 15)
- WriteText(FF4Text("Count starts from the Power of the spell, set in the Spells editor, and"), 2, 30, 15)
- WriteText(FF4Text("goes down by 1 each step. The other timers, such as poison, stop and sap,"), 2, 31, 15)
- WriteText(FF4Text("go down by 1 on every tick, so with 2 Count is half as fast as they are."), 2, 32, 15)
- WriteText(FF4Text("Poison takes the max HP divided by a number every tick, at least 1."), 2, 34, 15)
- WriteText(FF4Text("Sleep and Paralyze last the base minus the multiplier times the target's"), 2, 35, 15)
- WriteText(FF4Text("spirit, divided by a number. Petrify uses the wait of poison, and monsters"), 2, 36, 15)
- WriteText(FF4Text("use their level plus 10 instead of the stats."), 2, 37, 15)
+ BlueBox(1, 22, 76, 14)
+ WriteText(FF4Text(" Notes "), 2, 22, 14)
+ WriteText(FF4Text("Ctrl-R reverts this page to the loaded ROM, Ctrl-Z undoes, Space shows both."), 2, 36, 15)
+ WriteText(FF4Text("The turn wait is for every unit, monsters too: a unit waits the top line"), 2, 23, 15)
+ WriteText(FF4Text("divided by the line below it. The anchor is the actor that Cover disables"), 2, 24, 15)
+ WriteText(FF4Text("if present, else the actor that covers, else the first party member. Both"), 2, 25, 15)
+ WriteText(FF4Text("are set under Cover in the Commands editor."), 2, 26, 15)
+ WriteText(FF4Text("Count starts from the Power of the spell, set in the Spells editor, and"), 2, 28, 15)
+ WriteText(FF4Text("goes down by 1 each step. The other timers, such as poison, stop and sap,"), 2, 29, 15)
+ WriteText(FF4Text("go down by 1 on every tick, so with 2 Count is half as fast as they are."), 2, 30, 15)
+ WriteText(FF4Text("Poison takes the max HP divided by a number every tick, at least 1."), 2, 32, 15)
+ WriteText(FF4Text("Sleep and Paralyze last the base minus the multiplier times the target's"), 2, 33, 15)
+ WriteText(FF4Text("spirit, divided by a number. Petrify uses the wait of poison, and monsters"), 2, 34, 15)
+ WriteText(FF4Text("use their level plus 10 instead of the stats."), 2, 35, 15)
 
 end sub
 
@@ -1339,8 +1258,8 @@ sub FsNotes8()
 
  BlueBox(1, 11, 76, 11)
  WriteText(FF4Text(" Notes "), 2, 11, 14)
- WriteText(FF4Text("The critical hit rate and bonus belong to the character: the game takes"), 2, 12, 15)
- WriteText(FF4Text("them from the character data, not from the weapon. A bow triples the rate"), 2, 13, 15)
+ WriteText(FF4Text("The critical hit rate and bonus belong to the character, they are set"), 2, 12, 15)
+ WriteText(FF4Text("in Characters, Edit starting data, not in the weapon. A bow triples the rate"), 2, 13, 15)
  WriteText(FF4Text("and adds the arrow attack to the bonus, two weapons double the rate."), 2, 14, 15)
  WriteText(FF4Text("Fight picks a number from 0 to 98, the hit is critical if it is below the"), 2, 15, 15)
  WriteText(FF4Text("rate. In the original game the bonus is added to the damage before the"), 2, 16, 15)
@@ -1605,30 +1524,14 @@ end sub
 
 sub FmlShow(entry as Integer)
 
- 'Draws the settings of one line of the list in the window on its right. The list: 1 to 4 the formulas of
- ' the commands, 5 to 8 spells (damage, Armor and Shell, Dispel and Black Hole, the Summon Book), 9 the
- ' stats of the party, 10 and 11 the statuses, 12 the timers.
+ 'Draws the settings of one line of the list in the window on its right. The lines are numbered 5 to 15 (1 to
+ ' 4 were the commands, which are in the Commands editor now): 5 to 8 spells (damage, Armor and Shell, Dispel and
+ ' Black Hole, the Summon Book), 9 the stats of the party, 10 and 11 the first slot and the back row, 12 and 13
+ ' the statuses, 14 the timers, 15 the critical hits.
 
  line (fml_x * 8 - 8, 3 * 8)-(639, 56 * 8 - 1), RGB(0, 0, 0), bf
 
  select case entry
-  case 1 to 4
-   select case entry
-    case 1: fml_params.SetTo(1)
-    case 2: fml_params.SetTo(15)
-    case 3: fml_params.SetTo(6)
-    case 4: fml_params.SetTo(123)
-   end select
-   fml_params.Display()
-   select case entry
-    case 2
-     FmlNote(8, "Kick halves the user's attack multiplier before the|damage formula. Dark Wave does not.")
-    case 3
-     FmlNote(9, "Dark Wave hurts the user, the HP loss is a fraction of|its max HP. The attacker's weapon gives the damage.")
-    case 4
-     FmlNote(9, "Throw does the item's attack power times a stat of the|user plus a random part, up to the damage cap.")
-   end select
-
   case 5
    FmlSpellRows()
    fml_spells.Display()
@@ -1666,13 +1569,12 @@ sub FmlShow(entry as Integer)
    FmlNote(3, "The critical hits of Fight, Jump and Kick: in the|original game the weapon's critical bonus is added to|the damage. The damage can be multiplied first, and|the bonus can be left out.||Enter opens them as a line with fields you can change.")
 
   case 14
-   FmlNote(3, "The timers of the battle: the turn wait of every unit,|Count, also called doom, poison, HP leak, Regen and|the length of sleep and paralyze.||Enter opens them as lines with fields you can change.")
+   FmlNote(3, "The timers of the battle: the turn wait of every unit,|Count, also called doom, poison, HP leak and|the length of sleep and paralyze.||Enter opens them as lines with fields you can change.")
 
  end select
 
  line (0, 57 * 8)-(639, 58 * 8 - 1), RGB(0, 0, 0), bf
  select case entry
-  case 1 to 4: WriteText(FF4Text("Enter changes the settings. Esc goes back to the list."), 1, 57, 14)
   case 5: WriteText(FF4Text("Enter changes the setting. A setting of custom code is left alone."), 1, 57, 14)
   case 6: WriteText(FF4Text("Enter opens the numbers that Armor and Shell add."), 1, 57, 14)
   case 7: WriteText(FF4Text("Enter switches what the effect removes. Esc goes back."), 1, 57, 14)
@@ -1766,10 +1668,6 @@ sub FmlEdit(entry as Integer)
  'Enter on a line of the list: change its settings until Esc.
 
  select case entry
-  case 1: fml_hook_entry = 1: fml_params.SetTo(1): fml_params.UserSelect()
-  case 2: fml_hook_entry = 2: fml_params.SetTo(15): fml_params.UserSelect()
-  case 3: fml_hook_entry = 3: fml_params.SetTo(6): fml_params.UserSelect()
-  case 4: fml_hook_entry = 4: fml_params.SetTo(123): fml_params.UserSelect()
   case 5: fml_hook_entry = 5: FmlEditSpells()
   case 6: EditStatFormulas(4): FmlShow(6)
   case 7: fml_hook_entry = 7: FmlEditRemoval()
@@ -1797,19 +1695,14 @@ sub EditFormulas()
  cls
 
  key_hook = @FmlKeyHook
- BlueBox(1, 22, 19, 3)
- WriteText(FF4Text(" Keys "), 2, 22, 14)
- WriteText(FF4Text("Space: menu"), 2, 23, 15)
- WriteText(FF4Text("Ctrl-R: revert"), 2, 24, 15)
- WriteText(FF4Text("Ctrl-Z: undo"), 2, 25, 15)
+ BlueBox(1, 18, 19, 3)
+ WriteText(FF4Text(" Keys "), 2, 18, 14)
+ WriteText(FF4Text("Space: menu"), 2, 19, 15)
+ WriteText(FF4Text("Ctrl-R: revert"), 2, 20, 15)
+ WriteText(FF4Text("Ctrl-Z: undo"), 2, 21, 15)
  fml_hub = BlueMenu(1, 3)
  fml_hub.title = "Battle formulas"
  fml_hub.min_width = 19
- fml_hub.AddOption(FF4Text("Fight"))
- fml_hub.AddOption(FF4Text("Kick"))
- fml_hub.AddOption(FF4Text("Dark Wave"))
- fml_hub.AddOption(FF4Text("Throw"))
- fml_hub.AddOption(FF4Text("Critical hits"))
  fml_hub.AddOption(FF4Text("Spell damage"))
  fml_hub.AddOption(FF4Text("Armor and Shell"))
  fml_hub.AddOption(FF4Text("Dispel, Black Hole"))
@@ -1820,9 +1713,8 @@ sub EditFormulas()
  fml_hub.AddOption(FF4Text("Weakening statuses"))
  fml_hub.AddOption(FF4Text("Status adjustments"))
  fml_hub.AddOption(FF4Text("Timers"))
+ fml_hub.AddOption(FF4Text("Critical hits"))
  fml_x = fml_hub.WindowWidth() + 4
-
- fml_params = CommandParametersMenu(fml_x, 3)
 
  fml_spells = BlueMenu(fml_x, 3)
  for i as Integer = 1 to 5
@@ -1846,7 +1738,7 @@ sub EditFormulas()
 
  do
   FmlShow(FmlEntryOf(fml_hub.selected))
-  for i as Integer = 1 to 15
+  for i as Integer = 1 to 11
    if FmlGroupChanged(FmlEntryOf(i)) then fml_hub.ChangeOption(i, "", 14) else fml_hub.ChangeOption(i, "", 15)
   next
   fml_hub.cancelled = false

@@ -24,7 +24,6 @@ constructor CommandParametersMenu(starting_x as UByte = 0, starting_y as UByte =
  regen_menu = BlueMenu(x, y)
  clone_menu = BlueMenu(x, y)
  fail_menu = BlueMenu(x, y)
- throw_menu = BlueMenu(x, y)
  aim_menu = BlueMenu(x, y)
  code_menu = BlueMenu(x, y)
  code_choice_menu = BlueMenu(x + 26, y)
@@ -404,34 +403,45 @@ sub CommandParametersMenu.Display()
    next
    code_menu.Remove(MenuCommand.CodeRows(id) + 1)
    code_menu.Display()
+   if id = 15 or id = 6 then
+    BlueBox(x, y + MenuCommand.CodeRows(id) + 2, 51, 3)
+    WriteText(FF4Text(" Notes "), x + 1, y + MenuCommand.CodeRows(id) + 2, 14)
+    if id = 15 then
+     WriteText(FF4Text("Kick halves the user's attack multiplier before the"), x + 1, y + MenuCommand.CodeRows(id) + 3, 15)
+     WriteText(FF4Text("damage formula. Dark Wave does not."), x + 1, y + MenuCommand.CodeRows(id) + 4, 15)
+    else
+     WriteText(FF4Text("Dark Wave costs the user a fraction of its max HP."), x + 1, y + MenuCommand.CodeRows(id) + 3, 15)
+     WriteText(FF4Text("The weapon of the attacker gives the damage."), x + 1, y + MenuCommand.CodeRows(id) + 4, 15)
+    end if
+   end if
    
   case 7, 23 'Jump, Throw
    fail_menu.ChangeOption(1, FF4Text("Failure message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
    if id = 7 then
     fail_menu.ChangeOption(2, FF4Text("Wait before jump: " + str(menucommands(id).jump_wait) + " ticks"), 15)
     fail_menu.ChangeOption(3, FF4Text("Time in the air:   " + str(menucommands(id).jump_air) + " ticks"), 15)
-   else
+    fail_menu.Remove(4)
+   elseif not menucommands(23).throw_known then
+    fail_menu.ChangeOption(2, FF4Text("Damage code is custom, not changed"), 15)
+    fail_menu.Remove(4)
     fail_menu.Remove(3)
-    fail_menu.Remove(2)
-   end if
-   fail_menu.Display()
-
-  case 123 'The Throw damage formula (shown by the Battle Formulas editor)
-   if not menucommands(23).throw_known then
-    throw_menu.ChangeOption(1, FF4Text("Damage code is custom, not changed"), 15)
-    throw_menu.Remove(3)
-    throw_menu.Remove(2)
    else
-    throw_menu.ChangeOption(1, FF4Text("Item power times user's: ") + Pad(stat_menu.options.ItemAt((menucommands(23).throw_stat mod &h80) + 1), stat_menu.options.Width(),, FF4Text(" ")), 15)
+    fail_menu.ChangeOption(2, FF4Text("Item power times user's: ") + Pad(stat_menu.options.ItemAt((menucommands(23).throw_stat mod &h80) + 1), stat_menu.options.Width(),, FF4Text(" ")), 15)
     if menucommands(23).code_choice(1) = 0 then
      temp = FF4Text("Custom, not changed")
     else
      temp = FF4Text(MenuCommand.CodeItem(MenuCommand.CodeNames(23, 1), menucommands(23).code_choice(1)))
     end if
-    throw_menu.ChangeOption(2, FF4Text("Random part added:      ") + temp, 15)
-    throw_menu.ChangeOption(3, FF4Text("Damage is at most:      " + str(menucommands(23).throw_cap)), 15)
+    fail_menu.ChangeOption(3, FF4Text("Random part added:      ") + temp, 15)
+    fail_menu.ChangeOption(4, FF4Text("Damage is at most:      " + str(menucommands(23).throw_cap)), 15)
    end if
-   throw_menu.Display()
+   fail_menu.Display()
+   if id = 23 then
+    BlueBox(x, y + 6, 51, 3)
+    WriteText(FF4Text(" Notes "), x + 1, y + 6, 14)
+    WriteText(FF4Text("Throw does the item's attack power times a stat of"), x + 1, y + 7, 15)
+    WriteText(FF4Text("the user plus a random part, up to the damage cap."), x + 1, y + 8, 15)
+   end if
 
   case 22 'Unused command: runs another command's routine
    if not menucommands(id).behaves_known then
@@ -485,6 +495,11 @@ sub CommandParametersMenu.Display()
    end if
    regen_menu.ChangeOption(3, FF4Text("Message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
    regen_menu.ChangeOption(4, FF4Text("Lasts: " + MenuCommand.DelayText(menucommands(id).extra_delay) + ", value " + str(menucommands(id).extra_delay)), 15)
+   if menucommands(id).regen_every_known then
+    regen_menu.ChangeOption(5, FF4Text("Heals every: " + str(menucommands(id).regen_every) + " ticks"), 15)
+   else
+    regen_menu.ChangeOption(5, FF4Text("Heals every: custom code, not changed"), 15)
+   end if
    regen_menu.Display()
    
  end select
@@ -496,6 +511,54 @@ sub CommandParametersMenu.SetTo(index as UByte)
 
  id = index
  
+end sub
+
+
+sub CommandParametersMenu.EditThrowRow(row as Integer)
+
+ 'The Throw damage formula, rows 1 to 3 under the failure message: the stat the item power is multiplied by, the
+ ' random part and the cap.
+
+ dim temp as String
+ dim n as Integer
+
+ if not menucommands(23).throw_known then exit sub
+
+ select case row
+  case 1 'the stat that the item power is multiplied by
+   stat_menu.x = x + 26
+   stat_menu.y = y + 1
+   stat_menu.ChangeSelected((menucommands(23).throw_stat mod &h80) + 1)
+   stat_menu.UserSelect()
+   if not stat_menu.cancelled then menucommands(23).throw_stat = stat_menu.selected - 1
+   stat_menu.Hide()
+  case 2 'the random part
+   code_choice_menu.ClearAll()
+   n = 1
+   do
+    temp = MenuCommand.CodeItem(MenuCommand.CodeNames(23, 1), n)
+    if temp = "" then exit do
+    code_choice_menu.AddOption(FF4Text(temp))
+    n += 1
+   loop
+   code_choice_menu.x = x + 26
+   code_choice_menu.y = y + 2
+   code_choice_menu.top_row = 1
+   code_choice_menu.ChangeSelected(Max(1, menucommands(23).code_choice(1)))
+   code_choice_menu.UserSelect()
+   if not code_choice_menu.cancelled then menucommands(23).code_choice(1) = code_choice_menu.selected
+   code_choice_menu.Hide()
+  case 3 'the damage cap
+   success_input.x = x + 26
+   success_input.y = y + 3
+   success_input.min_value = 1
+   success_input.max_value = 9999
+   success_input.starting_number = menucommands(23).throw_cap
+   success_input.UserSelect()
+   menucommands(23).throw_cap = success_input.number
+   success_input.min_value = 0
+ end select
+
 end sub
 
 
@@ -1007,6 +1070,8 @@ sub CommandParametersMenu.UserSelect()
       message_menu.ChangeSelected(menucommands(id).message(1) + 2)
       message_menu.UserSelect()
       if not message_menu.cancelled and message_menu.selected > 1 then menucommands(id).message(1) = message_menu.selected - 2
+     elseif id = 23 then
+      EditThrowRow(fail_menu.selected - 1)
      else
       success_input.x = x + 28
       success_input.y = y + fail_menu.selected - 1
@@ -1017,49 +1082,6 @@ sub CommandParametersMenu.UserSelect()
       if fail_menu.selected = 2 then menucommands(id).jump_wait = success_input.number else menucommands(id).jump_air = success_input.number
       success_input.min_value = 0
      end if
-    end if
-    Display()
-   loop
-
-  case 123 'The Throw damage formula: the stat the item power is multiplied by, the random part and the cap
-   throw_menu.cancelled = false
-   do until throw_menu.cancelled
-    throw_menu.UserSelect()
-    if not throw_menu.cancelled and menucommands(23).throw_known then
-     select case throw_menu.selected
-      case 1 'the stat that the item power is multiplied by
-       stat_menu.x = x + 26
-       stat_menu.y = y
-       stat_menu.ChangeSelected((menucommands(23).throw_stat mod &h80) + 1)
-       stat_menu.UserSelect()
-       if not stat_menu.cancelled then menucommands(23).throw_stat = stat_menu.selected - 1
-       stat_menu.Hide()
-      case 2 'the random part
-       code_choice_menu.ClearAll()
-       n = 1
-       do
-        temp = MenuCommand.CodeItem(MenuCommand.CodeNames(23, 1), n)
-        if temp = "" then exit do
-        code_choice_menu.AddOption(FF4Text(temp))
-        n += 1
-       loop
-       code_choice_menu.x = x + 26
-       code_choice_menu.y = y + 1
-       code_choice_menu.top_row = 1
-       code_choice_menu.ChangeSelected(Max(1, menucommands(23).code_choice(1)))
-       code_choice_menu.UserSelect()
-       if not code_choice_menu.cancelled then menucommands(23).code_choice(1) = code_choice_menu.selected
-       code_choice_menu.Hide()
-      case 3 'the damage cap
-       success_input.x = x + 26
-       success_input.y = y + 2
-       success_input.min_value = 1
-       success_input.max_value = 9999
-       success_input.starting_number = menucommands(23).throw_cap
-       success_input.UserSelect()
-       menucommands(23).throw_cap = success_input.number
-       success_input.min_value = 0
-     end select
     end if
     Display()
    loop
@@ -1215,6 +1237,17 @@ sub CommandParametersMenu.UserSelect()
        success_input.starting_number = menucommands(id).extra_delay
        success_input.UserSelect()
        menucommands(id).extra_delay = success_input.number
+      case 5
+       if menucommands(id).regen_every_known then
+        success_input.x = x + 30
+        success_input.y = y + 4
+        success_input.min_value = 1
+        success_input.max_value = 255
+        success_input.starting_number = menucommands(id).regen_every
+        success_input.UserSelect()
+        menucommands(id).regen_every = success_input.number
+        success_input.min_value = 0
+       end if
      end select      
     end if
     Display()

@@ -43,8 +43,6 @@ type BattleFormulas
  sap_len_known as Boolean 'how long HP leak lasts: the sum of the WIS and the WIL of the character times a number plus a number
  sap_len_mult as UByte '2 in the original
  sap_len_const as UByte '30 in the original
- regen_known as Boolean 'the regen of the party heals every this many ticks, 6 in the original
- regen_every as UByte
  sap_known as Boolean
  sleep_known as Boolean 'sleep and paralyze last (base minus multiplier x spirit) divided by a number, in ticks
  sleep_base as UInteger 'the base, 300 in the original

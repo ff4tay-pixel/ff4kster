@@ -581,8 +581,6 @@ sub BattleFormulas.ReadFromROM()
  ' counted 6 passes. How long HP leak lasts is TimerDur_09: (WIS plus WIL) x 2 plus 30 for a character.
  sap_every_known = (ByteAt(&h1AC15) = &hC9)
  sap_every = ByteAt(&h1AC16)
- regen_known = (ByteAt(&h1ACA6) = &hC9)
- regen_every = ByteAt(&h1ACA7) + 1
  sap_len_known = (ByteAt(&h1A15D) = &hA9 and ByteAt(&h1A16F) = &h69)
  sap_len_mult = ByteAt(&h1A15E)
  sap_len_const = ByteAt(&h1A170)
@@ -810,7 +808,6 @@ sub BattleFormulas.WriteToROM()
   WriteByte(&h1A11C, wait_const)
  end if
  if sap_every_known then WriteByte(&h1AC16, sap_every)
- if regen_known then WriteByte(&h1ACA7, regen_every - 1)
  if sap_len_known then
   WriteByte(&h1A15E, sap_len_mult)
   WriteByte(&h1A170, sap_len_const)

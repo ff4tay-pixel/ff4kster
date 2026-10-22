@@ -12,6 +12,8 @@ type CharacterStartingMenu
  stat(5) as UByte
  xp as UInteger
  tnl as UInteger
+ crit_rate as UByte
+ crit_bonus as UByte
  starting_menu as BlueMenu
  
  declare constructor(starting_x as UByte = 0, starting_y as UByte = 0)

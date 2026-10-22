@@ -23,6 +23,8 @@ sub CharacterStartingMenu.ApplyUpdates(index as UByte)
  next
  characters(index).xp = xp
  characters(index).tnl = tnl
+ characters(index).crit_rate = crit_rate
+ characters(index).crit_bonus = crit_bonus
  
 end sub
 
@@ -53,6 +55,8 @@ sub CharacterStartingMenu.Display()
  next
  starting_menu.AddOption(FF4Text("Experience:    " + str(xp)))
  starting_menu.AddOption(FF4Text("TNL:           " + str(tnl)))
+ starting_menu.AddOption(FF4Text("Crit rate:     " + str(crit_rate) + "%"))
+ starting_menu.AddOption(FF4Text("Crit bonus:    " + str(crit_bonus)))
 
  starting_menu.Display()
 
@@ -73,6 +77,8 @@ sub CharacterStartingMenu.SetTo(index as UByte)
  next
  xp = characters(index).xp
  tnl = characters(index).tnl
+ crit_rate = characters(index).crit_rate
+ crit_bonus = characters(index).crit_bonus
 
 end sub
 
@@ -204,6 +210,24 @@ sub CharacterStartingMenu.UserSelect()
      tnl_input.max_value = &h1000000
      tnl_input.UserSelect()
      tnl = tnl_input.number
+     Display()
+
+    case 14 'Critical hit rate
+     dim crit_input as BlueNumberInput
+     crit_input = BlueNumberInput(x + 15, y + 13)
+     crit_input.starting_number = crit_rate
+     crit_input.max_value = 99
+     crit_input.UserSelect()
+     crit_rate = crit_input.number
+     Display()
+
+    case 15 'Critical hit bonus
+     dim bonus_input as BlueNumberInput
+     bonus_input = BlueNumberInput(x + 15, y + 14)
+     bonus_input.starting_number = crit_bonus
+     bonus_input.max_value = 255
+     bonus_input.UserSelect()
+     crit_bonus = bonus_input.number
      Display()
    
    end select

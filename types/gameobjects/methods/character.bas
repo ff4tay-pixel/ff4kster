@@ -26,6 +26,8 @@ sub Character.ReadFromROM(index as UByte)
  
  xp = ByteAt(start + &h17) + ByteAt(start + &h18) * &h100 + ByteAt(start + &h19) * &h10000
  tnl = ByteAt(start + &h1D) + ByteAt(start + &h1E) * &h100 + ByteAt(start + &h1F) * &h10000
+ crit_rate = ByteAt(start + &h14)
+ crit_bonus = ByteAt(start + &h15)
  
  '=== DO NOT DELETE THIS PART ===
  'actor_index = 0
@@ -94,6 +96,8 @@ sub Character.WriteToROM(index as UByte)
   WriteByte(start + 14 + i, stat(i))
  next
   
+ WriteByte(start + &h14, crit_rate)
+ WriteByte(start + &h15, crit_bonus)
  WriteByte(start + &h17, xp mod &h100)
  WriteByte(start + &h18, (xp \ &h100) mod &h100)
  WriteByte(start + &h19, xp \ &h10000)
