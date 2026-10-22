@@ -1025,6 +1025,18 @@ Spells editor does the same. The game makes both
 do nothing in the final battle with Zeromus (battle number 01B7); the two
 Zeromus lines on the same screen switch that off, so they work there too.
 
+Dispel and Black Hole: two spell effects that take statuses off their target.
+The window lists the statuses with a column for each effect, and Enter on a
+cell switches removes and keeps. The statuses are curse, float, paralyze, sleep,
+charm, berserk, HP leak (sap), reflect (Wall), barrier and image (Blink). The
+original Dispel removes berserk, HP leak, reflect, barrier and image, and the
+original Black Hole removes float, berserk, reflect, barrier and image. Black
+Hole also puts the speed of the target back to normal, which ends haste and
+slow, and that can be switched off. Every spell that has the effect in the
+Spells editor does it (Disrupt and Blk.Hole use Black Hole). The petrify, hide,
+cover and low HP bits are not offered. A cell shows ? if other changes have
+altered the code of the effect.
+
 Summon Book: the item of that name calls one of ten summons at random. Each
 has its summon and whether it hits all targets or one random target.
 
@@ -1845,7 +1857,7 @@ VERSION HISTORY
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Recall can skip its MP check and its MP cost
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
-    - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the turn timer, the Count (doom) timer and what Armor and Shell add
+    - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the turn timer, the Count (doom) timer, what Armor and Shell add, and what Dispel and Black Hole remove
     - Battle Formulas editor: Fight, Kick, Dark Wave and Throw formulas (moved from Commands), spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book
     - Commands: overview of all commands with what changed, and the names of the four internal commands
     - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)

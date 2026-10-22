@@ -115,6 +115,7 @@ sub FmlNote(first_row as Integer, notes as String)
 end sub
 
 
+dim shared fml_removal as BlueMenu 'what Dispel and Black hole remove, 3 columns
 dim shared fs_text(1 to 16, 1 to 14) as String 'the pieces of the formula lines: text, or @ and the field
 dim shared fs_pieces(1 to 16) as Integer
 dim shared fs_labels(1 to 16) as String
@@ -587,6 +588,131 @@ sub EditStatFormulas()
 end sub
 
 
+function FmlRemovalMask(row as Integer, byref status_byte as Integer) as Integer
+
+ 'The bits of a status that a row of the Dispel and Black hole window stands for. Row 1 is the title row.
+ ' status_byte is 2 or 4 for the status the bits belong to, 0 for the speed.
+
+ select case row
+  case 2: status_byte = 2: return &h80 'curse
+  case 3: status_byte = 2: return &h40 'float
+  case 4: status_byte = 2: return &h20 'paralyze
+  case 5: status_byte = 2: return &h10 'sleep
+  case 6: status_byte = 2: return &h08 'charm
+  case 7: status_byte = 2: return &h04 'berserk
+  case 8: status_byte = 4: return &h40 'hp leak (sap)
+  case 9: status_byte = 4: return &h20 'reflect
+  case 10: status_byte = 4: return &h10 'barrier
+  case 11: status_byte = 4: return &h0C 'image
+ end select
+ status_byte = 0
+
+ return 0
+
+end function
+
+
+function FmlRemovalCell(row as Integer, column as Integer) as String
+
+ 'The text of a cell: removes, keeps, or ? when the code is not the original or the known variants.
+
+ dim status_byte as Integer
+ dim mask as Integer = FmlRemovalMask(row, status_byte)
+ dim removed as Integer
+
+ if column = 1 then
+  if status_byte = 0 and row = 12 then return "Speed"
+  select case row
+   case 2: return "Curse"
+   case 3: return "Float"
+   case 4: return "Paralyze"
+   case 5: return "Sleep"
+   case 6: return "Charm"
+   case 7: return "Berserk"
+   case 8: return "HP leak, sap"
+   case 9: return "Reflect, Wall"
+   case 10: return "Barrier"
+   case 11: return "Image, Blink"
+  end select
+ end if
+
+ if row = 12 then
+  if column = 2 then return "cannot"
+  if not formulas.hole_speed_known then return "?"
+  if formulas.hole_speed then return "resets to normal" else return "keeps"
+ end if
+
+ if column = 2 then
+  if not formulas.dispel_known then return "?"
+  if status_byte = 2 then removed = formulas.dispel_s2 and mask else removed = formulas.dispel_s4 and mask
+ else
+  if not formulas.hole_known then return "?"
+  if status_byte = 2 then removed = formulas.hole_s2 and mask else removed = formulas.hole_s4 and mask
+ end if
+
+ if removed <> 0 then return "removes"
+
+ return "keeps"
+
+end function
+
+
+sub FmlRemovalRows()
+
+ 'The 12 rows of 3 cells: a title row, 10 statuses and the speed.
+
+ dim text_cell as String
+ dim cell_color as Integer
+
+ fml_removal.ChangeOption(1, FF4Text("Status"), 14)
+ fml_removal.ChangeOption(2, FF4Text("Dispel"), 14)
+ fml_removal.ChangeOption(3, FF4Text("Black Hole"), 14)
+ for r as Integer = 2 to 12
+  for c as Integer = 1 to 3
+   if c = 1 then
+    text_cell = FmlRemovalCell(r, 1)
+   else
+    text_cell = FmlRemovalCell(r, c)
+   end if
+   cell_color = 15
+   if c > 1 and (text_cell = "removes" or text_cell = "resets to normal") then cell_color = 14
+   fml_removal.ChangeOption((r - 1) * 3 + c, FF4Text(text_cell), cell_color)
+  next
+ next
+
+end sub
+
+
+sub FmlEditRemoval()
+
+ 'Enter on a cell of the Dispel or Black hole column switches removes and keeps.
+
+ dim row as Integer
+ dim column as Integer
+ dim status_byte as Integer
+ dim mask as Integer
+
+ do
+  fml_removal.UserSelect()
+  if fml_removal.cancelled then exit do
+  row = (fml_removal.selected - 1) \ 3 + 1
+  column = (fml_removal.selected - 1) mod 3 + 1
+  if row >= 2 and column >= 2 then
+   mask = FmlRemovalMask(row, status_byte)
+   if row = 12 then
+    if column = 3 and formulas.hole_speed_known then formulas.hole_speed = not formulas.hole_speed
+   elseif column = 2 and formulas.dispel_known then
+    if status_byte = 2 then formulas.dispel_s2 = formulas.dispel_s2 xor mask else formulas.dispel_s4 = formulas.dispel_s4 xor mask
+   elseif column = 3 and formulas.hole_known then
+    if status_byte = 2 then formulas.hole_s2 = formulas.hole_s2 xor mask else formulas.hole_s4 = formulas.hole_s4 xor mask
+   end if
+  end if
+  FmlRemovalRows()
+ loop
+
+end sub
+
+
 sub FmlShow(entry as Integer)
 
  'Draws the settings of one line of the list in the window on its right.
@@ -621,6 +747,11 @@ sub FmlShow(entry as Integer)
    fml_book.Display()
    FmlNote(16, "The Summon Book item calls one of these ten at random.|Enter on a name picks the summon, Enter on its right|side switches between all targets and one random target.")
 
+  case 8
+   FmlRemovalRows()
+   fml_removal.Display()
+   FmlNote(18, "Dispel and Black Hole take statuses off their target.|Enter on removes or keeps switches it, in the column of|the effect. Black Hole also puts the speed back to|normal, which ends haste and slow. Every spell with|the Dispel effect or the Black Hole effect in the|Spells editor does this. Black Hole is used by the|monster spells Disrupt and Blk.Hole. The petrify,|hide, cover and low HP bits are not offered.")
+
   case 7
    FmlNote(3, "The formulas of the stats of the party in battle:|attack multiplier, attack power, attack hit rate,|Yang's attack, defense multiplier, defense, magic|defense multiplier and rate,|two timers: the turn wait and Count, also|called doom, and what Armor and Shell add.||Enter opens them as formulas on one screen, with|the numbers and stats you can change in yellow.")
 
@@ -632,6 +763,7 @@ sub FmlShow(entry as Integer)
   case 5: WriteText(FF4Text("Enter changes the setting. A setting of custom code is left alone."), 1, 57, 14)
   case 6: WriteText(FF4Text("Enter picks the summon or switches how it is aimed. Esc goes back."), 1, 57, 14)
   case 7: WriteText(FF4Text("Enter opens the formulas of the stats of the party, the turn wait and Count."), 1, 57, 14)
+  case 8: WriteText(FF4Text("Enter switches what the effect removes. Esc goes back."), 1, 57, 14)
  end select
 
 end sub
@@ -721,6 +853,7 @@ sub FmlEdit(entry as Integer)
   case 5: FmlEditSpells()
   case 6: FmlEditBook()
   case 7: EditStatFormulas(): FmlShow(7)
+  case 8: FmlEditRemoval()
  end select
 
 end sub
@@ -734,7 +867,7 @@ sub EditFormulas()
 
  fml_hub = BlueMenu(1, 3)
  fml_hub.title = "Battle formulas"
- fml_hub.min_width = 17
+ fml_hub.min_width = 19
  fml_hub.AddOption(FF4Text("Fight"))
  fml_hub.AddOption(FF4Text("Kick"))
  fml_hub.AddOption(FF4Text("Dark Wave"))
@@ -742,6 +875,7 @@ sub EditFormulas()
  fml_hub.AddOption(FF4Text("Spell damage"))
  fml_hub.AddOption(FF4Text("Summon Book"))
  fml_hub.AddOption(FF4Text("Stats and timers"))
+ fml_hub.AddOption(FF4Text("Dispel, Black Hole"))
  fml_x = fml_hub.WindowWidth() + 4
 
  fml_params = CommandParametersMenu(fml_x, 3)
@@ -755,6 +889,12 @@ sub EditFormulas()
  fml_book.columns = 2
  for i as Integer = 1 to 20
   fml_book.AddOption(FF4Text("."))
+ next
+
+ fml_removal = BlueMenu(fml_x, 3)
+ fml_removal.columns = 3
+ for i as Integer = 1 to 36
+  fml_removal.AddOption(FF4Text("."))
  next
 
  fml_number = BlueNumberInput(fml_x + 24, 3)

@@ -198,6 +198,21 @@ sub BattleFormulas.ReadFromROM()
  next
  plus_known = (ByteAt(&h19E41) = &h1A or ByteAt(&h19E41) = &hEA)
  plus_on = (ByteAt(&h19E41) = &h1A)
+ 'Dispel (magic effect $10) and Black hole ($2A) work on a copy of the status bytes of the target: each does
+ ' "and #mask" on status 2 ($2704) and on status 4 ($2706), so the bits that are 0 in the mask are removed.
+ ' Only the bits that make sense to remove are offered: status 2 without the petrify bits, status 4 without
+ ' hide, cover and low hp. Black hole also sets the speed modifier ($273b) to 10h, normal speed.
+ dispel_known = (ByteAt(&h1DAC0) = &h29 and ByteAt(&h1DADC) = &h29)
+ dispel_s2 = &hFF - ByteAt(&h1DAC1)
+ dispel_s4 = &hFF - ByteAt(&h1DADD)
+ if (dispel_s2 and &h03) <> 0 or (dispel_s4 and &h83) <> 0 then dispel_known = false
+ hole_known = (ByteAt(&h1DFB3) = &h29 and ByteAt(&h1DFBB) = &h29)
+ hole_s2 = &hFF - ByteAt(&h1DFB4)
+ hole_s4 = &hFF - ByteAt(&h1DFBC)
+ if (hole_s2 and &h03) <> 0 or (hole_s4 and &h83) <> 0 then hole_known = false
+ hole_speed_known = MenuCommand.BytesAre(&h1DFC0, "A9108D3B27") or MenuCommand.BytesAre(&h1DFC0, "EAEAEAEAEA")
+ hole_speed = MenuCommand.BytesAre(&h1DFC0, "A9108D3B27")
+
  'Armor (magic effect $0d) adds a number to the defense of the target ($272a, 255 at most) and Shell (effect $0e)
  ' to its magic defense base ($2724): adc #imm in the code of battle/magic.asm.
  buff_known = (ByteAt(&h1DA66) = &hAD and ByteAt(&h1DA68) = &h27 and ByteAt(&h1DA69) = &h69 and ByteAt(&h1DA8A) = &hAD and ByteAt(&h1DA8C) = &h27 and ByteAt(&h1DA8D) = &h69)
@@ -307,6 +322,23 @@ sub BattleFormulas.WriteToROM()
  next
  if plus_known then
   if plus_on then WriteByte(&h19E41, &h1A) else WriteByte(&h19E41, &hEA)
+ end if
+ if dispel_known then
+  WriteByte(&h1DAC1, &hFF - dispel_s2)
+  WriteByte(&h1DADD, &hFF - dispel_s4)
+ end if
+ if hole_known then
+  WriteByte(&h1DFB4, &hFF - hole_s2)
+  WriteByte(&h1DFBC, &hFF - hole_s4)
+ end if
+ if hole_speed_known then
+  if hole_speed then
+   WriteByte(&h1DFC0, &hA9): WriteByte(&h1DFC1, &h10): WriteByte(&h1DFC2, &h8D): WriteByte(&h1DFC3, &h3B): WriteByte(&h1DFC4, &h27)
+  else
+   for i as Integer = 0 to 4
+    WriteByte(&h1DFC0 + i, &hEA)
+   next
+  end if
  end if
  if buff_known then
   WriteByte(&h1DA6A, protect_add)

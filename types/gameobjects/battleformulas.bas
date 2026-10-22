@@ -16,6 +16,14 @@ type BattleFormulas
  buff_known as Boolean 'Armor (protect) and Shell: the numbers they add to the defense and to the magic defense
  protect_add as UByte 'added to the defense of the target by magic effect $0d, 5 in the original
  shell_add as UByte 'added to the magic defense by magic effect $0e, 3 in the original
+ dispel_known as Boolean 'Dispel (magic effect $10) removes the status bits that are not kept by two masks
+ dispel_s2 as UByte 'the bits of status 2 that Dispel removes: curse 80, float 40, paralyze 20, sleep 10, charm 08, berserk 04
+ dispel_s4 as UByte 'and of status 4: hp leak 40, reflect 20, barrier 10, image 0C
+ hole_known as Boolean 'Black hole (magic effect $2A) does the same
+ hole_s2 as UByte
+ hole_s4 as UByte
+ hole_speed_known as Boolean 'and sets the speed modifier of the target back to normal
+ hole_speed as Boolean
  zeromus_known as Boolean 'false if the check of the Zeromus battle is not the original or switched off
  protect_zeromus as Boolean 'Armor also works in the Zeromus battle (the original game skips it there)
  shell_zeromus as Boolean
