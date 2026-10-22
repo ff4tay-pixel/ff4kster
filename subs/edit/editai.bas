@@ -41,8 +41,8 @@ type AIUndoEntry
  hp(1 to total_condition_hps) as UInteger
 end type
 
-dim shared ai_panel_y(1 to 2) as Integer = {4, 9} 'top border of each panel
-dim shared ai_panel_inner(1 to 2) as Integer = {3, 36} 'text rows inside each panel
+dim shared ai_panel_y(1 to 2) as Integer = {3, 8} 'top border of each panel
+dim shared ai_panel_inner(1 to 2) as Integer = {3, 37} 'text rows inside each panel
 dim shared ai_cur(1 to 3) as Integer 'cursor row of panel 1; (3) is the action the pair list cursor is on (0 is the script line, the last is the Add row)
 dim shared ai_top(1 to 2) as Integer 'first list row shown
 dim shared ai_focus as Integer 'the panel the keys act on: 1 the AI, 2 the list of pairs
@@ -675,7 +675,6 @@ sub AIDrawPanel1()
  else
   LuText("Not its AI, it uses AI " + str(assigned), 18, y0 + 1, 14)
  end if
- LuText("Left Right: previous or next AI", 46, y0 + 1, 23)
  AIBand(y0 + 1, iif(ai_cur(1) = 0, selected_color, RGB(30, 45, 120)))
  if focused and ai_cur(1) = 0 then DrawLetter(20, 0, y0 + 1)
 
@@ -714,10 +713,8 @@ sub AIDrawCondLine(i as Integer, y as Integer)
    LuText(iif(j = 1, "WHEN", "AND "), 5, y, 21)
    if slot < total_conditions then
     WriteText(left(conditions(slot + 1).TextDescription(), 31), 11, y, 15)
-    if j = 1 then LuText("set " + str(sid + 1) + " used " + str(ai_set_uses(sid)) + "x", 43, y, iif(ai_set_uses(sid) > 1, 14, 23))
-    LuText("cond " + str(slot + 1), 61, y, 22)
-    uses = ai_condition_uses(slot)
-    LuText("used " + str(uses) + "x", 70, y, iif(uses > 1, 14, 23))
+    if j = 1 and ai_set_uses(sid) > 1 then LuText("shared by " + str(ai_set_uses(sid)) + " pairs", 46, y, 14)
+    LuText("cond " + str(slot + 1), 70, y, 22)
    else
     LuText("Unknown condition " + str(slot), 11, y, 12)
    end if
@@ -728,7 +725,7 @@ sub AIDrawCondLine(i as Integer, y as Integer)
   case ai_cl_chooser
    id = AIScriptId(p)
    LuText("Script " + str(id + 1), 8, y, 22)
-   LuText("used " + str(ai_script_uses(id)) + "x", 66, y, iif(ai_script_uses(id) > 1, 14, 23))
+   if ai_script_uses(id) > 1 then LuText("shared by " + str(ai_script_uses(id)) + " pairs", 60, y, 14)
    if AIScriptExists(id) then
     if scripts(AIScriptIndex(id)).Length() = 0 then LuText("no actions", 18, y, 23)
    else
@@ -821,21 +818,16 @@ sub AIDraw(message as String)
  line (0, 0)-(639, 479), RGB(0, 0, 0), bf
 
  'Title: whose AI, and the bank
- BlueBox(0, 0, 78, 2)
+ BlueBox(0, 0, 78, 1)
  WriteText(FF4Text("Monster: ") + AITrim(monsters(ai_monster).name), 1, 1, 15)
  title = iif(ai_on_reaction, "Its reaction AI is ", "Its attack AI is ") + str(AIAssigned()) + "   " + iif(ai_lunar, "LUNAR bank", "Regular bank") + ", L switches"
  LuText(title, 26, 1, iif(ai_lunar, 12, 14))
- if ai_index = AIAssigned() then
-  LuText("Viewing the AI this monster uses", 1, 2, 23)
- else
-  LuText("Viewing AI " + str(ai_index) + ", which this monster does not use", 1, 2, 23)
- end if
 
  AIDrawPanel1()
  AIDrawPanel2()
 
  'Footer: what the line does, how shared it is, how much room is left, and the keys
- BlueBox(0, footer_y, 78, 8)
+ BlueBox(0, footer_y, 78, 5)
  info = AIHint()
  if ai_pair > 0 and ai_focus = 2 then
   line_index = AICondIndex()
@@ -861,11 +853,8 @@ sub AIDraw(message as String)
  LuText(space_text, 0, footer_y + 2, iif(over, 12, 23))
  if over then LuText("Over the limit: Save ROM will refuse to save until there is less AI data.", 0, footer_y + 3, 12)
 
- LuText("Tab or 1 2: panel.  Arrows PgUp PgDn: move.  Left Right: other AI or pair.", 0, footer_y + 4, 23)
- LuText("Enter: change or add.  Insert: add.  Delete: remove.  Ctrl-Z: undo.", 0, footer_y + 5, 23)
- LuText("S: change condition set.  D: delete pair.  Comma Period: move pair or action.", 0, footer_y + 6, 23)
- LuText("Ctrl-C Ctrl-V: copy and paste a condition or an action.", 0, footer_y + 7, 23)
- LuText("N P G: other AI. A: use it. L: bank. R: reaction. Ctrl-R: revert. Esc: back.", 0, footer_y + 8, 23)
+ LuText("Tab or 1 2: panel.  Arrows: move.  Enter: change or add.  Ctrl-Z: undo.  Esc: back.", 0, footer_y + 4, 23)
+ LuText("L: other bank.  R: reaction AI.  Ctrl-R: revert.  Ctrl-C Ctrl-V: copy and paste.", 0, footer_y + 5, 23)
  screenunlock
 
 end sub
