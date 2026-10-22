@@ -13,7 +13,7 @@ function MenuCommand.HasParameters(index as UByte) as Boolean
    temp = true
   case 7, 23
    temp = true
-  case 6, 15
+  case 6, 13, 15, 21
    temp = true
  end select
 
@@ -40,6 +40,28 @@ function MenuCommand.TargetsCorrectly(index as UByte) as Boolean
 end function
 
 
+function MenuCommand.DelayText(value as UByte) as String
+
+ 'What an entry of the action delay table means (battle/timer_dur.asm, TimerDur_0c): 0 no wait, 1 to 127
+ ' a fraction of the unit's turn timer (1 = a whole one), 128 and up that many turns.
+
+ dim result as String
+
+ if value = 0 then
+  result = "no wait"
+ elseif value = 1 then
+  result = "1 turn timer"
+ elseif value < 128 then
+  result = "1/" + str(value) + " of a turn timer"
+ else
+  result = str(value - 128) + " x the turn timer"
+ end if
+
+ return result
+
+end function
+
+
 function MenuCommand.CodeRows(index as UByte) as Integer
 
  'Settings that are not data bytes but small changes to the game's code. Each one is a few bytes
@@ -49,6 +71,8 @@ function MenuCommand.CodeRows(index as UByte) as Integer
  select case index
   case 6: return 3 'Dark Wave
   case 15: return 2 'Kick
+  case 13: return 2 'Aim
+  case 21: return 1 'Peep
  end select
 
  return 0
@@ -66,6 +90,11 @@ function MenuCommand.CodeTitle(index as UByte, row as Integer) as String
   case 15
    if row = 1 then return "Attack multiplier:    "
    return "Base damage, both:    "
+  case 13
+   if row = 1 then return "Target's evasion:     "
+   return "User's hit rate:      "
+  case 21
+   return "Bosses:               "
  end select
 
  return ""
@@ -83,6 +112,11 @@ function MenuCommand.CodeOffset(index as UByte, row as Integer) as UInteger
   case 15
    if row = 1 then return &h1E924
    return &h1E93A
+  case 13
+   if row = 1 then return &h1EA3F
+   return &h1EA42
+  case 21
+   return &h1E356
  end select
 
  return 0
@@ -102,6 +136,11 @@ function MenuCommand.CodeNames(index as UByte, row as Integer) as String
   case 15
    if row = 1 then return "Half, original|Full|Double"
    return "x0.5, original|x1|x2"
+  case 13
+   if row = 1 then return "Set to 0, original|Kept"
+   return "Set to 255, original|Kept"
+  case 21
+   return "Cannot be peeked at, original|Can be peeked at"
  end select
 
  return ""
@@ -115,7 +154,9 @@ function MenuCommand.CodeBytes(index as UByte, row as Integer) as String
  ' 16 bit value right by N (Lsr_N in the disassembly) or "lda #0". Damage to undead: two shift pairs
  ' (lsr/ror) of which the choices keep two, one or none. Kick: lsr, nothing or asl on the multiplier.
  ' Base damage: the shared half of multiplier x power (lsr/ror), nothing, or doubled (asl/rol), used by
- ' both commands, so it is the same bytes on both screens.
+ ' both commands, so it is the same bytes on both screens. Aim: the game saves the target's evasion and the
+ ' user's hit rate, sets 0 and 255 (sta / dec, sta), attacks and restores them; the choices keep them.
+ ' Peep: the branch that skips bosses (bpl) or an always taken branch (bra).
 
  select case index
   case 6
@@ -125,6 +166,11 @@ function MenuCommand.CodeBytes(index as UByte, row as Integer) as String
   case 15
    if row = 1 then return "46DF|EAEA|06DF"
    return "46E466E3|EAEAEAEA|06E326E4"
+  case 13
+   if row = 1 then return "8D2927|EAEAEA"
+   return "3A8D9C26|EAEAEAEA"
+  case 21
+   return "1003|8003"
  end select
 
  return ""
@@ -253,6 +299,8 @@ sub MenuCommand.ReadFromROM(index as UByte)
    action_stance = ByteAt(&h14828)
    action_stance2 = ByteAt(&h14833)
    action_stance3 = ByteAt(&h146CD)
+   jump_wait = ByteAt(&h1A19D)
+   jump_air = ByteAt(&h1EB6D)
    message(1) = ByteAt(&h1EB62) 'Failure message
    
   case 8 'Recall
@@ -306,6 +354,7 @@ sub MenuCommand.ReadFromROM(index as UByte)
   
   case 14 'Charge
    message(1) = ByteAt(&h1EA1E)
+   extra_delay = ByteAt(&hA0089 + &h1F)
    
   case 15 'Kick
    action_stance = ByteAt(&h1451D)
@@ -324,6 +373,7 @@ sub MenuCommand.ReadFromROM(index as UByte)
    misc_bytes(2) = ByteAt(&h1E778) 'Golbez
    message(1) = ByteAt(&h1E6DC) 'Cancel message
    message(2) = ByteAt(&h1E787) 'Failure message
+   extra_delay = ByteAt(&hA0089 + &h20)
    
   case 18 'Boast
    action_stance = ByteAt(&h149AB)
@@ -375,6 +425,7 @@ sub MenuCommand.ReadFromROM(index as UByte)
   case 26 'Regen
    action_stance = ByteAt(&h149AB)
    regen_amount = ByteAt(&h1E5FE)
+   extra_delay = ByteAt(&hA0089 + &h22)
    if ByteAt(&h1E616) = 1 and ByteAt(&h1E624) = 0 then
     regen_freeze = false
    else
@@ -437,6 +488,8 @@ sub MenuCommand.WriteToROM(index as UByte)
    WriteByte(&h14833, action_stance2)
    WriteByte(&h146CD, action_stance3)
    WriteByte(&h1EB62, message(1))
+   WriteByte(&h1A19D, jump_wait)
+   WriteByte(&h1EB6D, jump_air)
  
   case 8 'Recall
    start = &h1EC22
@@ -561,6 +614,7 @@ sub MenuCommand.WriteToROM(index as UByte)
    WriteByte(&h14A8A, action_stance)
    
   case 14 'Charge
+   WriteByte(&hA0089 + &h1F, extra_delay)
    WriteByte(&h1EA1E, message(1))
    if message(1) = &hFF then
     WriteByte(&h1EA1F, &hEA)
@@ -607,6 +661,7 @@ sub MenuCommand.WriteToROM(index as UByte)
     WriteByte(&h1E6DF, &h34)
    end if
    WriteByte(&h1E787, message(2))
+   WriteByte(&hA0089 + &h20, extra_delay)
    if message(2) = &hFF then
     WriteByte(&h1E788, &hEA)
     WriteByte(&h1E789, &hEA)
@@ -715,6 +770,7 @@ sub MenuCommand.WriteToROM(index as UByte)
    
   case 26 'Regen
    WriteByte(&h1E5FE, regen_amount)
+   WriteByte(&hA0089 + &h22, extra_delay)
    if regen_freeze then
     WriteByte(&h1E616, &h0C)
     WriteByte(&h1E624, &h08)

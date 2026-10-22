@@ -249,6 +249,7 @@ sub CommandParametersMenu.Display()
    
   case 14 'Charge
    charge_menu.ChangeOption(1, FF4Text("Message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
+   charge_menu.ChangeOption(2, FF4Text("Wait before attack: " + MenuCommand.DelayText(menucommands(id).extra_delay) + ", value " + str(menucommands(id).extra_delay)), 15)
    charge_menu.Display()
   
   case 16 'Bear
@@ -266,6 +267,7 @@ sub CommandParametersMenu.Display()
    twin_menu.ChangeOption(7, FF4Text("Special spell:     ") + spells(menucommands(id).spell(3)).name, 15)
    twin_menu.ChangeOption(8, FF4Text("Failure message:   ") + message_menu.options.ItemAt((menucommands(id).message(2) + 2) mod &h100), 15)
    twin_menu.ChangeOption(9, FF4Text("Cancel message:    ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
+   twin_menu.ChangeOption(10, FF4Text("Wait for 2nd cast:  " + MenuCommand.DelayText(menucommands(id).extra_delay) + ", value " + str(menucommands(id).extra_delay)), 15)
    twin_menu.Display()
    
   case 18 'Boast
@@ -298,7 +300,7 @@ sub CommandParametersMenu.Display()
    cover_menu.ChangeOption(3, FF4Text("Disable if present: ") + Pad(temp, actor_names.Width(),, FF4Text(" ")), 15)
    cover_menu.Display()
    
-  case 6, 15 'Dark Wave, Kick: code settings
+  case 6, 13, 15, 21 'Dark Wave, Aim, Kick, Peep: code settings
    for row as Integer = 1 to MenuCommand.CodeRows(id)
     if menucommands(id).code_choice(row) = 0 then
      temp = FF4Text("Custom, not changed")
@@ -312,6 +314,13 @@ sub CommandParametersMenu.Display()
    
   case 7, 23 'Jump, Throw
    fail_menu.ChangeOption(1, FF4Text("Failure message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
+   if id = 7 then
+    fail_menu.ChangeOption(2, FF4Text("Wait before jump: " + str(menucommands(id).jump_wait) + " ticks"), 15)
+    fail_menu.ChangeOption(3, FF4Text("Time in the air:   " + str(menucommands(id).jump_air) + " ticks"), 15)
+   else
+    fail_menu.Remove(3)
+    fail_menu.Remove(2)
+   end if
    fail_menu.Display()
    
   case 22 'Unused command: runs another command's routine
@@ -345,6 +354,7 @@ sub CommandParametersMenu.Display()
     regen_menu.ChangeOption(2, FF4Text("Freeze:  NO"), 15)
    end if
    regen_menu.ChangeOption(3, FF4Text("Message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
+   regen_menu.ChangeOption(4, FF4Text("Lasts: " + MenuCommand.DelayText(menucommands(id).extra_delay) + ", value " + str(menucommands(id).extra_delay)), 15)
    regen_menu.Display()
    
  end select
@@ -543,11 +553,21 @@ sub CommandParametersMenu.UserSelect()
    do
     charge_menu.UserSelect()
     if not charge_menu.cancelled then
-     message_menu.x = x + 9
-     message_menu.y = y
-     message_menu.ChangeSelected(menucommands(id).message(1) + 2)
-     message_menu.UserSelect()
-     if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+     if charge_menu.selected = 1 then
+      message_menu.x = x + 9
+      message_menu.y = y
+      message_menu.ChangeSelected(menucommands(id).message(1) + 2)
+      message_menu.UserSelect()
+      if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+     else
+      success_input.x = x + 32
+      success_input.y = y + 1
+      success_input.min_value = 0
+      success_input.max_value = 255
+      success_input.starting_number = menucommands(id).extra_delay
+      success_input.UserSelect()
+      menucommands(id).extra_delay = success_input.number
+     end if
     end if
     Display()
    loop until charge_menu.cancelled
@@ -635,6 +655,14 @@ sub CommandParametersMenu.UserSelect()
        message_menu.ChangeSelected(menucommands(id).message(1) + 2)
        message_menu.UserSelect()
        if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+      case 10 'Wait for the second cast
+       success_input.x = x + 36
+       success_input.y = y + 9
+       success_input.min_value = 0
+       success_input.max_value = 255
+       success_input.starting_number = menucommands(id).extra_delay
+       success_input.UserSelect()
+       menucommands(id).extra_delay = success_input.number
      end select
     end if
     Display()
@@ -756,7 +784,7 @@ sub CommandParametersMenu.UserSelect()
     Display()
    loop until cover_menu.cancelled
    
-  case 6, 15 'Dark Wave, Kick: pick one of the known code variants
+  case 6, 13, 15, 21 'Dark Wave, Aim, Kick, Peep: pick one of the known code variants
    code_menu.cancelled = false
    do until code_menu.cancelled
     code_menu.UserSelect()
@@ -785,11 +813,22 @@ sub CommandParametersMenu.UserSelect()
    do until fail_menu.cancelled
     fail_menu.UserSelect()
     if not fail_menu.cancelled then
-     message_menu.x = x + 17
-     message_menu.y = y
-     message_menu.ChangeSelected(menucommands(id).message(1) + 2)
-     message_menu.UserSelect()
-     if not message_menu.cancelled and message_menu.selected > 1 then menucommands(id).message(1) = message_menu.selected - 2
+     if fail_menu.selected = 1 then
+      message_menu.x = x + 17
+      message_menu.y = y
+      message_menu.ChangeSelected(menucommands(id).message(1) + 2)
+      message_menu.UserSelect()
+      if not message_menu.cancelled and message_menu.selected > 1 then menucommands(id).message(1) = message_menu.selected - 2
+     else
+      success_input.x = x + 28
+      success_input.y = y + fail_menu.selected - 1
+      success_input.min_value = 1
+      success_input.max_value = 255
+      if fail_menu.selected = 2 then success_input.starting_number = menucommands(id).jump_wait else success_input.starting_number = menucommands(id).jump_air
+      success_input.UserSelect()
+      if fail_menu.selected = 2 then menucommands(id).jump_wait = success_input.number else menucommands(id).jump_air = success_input.number
+      success_input.min_value = 0
+     end if
     end if
     Display()
    loop
@@ -907,6 +946,14 @@ sub CommandParametersMenu.UserSelect()
        message_menu.ChangeSelected(menucommands(id).message(1) + 2)
        message_menu.UserSelect()
        if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+      case 4
+       success_input.x = x + 30
+       success_input.y = y + 3
+       success_input.min_value = 0
+       success_input.max_value = 255
+       success_input.starting_number = menucommands(id).extra_delay
+       success_input.UserSelect()
+       menucommands(id).extra_delay = success_input.number
      end select      
     end if
     Display()

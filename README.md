@@ -835,7 +835,17 @@ Parameters shows the details that go with the command if it has any that can
 be edited (for example base values, multipliers and the stats and elements
 involved).
 
-Jump and Throw have one parameter, the message shown when they fail.
+Jump and Throw have the message shown when they fail. Jump also has the ticks
+it waits before leaving and the ticks it stays in the air (4 each in the
+original game; a tick is the game's smallest timer step).
+
+Charge, Twin and Regen have one more value each, which is an entry of the
+game's action delay table that the Information screen does not list because
+no command number points to it: Charge's wait before the attack, Twin's wait
+for the second cast and how long Regen lasts. A value of 0 means no wait, 1 to
+127 means 1/value of the unit's turn timer (1 is a whole one) and 128 and up
+means that many turns after subtracting 128 (the original Regen is 138, ten
+turns).
 
 Dark Wave and Kick have code settings. They are not data bytes: the editor
 swaps a few bytes of the game's code for another known sequence of the same
@@ -849,6 +859,10 @@ attack power, divided by 2, plus a random amount), and this setting changes
 that division to x0.5 (original), x1 or x2, so it changes both commands. If another patch has changed those bytes, the screen says
 "Custom, not changed" and leaves them alone until you pick one of the known
 choices.
+Aim and Peep have code settings too. Aim works by saving the target's
+evasion and the user's hit rate, setting them to 0 and 255 for the attack and
+restoring them afterwards: each can be kept instead of changed. Peep skips
+bosses; the setting lets it work on them.
 
 Command 22 (named "Dummy") is not used by the original game. Its Parameters
 screen has "Behaves like": pick another command and 22 runs that command's
@@ -1678,7 +1692,8 @@ VERSION HISTORY
       pair), pairs can be added and moved, a new pair starts as set 1 and script 1, and the sharing of sets
       and scripts is said on screen (private copies were removed)
     - Commands: the unknown bytes in the If lists are named from the disassembly (or shown as unused bytes)
-    - Commands: Dark Wave and Kick have code settings (HP cost, damage to undead, Kick multiplier, shared base damage)
+    - Commands: Dark Wave and Kick have code settings (HP cost, damage to undead, Kick multiplier, shared base damage), Aim (evasion, hit rate) and Peep (bosses) too
+    - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Jump and Throw have a Parameters screen with their failure message
     - Commands: the unused command 22 can "Behave like" another command (runs its routine and animation)
     - Messages editor: the list shows the start of each message, changed ones are yellow, the space of the
