@@ -844,6 +844,14 @@ Item and the spell commands (White, Black, Call, Ninja) use the delay of the
 item or spell instead, and Jump always waits the ticks set on its Parameters
 screen, so the screen shows their value as not used.
 
+Recall has two switches next to its message, both found in the battle code.
+"Needs the spell's MP" is the game's own check: Recall picks a random spell and
+does nothing at all, without a message, when the user has less MP than that
+spell costs. "Takes the spell's MP" is whether the MP is taken after the cast.
+With the check off but the cost on, the spell fails with the game's "not enough
+MP" message when the MP is short. With both off, Recall is free. Either one is
+shown as custom code, not changed, if other changes have altered those bytes.
+
 Jump and Throw have the message shown when they fail. Throw's damage is
 the thrown item's attack power times one of the user's stats (the level in the
 original game) plus a random amount, at most 9999. Its Parameters screen lets
@@ -1720,6 +1728,7 @@ VERSION HISTORY
     - Commands: Dark Wave and Kick have code settings (HP cost, damage to undead, Kick multiplier, shared base damage) and Peep has one (bosses)
     - Commands: Aim can use any stat of the target and the user, Boast and Cry can be reversed (raise or lower)
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
+    - Commands: Recall can skip its MP check and its MP cost
     - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)
     - Commands: the unused command 22 can "Behave like" another command (runs its routine and animation)
     - Messages editor: the list shows the start of each message, changed ones are yellow, the space of the

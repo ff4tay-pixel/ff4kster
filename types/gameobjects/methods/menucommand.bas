@@ -172,6 +172,47 @@ sub MenuCommand.WriteReverse(index as UByte)
 end sub
 
 
+sub MenuCommand.ReadRecall()
+
+ 'Recall picks a random spell and then (Cmd_07 in battle/cmd.asm) does nothing at all if the user has
+ ' less MP than the spell costs: that is one branch, beq (F0) in the code, or bra (80) to always go on.
+ ' The MP is taken by magic.asm when $355d is not 0. $355d is raised for Recall in ExecCmd
+ ' (battle/attack.asm: cmp #$07) and once more in Cmd_07 itself, so removing the cost means changing
+ ' that compare to a command number that never occurs (FF) and the inc in Cmd_07 to nops.
+
+ recall_check_known = (ByteAt(&h1ECB1) = &h06 and (ByteAt(&h1ECB0) = &hF0 or ByteAt(&h1ECB0) = &h80))
+ recall_needs_mp = (ByteAt(&h1ECB0) = &hF0)
+
+ recall_uses_mp = (ByteAt(&h1B340) = &h07 and ByteAt(&h1ECBC) = &hEE and ByteAt(&h1ECBD) = &h5D and ByteAt(&h1ECBE) = &h35)
+ recall_cost_known = recall_uses_mp
+ if ByteAt(&h1B340) = &hFF and ByteAt(&h1ECBC) = &hEA and ByteAt(&h1ECBD) = &hEA and ByteAt(&h1ECBE) = &hEA then recall_cost_known = true
+
+end sub
+
+
+sub MenuCommand.WriteRecall()
+
+ if recall_check_known then
+  if recall_needs_mp then WriteByte(&h1ECB0, &hF0) else WriteByte(&h1ECB0, &h80)
+ end if
+
+ if recall_cost_known then
+  if recall_uses_mp then
+   WriteByte(&h1B340, &h07)
+   WriteByte(&h1ECBC, &hEE)
+   WriteByte(&h1ECBD, &h5D)
+   WriteByte(&h1ECBE, &h35)
+  else
+   WriteByte(&h1B340, &hFF)
+   WriteByte(&h1ECBC, &hEA)
+   WriteByte(&h1ECBD, &hEA)
+   WriteByte(&h1ECBE, &hEA)
+  end if
+ end if
+
+end sub
+
+
 sub MenuCommand.ReadThrow()
 
  'Throw (dart): damage is the item's attack power times one of the user's stats (the level) plus a random
@@ -484,6 +525,7 @@ sub MenuCommand.ReadFromROM(index as UByte)
  
  charging_stance = ByteAt(&hB7E60 + (index - 1))
  ReadCode(index)
+ if index = 8 then ReadRecall()
  action_stance = &hFF
  action_stance2 = &hFF
  action_stance3 = &hFF
@@ -679,6 +721,7 @@ sub MenuCommand.WriteToROM(index as UByte)
  WriteByte(&h9FF19 + (index - 1) * 2 + 1, disabling_temporary) 
  WriteByte(&hB7E60 + (index - 1), charging_stance)
  WriteCode(index)
+ if index = 8 then WriteRecall()
  
  select case index
  

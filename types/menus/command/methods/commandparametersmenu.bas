@@ -210,6 +210,22 @@ sub CommandParametersMenu.Display()
     recall_menu.ChangeOption(i * 2, FF4Text(Pad(str(menucommands(id).success(i)), 3, true) + "/160: " + Pad(str(fix(menucommands(id).success(i)*100/160)), 3, true) + "%"), 15)
    next
    recall_menu.ChangeOption(17, FF4Text("Message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
+   if not menucommands(id).recall_check_known then
+    temp = FF4Text("MP check: custom code")
+   elseif menucommands(id).recall_needs_mp then
+    temp = FF4Text("Needs the spell's MP: Yes")
+   else
+    temp = FF4Text("Needs the spell's MP: No ")
+   end if
+   recall_menu.ChangeOption(18, temp, 15)
+   if not menucommands(id).recall_cost_known then
+    temp = FF4Text("MP cost: custom code")
+   elseif menucommands(id).recall_uses_mp then
+    temp = FF4Text("Takes the spell's MP: Yes")
+   else
+    temp = FF4Text("Takes the spell's MP: No ")
+   end if
+   recall_menu.ChangeOption(19, temp, 15)
    recall_menu.Display()
   
   case 9 'Sing
@@ -463,6 +479,10 @@ sub CommandParametersMenu.UserSelect()
       message_menu.ChangeSelected(menucommands(id).message(1) + 2)
       message_menu.UserSelect()
       if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+     elseif recall_menu.selected = 18 then
+      if menucommands(id).recall_check_known then menucommands(id).recall_needs_mp = not menucommands(id).recall_needs_mp
+     elseif recall_menu.selected = 19 then
+      if menucommands(id).recall_cost_known then menucommands(id).recall_uses_mp = not menucommands(id).recall_uses_mp
      elseif recall_menu.selected mod 2 = 1 then
       spell_menu.x = x + 9
       spell_menu.y = y + (recall_menu.selected \ 2)

@@ -36,6 +36,10 @@ type MenuCommand
  throw_known as Boolean 'false if the Throw damage code is not the original
  throw_stat as UByte 'byte of the user's properties the item power is multiplied by (the level)
  throw_cap as UInteger 'largest damage a thrown item does
+ recall_check_known as Boolean 'Recall: false if the MP check code is not the original or the known variant
+ recall_cost_known as Boolean 'Recall: same for the code that makes it spend MP
+ recall_needs_mp as Boolean 'Recall does nothing if the user has less MP than the spell costs
+ recall_uses_mp as Boolean 'Recall takes the spell's MP
  behaves_like as UByte 'command 22 only: the command whose routine it runs (0 = none)
 
  declare static function ReverseParts(index as UByte) as Integer
@@ -54,6 +58,8 @@ type MenuCommand
  declare static function HasParameters(index as UByte) as Boolean
  declare static function TargetsCorrectly(index as UByte) as Boolean
  
+ declare sub ReadRecall()
+ declare sub WriteRecall()
  declare sub ReadThrow()
  declare sub WriteThrow()
  declare sub ReadAim()
