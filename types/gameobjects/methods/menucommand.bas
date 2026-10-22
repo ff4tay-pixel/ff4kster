@@ -62,6 +62,203 @@ function MenuCommand.DelayText(value as UByte) as String
 end function
 
 
+function MenuCommand.BytesAre(offset as UInteger, hex_text as String) as Boolean
+
+ 'Whether the ROM holds exactly these bytes (hex text) at offset.
+
+ for i as Integer = 0 to len(hex_text) \ 2 - 1
+  if ByteAt(offset + i) <> val("&h" + mid(hex_text, i * 2 + 1, 2)) then return false
+ next
+
+ return true
+
+end function
+
+
+function MenuCommand.ReverseParts(index as UByte) as Integer
+
+ 'Boast (18) and Cry (19) raise or lower a stat with a few bytes of code that can be swapped for the
+ ' opposite operation (add or subtract, with a cap of 99 or a floor of 0 or 1). Three pieces each.
+
+ if index = 18 or index = 19 then return 3
+
+ return 0
+
+end function
+
+
+function MenuCommand.ReverseOffset(index as UByte, part as Integer) as UInteger
+
+ if index = 18 then
+  select case part
+   case 1: return &h1ECCF 'clc or sec
+   case 2: return &h1ECD3 'adc or sbc, the amount follows
+   case 3: return &h1ECD5 'the cap or the floor
+  end select
+ else
+  select case part
+   case 1: return &h1ED0A
+   case 2: return &h1ED0E
+   case 3: return &h1ED10
+  end select
+ end if
+
+ return 0
+
+end function
+
+
+function MenuCommand.ReverseBytes(index as UByte, part as Integer, reversed as Boolean) as String
+
+ 'The bytes of the original code (reversed false) or of the reversed one, in hex. Boast: raise with
+ ' adc, capped at 99 / lower with sbc, stopping at 0. Cry: lower with sbc, stopping at 1 / raise with
+ ' adc, capped at 99.
+
+ if index = 18 then
+  select case part
+   case 1: if reversed then return "38" else return "18"
+   case 2: if reversed then return "E9" else return "69"
+   case 3: if reversed then return "B002A900EAEA" else return "C9639002A963"
+  end select
+ else
+  select case part
+   case 1: if reversed then return "18" else return "38"
+   case 2: if reversed then return "65A9" else return "E5A9"
+   case 3: if reversed then return "C9649002A963" else return "F002B002A901"
+  end select
+ end if
+
+ return ""
+
+end function
+
+
+sub MenuCommand.ReadReverse(index as UByte)
+
+ dim matches as Boolean
+
+ reverse_known = false
+ reversed = false
+ if ReverseParts(index) = 0 then exit sub
+
+ for variant as Integer = 0 to 1
+  matches = true
+  for part as Integer = 1 to ReverseParts(index)
+   if not BytesAre(ReverseOffset(index, part), ReverseBytes(index, part, (variant = 1))) then matches = false
+  next
+  if matches then
+   reverse_known = true
+   reversed = (variant = 1)
+   exit for
+  end if
+ next
+
+end sub
+
+
+sub MenuCommand.WriteReverse(index as UByte)
+
+ dim bytes_text as String
+
+ if ReverseParts(index) = 0 or not reverse_known then exit sub
+
+ for part as Integer = 1 to ReverseParts(index)
+  bytes_text = ReverseBytes(index, part, reversed)
+  for i as Integer = 0 to len(bytes_text) \ 2 - 1
+   WriteByte(ReverseOffset(index, part) + i, val("&h" + mid(bytes_text, i * 2 + 1, 2)))
+  next
+ next
+
+end sub
+
+
+sub MenuCommand.ReadAim()
+
+ 'Aim saves the target's evasion and the user's hit rate, sets them to 0 and 255, attacks and puts them
+ ' back (battle/cmd.asm). The two bytes are addresses in the code: $2680 + n is the user's property n,
+ ' $2700 + n the target's. Each "set" can also be removed (the bytes become nops).
+
+ dim start_at as UInteger = &h1EA36
+ dim b(0 to 27) as Integer
+
+ for i as Integer = 0 to 27
+  b(i) = ByteAt(start_at + i)
+ next
+
+ aim_target_set = (b(9) = &h8D)
+ aim_user_set = (b(12) = &h3A)
+ aim_target_stat = b(5)
+ aim_user_stat = b(1) - &h80
+
+ aim_known = (b(0) = &hAD and b(2) = &h26 and b(3) = &h48 and b(4) = &hAD and b(6) = &h27 and b(7) = &h48)
+ aim_known = aim_known and b(8) = &h7B and b(19) = &h68 and b(20) = &h8D and b(22) = &h27
+ aim_known = aim_known and b(23) = &h68 and b(24) = &h8D and b(26) = &h26 and b(27) = &h60
+ aim_known = aim_known and b(1) >= &h80 and b(5) < &h80 and b(21) = b(5) and b(25) = b(1)
+ if aim_target_set then
+  aim_known = aim_known and b(10) = b(5) and b(11) = &h27
+ else
+  aim_known = aim_known and b(9) = &hEA and b(10) = &hEA and b(11) = &hEA
+ end if
+ if aim_user_set then
+  aim_known = aim_known and b(13) = &h8D and b(14) = b(1) and b(15) = &h26
+ else
+  aim_known = aim_known and b(12) = &hEA and b(13) = &hEA and b(14) = &hEA and b(15) = &hEA
+ end if
+
+end sub
+
+
+sub MenuCommand.WriteAim()
+
+ dim start_at as UInteger = &h1EA36
+
+ if not aim_known then exit sub
+
+ WriteByte(start_at + 1, &h80 + aim_user_stat)
+ WriteByte(start_at + 5, aim_target_stat)
+ WriteByte(start_at + 21, aim_target_stat)
+ WriteByte(start_at + 25, &h80 + aim_user_stat)
+ if aim_target_set then
+  WriteByte(start_at + 9, &h8D)
+  WriteByte(start_at + 10, aim_target_stat)
+  WriteByte(start_at + 11, &h27)
+ else
+  for i as Integer = 9 to 11
+   WriteByte(start_at + i, &hEA)
+  next
+ end if
+ if aim_user_set then
+  WriteByte(start_at + 12, &h3A)
+  WriteByte(start_at + 13, &h8D)
+  WriteByte(start_at + 14, &h80 + aim_user_stat)
+  WriteByte(start_at + 15, &h26)
+ else
+  for i as Integer = 12 to 15
+   WriteByte(start_at + i, &hEA)
+  next
+ end if
+
+end sub
+
+
+function MenuCommand.DelayDescription(index as UByte, value as UByte) as String
+
+ 'The delay of a command as the Information screen shows it. The game reads the table only for commands
+ ' picked from the command menu (char.asm): Item and the spell menus (White, Black, Call, Ninja) use the
+ ' delay of the item or spell, and Jump always waits 4 ticks (TimerDur_0c in timer_dur.asm).
+
+ select case index
+  case 2 to 5, 25
+   return str(value) + ", not used, the delay of the item or spell applies"
+  case 7
+   return str(value) + ", not used, Jump waits the ticks of its Parameters"
+ end select
+
+ return str(value) + ", " + DelayText(value)
+
+end function
+
+
 function MenuCommand.CodeRows(index as UByte) as Integer
 
  'Settings that are not data bytes but small changes to the game's code. Each one is a few bytes
@@ -71,7 +268,6 @@ function MenuCommand.CodeRows(index as UByte) as Integer
  select case index
   case 6: return 3 'Dark Wave
   case 15: return 2 'Kick
-  case 13: return 2 'Aim
   case 21: return 1 'Peep
  end select
 
@@ -90,9 +286,6 @@ function MenuCommand.CodeTitle(index as UByte, row as Integer) as String
   case 15
    if row = 1 then return "Attack multiplier:    "
    return "Base damage, both:    "
-  case 13
-   if row = 1 then return "Target's evasion:     "
-   return "User's hit rate:      "
   case 21
    return "Bosses:               "
  end select
@@ -112,9 +305,6 @@ function MenuCommand.CodeOffset(index as UByte, row as Integer) as UInteger
   case 15
    if row = 1 then return &h1E924
    return &h1E93A
-  case 13
-   if row = 1 then return &h1EA3F
-   return &h1EA42
   case 21
    return &h1E356
  end select
@@ -136,9 +326,6 @@ function MenuCommand.CodeNames(index as UByte, row as Integer) as String
   case 15
    if row = 1 then return "Half, original|Full|Double"
    return "x0.5, original|x1|x2"
-  case 13
-   if row = 1 then return "Set to 0, original|Kept"
-   return "Set to 255, original|Kept"
   case 21
    return "Cannot be peeked at, original|Can be peeked at"
  end select
@@ -154,8 +341,7 @@ function MenuCommand.CodeBytes(index as UByte, row as Integer) as String
  ' 16 bit value right by N (Lsr_N in the disassembly) or "lda #0". Damage to undead: two shift pairs
  ' (lsr/ror) of which the choices keep two, one or none. Kick: lsr, nothing or asl on the multiplier.
  ' Base damage: the shared half of multiplier x power (lsr/ror), nothing, or doubled (asl/rol), used by
- ' both commands, so it is the same bytes on both screens. Aim: the game saves the target's evasion and the
- ' user's hit rate, sets 0 and 255 (sta / dec, sta), attacks and restores them; the choices keep them.
+ ' both commands, so it is the same bytes on both screens.
  ' Peep: the branch that skips bosses (bpl) or an always taken branch (bra).
 
  select case index
@@ -166,9 +352,6 @@ function MenuCommand.CodeBytes(index as UByte, row as Integer) as String
   case 15
    if row = 1 then return "46DF|EAEA|06DF"
    return "46E466E3|EAEAEAEA|06E326E4"
-  case 13
-   if row = 1 then return "8D2927|EAEAEA"
-   return "3A8D9C26|EAEAEAEA"
   case 21
    return "1003|8003"
  end select
@@ -351,6 +534,7 @@ sub MenuCommand.ReadFromROM(index as UByte)
   
   case 13 'Aim
    action_stance = ByteAt(&h14A8A)
+   ReadAim()
   
   case 14 'Charge
    message(1) = ByteAt(&h1EA1E)
@@ -379,12 +563,14 @@ sub MenuCommand.ReadFromROM(index as UByte)
    action_stance = ByteAt(&h149AB)
    misc_bytes(1) = ByteAt(&h1ECD1) 'Stat
    misc_bytes(2) = ByteAt(&h1ECD4) 'Amount
+   ReadReverse(index)
    message(1) = ByteAt(&h1ECDF)
    
   case 19 'Cry
    action_stance = ByteAt(&h149AB)
    misc_bytes(1) = ByteAt(&h1ECF3) 'Read stat
    misc_bytes(2) = ByteAt(&h1ED0C) 'Write stat
+   ReadReverse(index)
    message(1) = ByteAt(&h1ED22) 'Message
    
   case 20 'Cover
@@ -612,6 +798,7 @@ sub MenuCommand.WriteToROM(index as UByte)
   
   case 13 'Aim
    WriteByte(&h14A8A, action_stance)
+   WriteAim()
    
   case 14 'Charge
    WriteByte(&hA0089 + &h1F, extra_delay)
@@ -676,6 +863,7 @@ sub MenuCommand.WriteToROM(index as UByte)
    WriteByte(&h1ECD1, misc_bytes(1))
    WriteByte(&h1ECDC, misc_bytes(1))
    WriteByte(&h1ECD4, misc_bytes(2))
+   WriteReverse(index)
    WriteByte(&h1ECDF, message(1))
    if message(1) = &hFF then
     WriteByte(&h1ECE0, &hEA)
@@ -692,6 +880,7 @@ sub MenuCommand.WriteToROM(index as UByte)
    WriteByte(&h1ECF3, misc_bytes(1))
    WriteByte(&h1ED0C, misc_bytes(2))
    WriteByte(&h1ED17, misc_bytes(2))
+   WriteReverse(index)
    WriteByte(&h1ED22, message(1))
    if message(1) = &hFF then
     WriteByte(&h1ED23, &hEA)

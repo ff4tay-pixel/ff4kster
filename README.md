@@ -835,6 +835,15 @@ Parameters shows the details that go with the command if it has any that can
 be edited (for example base values, multipliers and the stats and elements
 involved).
 
+The delay index on the Information screen is how long a unit waits after
+choosing the command before it acts, and the screen says what the value means:
+0 is no wait, 1 to 127 is 1/value of the unit's turn timer (1 is a whole turn
+timer, 2 is half, and so on), and 128 and up is the value minus 128 whole turn
+timers. The game reads this only for commands chosen from the command menu.
+Item and the spell commands (White, Black, Call, Ninja) use the delay of the
+item or spell instead, and Jump always waits the ticks set on its Parameters
+screen, so the screen shows their value as not used.
+
 Jump and Throw have the message shown when they fail. Jump also has the ticks
 it waits before leaving and the ticks it stays in the air (4 each in the
 original game; a tick is the game's smallest timer step).
@@ -859,10 +868,21 @@ attack power, divided by 2, plus a random amount), and this setting changes
 that division to x0.5 (original), x1 or x2, so it changes both commands. If another patch has changed those bytes, the screen says
 "Custom, not changed" and leaves them alone until you pick one of the known
 choices.
-Aim and Peep have code settings too. Aim works by saving the target's
-evasion and the user's hit rate, setting them to 0 and 255 for the attack and
-restoring them afterwards: each can be kept instead of changed. Peep skips
-bosses; the setting lets it work on them.
+Peep has a code setting too: it skips bosses, and the setting lets it work on
+them.
+
+Aim works by saving one stat of the target and one of the user, setting the
+target's to 0 and the user's to 255 for the attack and restoring them
+afterwards. In the original game they are the target's evasion (listed as
+Physical defense rate) and the user's hit rate. The Aim screen lets you pick
+which stat each side uses (the same list as Cry and Steal) and whether it is
+set at all or left alone.
+
+Boast (Bluff) and Cry have an "Effect" line that reverses them. Boast raises a
+stat by its amount up to 99; reversed it lowers it and stops at 0. Cry lowers
+a stat by half the user's and stops at 1; reversed it raises it by that
+amount up to 99. If other changes have altered that code the line says
+"custom code, not changed" and leaves it alone.
 
 Command 22 (named "Dummy") is not used by the original game. Its Parameters
 screen has "Behaves like": pick another command and 22 runs that command's
@@ -1692,7 +1712,8 @@ VERSION HISTORY
       pair), pairs can be added and moved, a new pair starts as set 1 and script 1, and the sharing of sets
       and scripts is said on screen (private copies were removed)
     - Commands: the unknown bytes in the If lists are named from the disassembly (or shown as unused bytes)
-    - Commands: Dark Wave and Kick have code settings (HP cost, damage to undead, Kick multiplier, shared base damage), Aim (evasion, hit rate) and Peep (bosses) too
+    - Commands: Dark Wave and Kick have code settings (HP cost, damage to undead, Kick multiplier, shared base damage) and Peep has one (bosses)
+    - Commands: Aim can use any stat of the target and the user, Boast and Cry can be reversed (raise or lower)
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Jump and Throw have a Parameters screen with their failure message
     - Commands: the unused command 22 can "Behave like" another command (runs its routine and animation)

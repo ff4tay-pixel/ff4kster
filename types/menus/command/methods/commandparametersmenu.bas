@@ -24,6 +24,7 @@ constructor CommandParametersMenu(starting_x as UByte = 0, starting_y as UByte =
  regen_menu = BlueMenu(x, y)
  clone_menu = BlueMenu(x, y)
  fail_menu = BlueMenu(x, y)
+ aim_menu = BlueMenu(x, y)
  code_menu = BlueMenu(x, y)
  code_choice_menu = BlueMenu(x + 26, y)
  code_choice_menu.max_rows = 8
@@ -247,6 +248,22 @@ sub CommandParametersMenu.Display()
    pray_menu.ChangeOption(3, FF4Text("Message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
    pray_menu.Display()
    
+  case 13 'Aim
+   if not menucommands(id).aim_known then
+    aim_menu.ChangeOption(1, FF4Text("Custom code, not changed"), 15)
+    aim_menu.Remove(4)
+    aim_menu.Remove(3)
+    aim_menu.Remove(2)
+   else
+    aim_menu.ChangeOption(1, FF4Text("Target's stat:  ") + Pad(stat_menu.options.ItemAt((menucommands(id).aim_target_stat mod &h80) + 1), stat_menu.options.Width(),, FF4Text(" ")), 15)
+    if menucommands(id).aim_target_set then temp = FF4Text("Set to 0 for the attack") else temp = FF4Text("Left alone")
+    aim_menu.ChangeOption(2, FF4Text("   during Aim:  ") + temp, 15)
+    aim_menu.ChangeOption(3, FF4Text("User's stat:    ") + Pad(stat_menu.options.ItemAt((menucommands(id).aim_user_stat mod &h80) + 1), stat_menu.options.Width(),, FF4Text(" ")), 15)
+    if menucommands(id).aim_user_set then temp = FF4Text("Set to 255 for the attack") else temp = FF4Text("Left alone")
+    aim_menu.ChangeOption(4, FF4Text("   during Aim:  ") + temp, 15)
+   end if
+   aim_menu.Display()
+   
   case 14 'Charge
    charge_menu.ChangeOption(1, FF4Text("Message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
    charge_menu.ChangeOption(2, FF4Text("Wait before attack: " + MenuCommand.DelayText(menucommands(id).extra_delay) + ", value " + str(menucommands(id).extra_delay)), 15)
@@ -271,15 +288,31 @@ sub CommandParametersMenu.Display()
    twin_menu.Display()
    
   case 18 'Boast
-   boast_menu.ChangeOption(1, FF4Text("Increase target's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(1) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
+   boast_menu.ChangeOption(1, FF4Text(iif(menucommands(id).reversed, "Decrease", "Increase") + " target's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(1) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
    boast_menu.ChangeOption(2, FF4Text("By " + Pad(str(menucommands(id).misc_bytes(2)), 3, true)), 15)
    boast_menu.ChangeOption(3, FF4Text("Message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
+   if not menucommands(id).reverse_known then
+    temp = FF4Text("Effect: custom code, not changed")
+   elseif menucommands(id).reversed then
+    temp = FF4Text("Effect: lowers the stat, stops at 0")
+   else
+    temp = FF4Text("Effect: raises the stat, up to 99")
+   end if
+   boast_menu.ChangeOption(4, temp, 15)
    boast_menu.Display()
    
   case 19 'Cry
-   cry_menu.ChangeOption(1, FF4Text("Reduce target's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(2) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
+   cry_menu.ChangeOption(1, FF4Text(iif(menucommands(id).reversed, "Raise", "Reduce") + " target's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(2) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
    cry_menu.ChangeOption(2, FF4Text(" by half user's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(1) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
    cry_menu.ChangeOption(3, FF4Text("Message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
+   if not menucommands(id).reverse_known then
+    temp = FF4Text("Effect: custom code, not changed")
+   elseif menucommands(id).reversed then
+    temp = FF4Text("Effect: raises the stat, up to 99")
+   else
+    temp = FF4Text("Effect: lowers the stat, stops at 1")
+   end if
+   cry_menu.ChangeOption(4, temp, 15)
    cry_menu.Display()
    
   case 20 'Cover
@@ -300,7 +333,7 @@ sub CommandParametersMenu.Display()
    cover_menu.ChangeOption(3, FF4Text("Disable if present: ") + Pad(temp, actor_names.Width(),, FF4Text(" ")), 15)
    cover_menu.Display()
    
-  case 6, 13, 15, 21 'Dark Wave, Aim, Kick, Peep: code settings
+  case 6, 15, 21 'Dark Wave, Kick, Peep: code settings
    for row as Integer = 1 to MenuCommand.CodeRows(id)
     if menucommands(id).code_choice(row) = 0 then
      temp = FF4Text("Custom, not changed")
@@ -549,6 +582,33 @@ sub CommandParametersMenu.UserSelect()
     Display()
    loop
    
+  case 13 'Aim: the stats that Aim saves, changes and restores
+   aim_menu.cancelled = false
+   stat_menu.x = x + 15
+   do until aim_menu.cancelled
+    aim_menu.UserSelect()
+    if not aim_menu.cancelled and menucommands(id).aim_known then
+     select case aim_menu.selected
+      case 1
+       stat_menu.y = y
+       stat_menu.ChangeSelected((menucommands(id).aim_target_stat mod &h80) + 1)
+       stat_menu.UserSelect()
+       if not stat_menu.cancelled then menucommands(id).aim_target_stat = stat_menu.selected - 1
+      case 2
+       menucommands(id).aim_target_set = not menucommands(id).aim_target_set
+      case 3
+       stat_menu.y = y + 2
+       stat_menu.ChangeSelected((menucommands(id).aim_user_stat mod &h80) + 1)
+       stat_menu.UserSelect()
+       if not stat_menu.cancelled then menucommands(id).aim_user_stat = stat_menu.selected - 1
+      case 4
+       menucommands(id).aim_user_set = not menucommands(id).aim_user_set
+     end select
+    end if
+    stat_menu.Hide()
+    Display()
+   loop
+   
   case 14 'Charge
    do
     charge_menu.UserSelect()
@@ -694,6 +754,8 @@ sub CommandParametersMenu.UserSelect()
        message_menu.ChangeSelected(menucommands(id).message(1) + 2)
        message_menu.UserSelect()
        if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+      case 4 'Raise or lower
+       if menucommands(id).reverse_known then menucommands(id).reversed = not menucommands(id).reversed
      end select
     end if
     Display()
@@ -722,6 +784,8 @@ sub CommandParametersMenu.UserSelect()
        message_menu.ChangeSelected(menucommands(id).message(1) + 2)
        message_menu.UserSelect()
        if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+      case 4 'Raise or lower
+       if menucommands(id).reverse_known then menucommands(id).reversed = not menucommands(id).reversed
      end select
     end if
     Display()
@@ -784,7 +848,7 @@ sub CommandParametersMenu.UserSelect()
     Display()
    loop until cover_menu.cancelled
    
-  case 6, 13, 15, 21 'Dark Wave, Aim, Kick, Peep: pick one of the known code variants
+  case 6, 15, 21 'Dark Wave, Kick, Peep: pick one of the known code variants
    code_menu.cancelled = false
    do until code_menu.cancelled
     code_menu.UserSelect()

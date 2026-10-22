@@ -75,7 +75,7 @@ sub EditCommands()
    name_input.starting_text = menucommands(select_command.selected).name
    edit_info.ChangeOption(1, FF4Text("Name:        ") + menucommands(select_command.selected).name, 15)
    edit_info.ChangeOption(2, FF4Text("Target:      ") + Pad(targets.ItemAt(menucommands(select_command.selected).target + 1), targets.Width(),, FF4Text(" ")), 15)
-   edit_info.ChangeOption(3, FF4Text("Delay index: " + Pad(str(menucommands(select_command.selected).delay), 3)), 15)
+   edit_info.ChangeOption(3, FF4Text("Delay index: " + MenuCommand.DelayDescription(select_command.selected, menucommands(select_command.selected).delay)), 15)
    edit_info.ChangeOption(4, FF4Text("Disable if:  ") + StatusList(menucommands(select_command.selected).disabling_persistent, "persistent"), 15)
    edit_info.ChangeOption(5, FF4Text("        or:  ") + StatusList(menucommands(select_command.selected).disabling_temporary, "temporary"), 15)
    edit_info.ChangeOption(6, FF4Text("Wait stance: ") + stance_names.ItemAt(menucommands(select_command.selected).charging_stance), 15)
@@ -190,7 +190,7 @@ sub EditCommands()
           number_input.starting_number = menucommands(select_command.selected).delay
           number_input.UserSelect()
           menucommands(select_command.selected).delay = number_input.number
-          edit_info.ChangeOption(3, FF4Text("Delay index: " + Pad(str(menucommands(select_command.selected).delay), 3)), 15)
+          edit_info.ChangeOption(3, FF4Text("Delay index: " + MenuCommand.DelayDescription(select_command.selected, menucommands(select_command.selected).delay)), 15)
 
          case 4 'Persistent statuses
           status_menu = FlagMenu(name_input.x, name_input.y + 3, "persistent status")

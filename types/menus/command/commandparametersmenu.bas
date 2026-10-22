@@ -26,6 +26,7 @@ type CommandParametersMenu
  steal_menu as BlueMenu
  regen_menu as BlueMenu
  clone_menu as BlueMenu
+ aim_menu as BlueMenu 'Aim: which stats it changes
  code_menu as BlueMenu 'Dark Wave and Kick: the code settings
  code_choice_menu as BlueMenu
  fail_menu as BlueMenu 'Jump and Throw: the message when the action fails

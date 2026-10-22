@@ -26,8 +26,20 @@ type MenuCommand
  extra_delay as UByte 'Charge, Twin, Regen: the entry of the delay table (the 3 hidden ones) used by their second part
  jump_wait as UByte 'Jump: ticks before it leaves
  jump_air as UByte 'Jump: ticks in the air
+ reversed as Boolean 'Boast raises or lowers, Cry lowers or raises: the code is the reversed variant
+ reverse_known as Boolean 'false if those bytes are not one of the two known variants
+ aim_known as Boolean 'false if the Aim code is not one of the known variants
+ aim_target_stat as UByte 'byte of the target properties that Aim changes (the game sets it to 0)
+ aim_user_stat as UByte 'byte of the user properties that Aim changes (the game sets it to 255)
+ aim_target_set as Boolean
+ aim_user_set as Boolean
  behaves_like as UByte 'command 22 only: the command whose routine it runs (0 = none)
 
+ declare static function ReverseParts(index as UByte) as Integer
+ declare static function ReverseOffset(index as UByte, part as Integer) as UInteger
+ declare static function ReverseBytes(index as UByte, part as Integer, reversed as Boolean) as String
+ declare static function BytesAre(offset as UInteger, hex_text as String) as Boolean
+ declare static function DelayDescription(index as UByte, value as UByte) as String
  declare static function DelayText(value as UByte) as String
  declare static function CodeRows(index as UByte) as Integer
  declare static function CodeTitle(index as UByte, row as Integer) as String
@@ -39,6 +51,10 @@ type MenuCommand
  declare static function HasParameters(index as UByte) as Boolean
  declare static function TargetsCorrectly(index as UByte) as Boolean
  
+ declare sub ReadAim()
+ declare sub WriteAim()
+ declare sub ReadReverse(index as UByte)
+ declare sub WriteReverse(index as UByte)
  declare sub ReadCode(index as UByte)
  declare sub WriteCode(index as UByte)
  declare sub ReadFromROM(index as UByte)
