@@ -116,43 +116,26 @@ end sub
 
 
 dim shared fml_removal as BlueMenu 'what Dispel and Black hole remove, 3 columns
-dim shared fs_text(1 to 16, 1 to 14) as String 'the pieces of the formula lines: text, or @ and the field
-dim shared fs_pieces(1 to 16) as Integer
-dim shared fs_labels(1 to 16) as String
+dim shared fs_page as Integer '1 the stat formulas, 2 the statuses of Frog and Mini and the like, 3 the other status modifiers
+dim shared fs_x0 as Integer 'where the formula starts on a line
+dim shared fs_text(1 to 24, 1 to 14) as String 'the pieces of the formula lines: text, or @ and the field
+dim shared fs_pieces(1 to 24) as Integer
+dim shared fs_labels(1 to 24) as String
 dim shared fs_lines as Integer
 dim shared fs_line as Integer 'the line of the cursor
 dim shared fs_field as Integer 'the field of the cursor, counted in the fields of the line
-dim shared fs_hit_x(1 to 16, 1 to 14) as Integer 'where each piece was drawn, for the mouse
-dim shared fs_hit_w(1 to 16, 1 to 14) as Integer
+dim shared fs_hit_x(1 to 24, 1 to 14) as Integer 'where each piece was drawn, for the mouse
+dim shared fs_hit_w(1 to 24, 1 to 14) as Integer
 
 
-sub FsLayout()
+sub FsFill(lines_text() as String, count as Integer)
 
- 'The lines of the character stat formulas. A piece is plain text, or @ and a field: S1 to S11 the stat of a
- ' term, D1 to D12 its divisor, PL the plus 1 of the attack multiplier, YS YM YP Yang's attack, AN NU MU AD
- ' the turn wait. The terms are numbered as in BattleFormulas.TermStatOffset.
+ 'Splits the lines of a page into the label and the pieces.
 
- dim lines_text(1 to 16) as String = { _
-  "Attack multiplier|@S1| / |@D1| plus |@S2| / |@D2| plus |@PL", _
-  "Attack power|@S3| / |@D3| plus |@S4| / |@D4| plus weapon attack", _
-  "Attack hit rate|@S4| / |@D4| plus weapon hit rate", _
-  "Yang's attack power|@YS| x |@YM| plus |@S3| / |@D3| plus |@YP", _
-  "Defense multiplier|@S5| / |@D5| x shield multiplier plus |@S6| / |@D6", _
-  "Defense|@S7| / |@D7| plus armor plus shield defense", _
-  "Magic def multiplier|sum of |@S8| and |@S9| / |@D10| plus |@S11| / |@D11", _
-  "Magic defense rate|sum of |@S8| and |@S9| / |@D12| plus armor and shield", _
-  "Turn wait, top|@AN|@NU", _
-  "divided by|My AGI x |@MU| plus |@AD", _
-  "Count, doom|counts down once every |@CT| ticks of the timer loop", _
-  "when it ends|the unit gets |@CS", _
-  "Protect, Armor|adds |@PA| to the defense of the target", _
-  "Shell|adds |@SA| to the magic defense of the target", _
-  "Armor, Zeromus|in the Zeromus battle Armor |@PZ", _
-  "Shell, Zeromus|in the Zeromus battle Shell |@SZ"}
  dim rest as String
  dim p as Integer
 
- fs_lines = 16
+ fs_lines = count
  for i as Integer = 1 to fs_lines
   rest = lines_text(i)
   p = instr(rest, "|")
@@ -174,9 +157,94 @@ sub FsLayout()
 end sub
 
 
+sub FsLayout()
+
+ 'The lines of a page. A piece is plain text, or @ and a field: S1 to S11 the stat of a term, D1 to D12 its
+ ' divisor, PL the plus 1 of the attack multiplier, YS YM YP Yang's attack, AN NU MU AD the turn wait, CT CS
+ ' Count, PA SA PZ SZ Armor and Shell. On page 2 T1 to T6 are the statuses of a rule, V1 the attack power of a
+ ' weak attacker, M2 what the attack power of a hurt target is multiplied by and XD its defense.
+ ' The terms are numbered as in BattleFormulas.TermStatOffset.
+
+ dim page1(1 to 16) as String = { _
+  "Attack multiplier|@S1| / |@D1| plus |@S2| / |@D2| plus |@PL", _
+  "Attack power|@S3| / |@D3| plus |@S4| / |@D4| plus weapon attack", _
+  "Attack hit rate|@S4| / |@D4| plus weapon hit rate", _
+  "Yang's attack power|@YS| x |@YM| plus |@S3| / |@D3| plus |@YP", _
+  "Defense multiplier|@S5| / |@D5| x shield multiplier plus |@S6| / |@D6", _
+  "Defense|@S7| / |@D7| plus armor plus shield defense", _
+  "Magic def multiplier|sum of |@S8| and |@S9| / |@D10| plus |@S11| / |@D11", _
+  "Magic defense rate|sum of |@S8| and |@S9| / |@D12| plus armor and shield", _
+  "Turn wait, top|@AN|@NU", _
+  "divided by|My AGI x |@MU| plus |@AD", _
+  "Count, doom|counts down once every |@CT| ticks of the timer loop", _
+  "when it ends|the unit gets |@CS", _
+  "Protect, Armor|adds |@PA| to the defense of the target", _
+  "Shell|adds |@SA| to the magic defense of the target", _
+  "Armor, Zeromus|in the Zeromus battle Armor |@PZ", _
+  "Shell, Zeromus|in the Zeromus battle Shell |@SZ"}
+ dim page2(1 to 9) as String = { _
+  "Weak attacker|when the attacker has |@T1", _
+  "|its attack power becomes |@V1| and it cannot crit", _
+  "Hurt target|when the target has |@T2", _
+  "|its attack power is multiplied by |@M2", _
+  "|and its defense becomes |@XD", _
+  "Defense multiplier is 0|when the target has |@T3", _
+  "Magic def multiplier is 0|when the target has |@T4", _
+  "Inflicts no status|when the attacker has |@T5", _
+  "Uses up no arrows|when the attacker has |@T6"}
+
+ dim page3(1 to 23) as String = { _
+  "Attacker hit rate|when the attacker has |@U1", _
+  "|its hit rate is |@E1", _
+  "Target evasion|when the target has |@U2", _
+  "|its evasion is |@E2", _
+  "Berserk bonus|when the attacker has |@U3| it adds 50% attack power", _
+  "Jump bonus|when the attacker has |@U4", _
+  "|its attack power is multiplied by |@E4", _
+  "Curse penalty|when the attacker has |@U5", _
+  "|its attack power is multiplied by |@E5", _
+  "Defense, curse|when the target has |@U6", _
+  "|its defense is multiplied by |@E6", _
+  "Defense, defend|when the target has |@U7", _
+  "|its defense is multiplied by |@E7", _
+  "Defense, focus|when the target has |@U8", _
+  "|its defense is multiplied by |@E8", _
+  "Spell hit rate|when the attacker has |@U9", _
+  "|its spell hit rate is |@E9", _
+  "Magic defense rate|when the target has |@U10", _
+  "|its magic defense rate is |@E10", _
+  "Magic def mult is 0|when the target has |@U11", _
+  "Poison|loses max HP / |@PD| every tick, at least 1", _
+  "Sap, HP leak|loses |@SD| HP every tick", _
+  "Sleep, paralyze|last |@LB| minus |@LM| x spirit, divided by |@LV| ticks"}
+
+ if fs_page = 3 then
+  fs_x0 = 22
+  FsFill(page3(), 23)
+ elseif fs_page = 2 then
+  fs_x0 = 30
+  FsFill(page2(), 9)
+ else
+  fs_x0 = 24
+  FsFill(page1(), 16)
+ end if
+
+end sub
+
+
 function FsRow(l as Integer) as Integer
 
- 'The screen row of a formula line. The line under "Turn wait, top" is the next row, like a fraction.
+ 'The screen row of a formula line. On page 1 the line under "Turn wait, top" is the next row, like a fraction.
+ ' On page 2 a line without a label goes on with the rule above it.
+
+ dim y as Integer = 6
+
+ if fs_page >= 2 then
+  for i as Integer = 2 to l
+   if fs_labels(i) <> "" then y += 2 else y += 1
+  next
+  return y
+ end if
 
  if l = 10 then return 6 + (l - 1) * 2 - 1
  if l = 11 then return 6 + 9 * 2 + 1
@@ -191,6 +259,33 @@ function FsRow(l as Integer) as Integer
 end function
 
 
+function FsSetText(mask as Integer) as String
+
+ 'The statuses of a mask as a short text.
+
+ dim s as String = FF4Name(StatusList(mask, "persistent"))
+
+ if len(s) > 22 then s = left(s, 19) + "..."
+
+ return s
+
+end function
+
+
+function FsListSetText(mask as Integer, which_list as Integer) as String
+
+ 'The statuses of a mask of one of the four status lists as a short text.
+
+ dim list_names(1 to 4) as String = {"persistent", "temporary", "system", "hidden"}
+ dim s as String = FF4Name(StatusList(mask, list_names(which_list)))
+
+ if len(s) > 24 then s = left(s, 21) + "..."
+
+ return s
+
+end function
+
+
 function FsFieldText(code as String) as String
 
  'The text of a field. A field that holds custom code says ?.
@@ -198,6 +293,19 @@ function FsFieldText(code as String) as String
  dim kind as String = left(code, 1)
  dim n as Integer = val(mid(code, 2))
  dim names as String
+
+ if kind = "T" then
+  if not formulas.st_known(n) then return "?"
+  return FsSetText(formulas.st_mask(n))
+ end if
+ if kind = "U" then
+  if not formulas.um_known(n) then return "?"
+  return FsListSetText(formulas.um_mask(n), formulas.um_list(n))
+ end if
+ if kind = "E" then
+  if not formulas.um_known(n) then return "?"
+  return MenuCommand.CodeItem(BattleFormulas.UmEffectNames(n), formulas.um_effect(n))
+ end if
 
  select case left(code, 2)
   case "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9"
@@ -225,6 +333,14 @@ function FsFieldText(code as String) as String
   case "SA": if not formulas.buff_known then return "?" else return str(formulas.shell_add)
   case "PZ": if not formulas.zeromus_known then return "?" else return iif(formulas.protect_zeromus, "works", "does nothing")
   case "SZ": if not formulas.zeromus_known then return "?" else return iif(formulas.shell_zeromus, "works", "does nothing")
+  case "V1": if not formulas.st_known(1) then return "?" else return str(formulas.st_power)
+  case "PD": if not formulas.poison_known then return "?" else return MenuCommand.CodeItem("2|4|8|16|32|64", formulas.poison_div)
+  case "SD": if not formulas.sap_known then return "?" else return str(formulas.sap_damage)
+  case "LB": if not formulas.sleep_known then return "?" else return str(formulas.sleep_base)
+  case "LM": if not formulas.sleep_known then return "?" else return MenuCommand.CodeItem("1|2|4", formulas.sleep_mult)
+  case "LV": if not formulas.sleep_known then return "?" else return str(formulas.sleep_div)
+  case "M2": if not formulas.st_known(2) then return "?" else return MenuCommand.CodeItem("x0.5|x1|x2", formulas.st_mult)
+  case "XD": if not formulas.st_known(2) then return "?" else return iif(formulas.st_defense_zero, "0", "unchanged")
   case "CT": if not formulas.doom_known then return "?" else return str(formulas.doom_ticks)
   case "CS": if not formulas.doom_known then return "?" else return MenuCommand.CodeItem("Dead|Stone|Toad|Mini|Pig|Mute|Blind|Poison", formulas.doom_status)
  end select
@@ -282,13 +398,23 @@ sub FsDraw()
  dim shown as String
  dim field_number as Integer
 
- BlueBox(1, 3, 76, 29)
- WriteText(FF4Text(" Formulas of the stats of the party in battle "), 2, 3, 14)
- WriteText(FF4Text("Monsters have stats of their own that are not changed here."), 2, 4, 15)
+ if fs_page = 3 then
+  BlueBox(1, 3, 76, 40)
+  WriteText(FF4Text(" Status modifiers of the damage and the timers "), 2, 3, 14)
+  WriteText(FF4Text("Each rule is for a set of statuses of the unit: none switches the rule off."), 2, 4, 15)
+ elseif fs_page = 2 then
+  BlueBox(1, 3, 76, 22)
+  WriteText(FF4Text(" Statuses that change the damage of attacks and spells "), 2, 3, 14)
+  WriteText(FF4Text("Each rule is for a set of statuses of the unit: none switches the rule off."), 2, 4, 15)
+ else
+  BlueBox(1, 3, 76, 29)
+  WriteText(FF4Text(" Formulas of the stats of the party in battle "), 2, 3, 14)
+  WriteText(FF4Text("Monsters have stats of their own that are not changed here."), 2, 4, 15)
+ end if
  for l as Integer = 1 to fs_lines
   y = FsRow(l)
   WriteText(FF4Text(fs_labels(l)), 2, y, 15)
-  x = 24
+  x = fs_x0
   field_number = 0
   for i as Integer = 1 to fs_pieces(l)
    piece = fs_text(l, i)
@@ -322,7 +448,57 @@ sub FsEditField(code as String)
  dim px as Integer = 30
  dim py as Integer = FsRow(fs_line) + 1
  dim div_names as String = "1|2|4|8|16|32|64"
+ dim status_menu as FlagMenu
 
+ if left(code, 1) = "U" then
+  n = val(mid(code, 2))
+  if formulas.um_known(n) then
+   pick = FmlPick(px, py, "Persistent|Temporary|System|Hidden", formulas.um_list(n))
+   if pick > 0 then
+    select case pick
+     case 1: status_menu = FlagMenu(px, py, "persistent status")
+     case 2: status_menu = FlagMenu(px, py, "temporary status")
+     case 3: status_menu = FlagMenu(px, py, "system status")
+     case else: status_menu = FlagMenu(px, py, "hidden status")
+    end select
+    if pick = formulas.um_list(n) then
+     for i as Integer = 0 to 7
+      if formulas.um_mask(n) and 2^i then status_menu.SetFlag(i + 1)
+     next
+    end if
+    status_menu.UserSelect()
+    formulas.um_list(n) = pick
+    formulas.um_mask(n) = 0
+    for i as Integer = 0 to 7
+     if status_menu.flags(i + 1) then formulas.um_mask(n) += 2^i
+    next
+   end if
+  end if
+  exit sub
+ end if
+ if left(code, 1) = "E" then
+  n = val(mid(code, 2))
+  if formulas.um_known(n) then
+   pick = FmlPick(px, py, BattleFormulas.UmEffectNames(n), formulas.um_effect(n))
+   if pick > 0 then formulas.um_effect(n) = pick
+  end if
+  exit sub
+ end if
+ if left(code, 1) = "T" then
+  n = val(mid(code, 2))
+  if formulas.st_known(n) then
+   status_menu = FlagMenu(px, py, "persistent status")
+   for i as Integer = 0 to 7
+    if formulas.st_mask(n) and 2^i then status_menu.SetFlag(i + 1)
+   next
+   status_menu.UserSelect()
+   formulas.st_mask(n) = 0
+   for i as Integer = 0 to 7
+    if status_menu.flags(i + 1) then formulas.st_mask(n) += 2^i
+   next
+  end if
+  exit sub
+ end if
  if left(code, 1) = "S" then
   n = val(mid(code, 2))
   pick = FmlPick(px, py, BattleFormulas.TermStatNames(), formulas.term_stat(n))
@@ -392,6 +568,58 @@ sub FsEditField(code as String)
     fml_number.UserSelect()
     formulas.speed_add = fml_number.number
    end if
+  case "PD"
+   if formulas.poison_known then
+    pick = FmlPick(px, py, "2|4|8, original|16|32|64", formulas.poison_div)
+    if pick > 0 then formulas.poison_div = pick
+   end if
+  case "SD"
+   if formulas.sap_known then
+    fml_number.x = px: fml_number.y = py
+    fml_number.min_value = 0: fml_number.max_value = 255
+    fml_number.starting_number = formulas.sap_damage
+    fml_number.UserSelect()
+    formulas.sap_damage = fml_number.number
+   end if
+  case "LB"
+   if formulas.sleep_known then
+    fml_number.x = px: fml_number.y = py
+    fml_number.min_value = 1: fml_number.max_value = 999
+    fml_number.starting_number = formulas.sleep_base
+    fml_number.UserSelect()
+    formulas.sleep_base = fml_number.number
+   end if
+  case "LM"
+   if formulas.sleep_known then
+    pick = FmlPick(px, py, "1|2|4, original", formulas.sleep_mult)
+    if pick > 0 then formulas.sleep_mult = pick
+   end if
+  case "LV"
+   if formulas.sleep_known then
+    fml_number.x = px: fml_number.y = py
+    fml_number.min_value = 1: fml_number.max_value = 99
+    fml_number.starting_number = formulas.sleep_div
+    fml_number.UserSelect()
+    formulas.sleep_div = fml_number.number
+   end if
+  case "V1"
+   if formulas.st_known(1) then
+    fml_number.x = px: fml_number.y = py
+    fml_number.min_value = 0: fml_number.max_value = 999
+    fml_number.starting_number = formulas.st_power
+    fml_number.UserSelect()
+    formulas.st_power = fml_number.number
+   end if
+  case "M2"
+   if formulas.st_known(2) then
+    pick = FmlPick(px, py, "x0.5|x1|x2, original", formulas.st_mult)
+    if pick > 0 then formulas.st_mult = pick
+   end if
+  case "XD"
+   if formulas.st_known(2) then
+    pick = FmlPick(px, py, "0, original|unchanged", iif(formulas.st_defense_zero, 1, 2))
+    if pick > 0 then formulas.st_defense_zero = (pick = 1)
+   end if
   case "PA"
    if formulas.buff_known then
     fml_number.x = px: fml_number.y = py
@@ -444,6 +672,9 @@ sub FsHint()
 
  select case left(code, 1)
   case "S": message = "Enter picks the stat of this term."
+  case "T": message = "Enter picks the statuses that switch this rule on, none switches it off."
+  case "U": message = "Enter picks a status list and then the statuses that switch this rule on."
+  case "E": message = "Enter picks what the rule does to the number."
   case "D": message = "Enter picks the number the stat is divided by."
   case else
    select case code
@@ -459,6 +690,14 @@ sub FsHint()
     case "SA": message = "Enter types the number Shell adds to the magic defense, 3 in the original."
     case "PZ": message = "Enter chooses if Armor works in the Zeromus battle, original: does nothing."
     case "SZ": message = "Enter chooses if Shell works in the Zeromus battle, original: does nothing."
+    case "PD": message = "Enter picks the number that the max HP is divided by, 8 in the original."
+    case "SD": message = "Enter types the HP that HP leak takes every tick, 2 in the original."
+    case "LB": message = "Enter types the base of the length of sleep and paralyze, 300 in the original."
+    case "LM": message = "Enter picks what the spirit is multiplied by, 4 in the original."
+    case "LV": message = "Enter types the number the length is divided by, 6 in the original."
+    case "V1": message = "Enter types the attack power of an attacker with these statuses, 1 originally."
+    case "M2": message = "Enter picks what the attack power of the hurt target is multiplied by."
+    case "XD": message = "Enter picks if the defense of the hurt target becomes 0 or stays as it is."
     case "CT": message = "Enter types after how many ticks Count goes down by 1, 2 in the original."
     case "CS": message = "Enter picks the status a unit gets when Count reaches 0, dead originally."
    end select
@@ -470,7 +709,47 @@ sub FsHint()
 end sub
 
 
+sub FsNotes2()
+
+ BlueBox(1, 27, 76, 9)
+ WriteText(FF4Text(" Notes "), 2, 27, 14)
+ WriteText(FF4Text("In the original game Frog and Mini do all of these, and only Frog makes a"), 2, 28, 15)
+ WriteText(FF4Text("spell ignore the magic defense multiplier. Pig changes no damage in the"), 2, 29, 15)
+ WriteText(FF4Text("original game, but it can be given any rule, like any other status."), 2, 30, 15)
+ WriteText(FF4Text("A unit with any of the statuses you pick gets the rule, so a poisoned"), 2, 32, 15)
+ WriteText(FF4Text("target can take double damage instead of a mini one."), 2, 33, 15)
+ WriteText(FF4Text("Which statuses stop a unit from using commands is set in the Commands"), 2, 35, 15)
+ WriteText(FF4Text("editor, under Information."), 2, 36, 15)
+
+end sub
+
+
+sub FsNotes3()
+
+ BlueBox(1, 45, 76, 10)
+ WriteText(FF4Text(" Notes "), 2, 45, 14)
+ WriteText(FF4Text("Each rule tests the statuses of the attacker or of the target. Pick the"), 2, 46, 15)
+ WriteText(FF4Text("list first, persistent, temporary, system or hidden, then its statuses, so"), 2, 47, 15)
+ WriteText(FF4Text("that Sleep can halve the attack power. None switches a rule off."), 2, 48, 15)
+ WriteText(FF4Text("Berserk adds 50% to the attack power, which cannot change, but its"), 2, 50, 15)
+ WriteText(FF4Text("statuses can. Barrier, Image and the back row are not here."), 2, 51, 15)
+ WriteText(FF4Text("Poison takes the max HP divided by a number every tick, at least 1."), 2, 53, 15)
+ WriteText(FF4Text("HP leak takes a number of HP. Sleep and Paralyze last the base minus the"), 2, 54, 15)
+ WriteText(FF4Text("multiplier times the target's spirit, divided by a number, in ticks."), 2, 55, 15)
+
+end sub
+
+
 sub FsNotes()
+
+ if fs_page = 3 then
+  FsNotes3()
+  exit sub
+ end if
+ if fs_page = 2 then
+  FsNotes2()
+  exit sub
+ end if
 
  BlueBox(1, 34, 76, 15)
  WriteText(FF4Text(" Notes "), 2, 34, 14)
@@ -490,7 +769,7 @@ sub FsNotes()
 end sub
 
 
-sub EditStatFormulas()
+sub EditStatFormulas(page as Integer = 1)
 
  'The formulas of the stats of the party on one screen: the fields in yellow are the ones that can be
  ' changed. Left and Right move along a line, Up and Down between lines, Enter changes the field.
@@ -511,6 +790,7 @@ sub EditStatFormulas()
  get (0, 0)-(639, 479), shot
  cls
 
+ fs_page = page
  FsLayout()
  fs_line = 1
  fs_field = 1
@@ -747,6 +1027,12 @@ sub FmlShow(entry as Integer)
    fml_book.Display()
    FmlNote(16, "The Summon Book item calls one of these ten at random.|Enter on a name picks the summon, Enter on its right|side switches between all targets and one random target.")
 
+  case 10
+   FmlNote(3, "More statuses that change the formulas of the game:|a blind attacker or target, berserk, jump, curse, defend,|focus, for attacks and spells, and the damage of poison|and HP leak and the length of sleep and paralyze.||Enter opens them as rules with fields you can change.|Each rule can have statuses of any of the four lists.")
+
+  case 9
+   FmlNote(3, "The statuses that change the damage:|a weak attacker (Toad and Mini do 1 attack power),|a hurt target (Toad and Mini take double damage and|have no defense), no defense multiplier, spells that|ignore magic defense, attackers that inflict no status|or use no arrows.||Enter opens them as rules with fields you can change.|Each rule can have any statuses of the list.")
+
   case 8
    FmlRemovalRows()
    fml_removal.Display()
@@ -764,6 +1050,8 @@ sub FmlShow(entry as Integer)
   case 6: WriteText(FF4Text("Enter picks the summon or switches how it is aimed. Esc goes back."), 1, 57, 14)
   case 7: WriteText(FF4Text("Enter opens the formulas of the stats of the party, the turn wait and Count."), 1, 57, 14)
   case 8: WriteText(FF4Text("Enter switches what the effect removes. Esc goes back."), 1, 57, 14)
+  case 9: WriteText(FF4Text("Enter opens the statuses that change the damage, with rules you can change."), 1, 57, 14)
+  case 10: WriteText(FF4Text("Enter opens more status rules and the poison, HP leak and sleep numbers."), 1, 57, 14)
  end select
 
 end sub
@@ -852,7 +1140,9 @@ sub FmlEdit(entry as Integer)
   case 4: fml_params.SetTo(123): fml_params.UserSelect()
   case 5: FmlEditSpells()
   case 6: FmlEditBook()
-  case 7: EditStatFormulas(): FmlShow(7)
+  case 7: EditStatFormulas(1): FmlShow(7)
+  case 9: EditStatFormulas(2): FmlShow(9)
+  case 10: EditStatFormulas(3): FmlShow(10)
   case 8: FmlEditRemoval()
  end select
 
@@ -876,6 +1166,8 @@ sub EditFormulas()
  fml_hub.AddOption(FF4Text("Summon Book"))
  fml_hub.AddOption(FF4Text("Stats and timers"))
  fml_hub.AddOption(FF4Text("Dispel, Black Hole"))
+ fml_hub.AddOption(FF4Text("Status and damage"))
+ fml_hub.AddOption(FF4Text("Status modifiers"))
  fml_x = fml_hub.WindowWidth() + 4
 
  fml_params = CommandParametersMenu(fml_x, 3)

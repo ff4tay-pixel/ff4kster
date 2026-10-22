@@ -1025,6 +1025,39 @@ Spells editor does the same. The game makes both
 do nothing in the final battle with Zeromus (battle number 01B7); the two
 Zeromus lines on the same screen switch that off, so they work there too.
 
+Status and damage: the statuses that change the damage formulas, written as rules
+with the statuses in yellow. In the original game Toad and Mini do all of
+these: an attacker with them does 1 attack power and cannot crit, inflicts no
+status and uses up no arrows; a target with them takes double the attack power
+and has no defense and no defense multiplier. In spells Toad alone makes the
+magic defense multiplier of a target 0 (focus does too). Pig changes no
+damage in the original game. Each rule has a set of statuses, any of Poison,
+Blind, Mute, Pig, Mini, Toad, Stone and Dead, so a poisoned target can take
+double damage instead of a mini one, or a pig can be a weak attacker; none
+switches a rule off. The attack power of a weak attacker (1) can be changed,
+and so can what the attack power of a hurt target is multiplied by (x0.5, x1
+or x2) and whether its defense becomes 0. Which statuses stop a unit from using
+commands is under Information in the Commands editor, and which spells a Toad
+or a Pig can cast is built into the game and not changed here.
+
+Status modifiers: the other places where a status changes the numbers, written as
+rules like the ones of Status and damage, but each rule can have statuses of any
+of the four status lists (persistent, temporary, system and hidden): the status
+byte of the rule is changed together with the statuses. The rules are, in the
+original game: a blind attacker has its hit rate halved and a blind target its
+evasion; berserk adds 50% to the attack power (the 50% is built into the game,
+the statuses can change); jump or focus doubles the attack power of the
+attacker; curse halves the attack power of the attacker and the defense of the
+target; defend doubles and focus halves the defense of the target; in spells a
+blind attacker has its hit rate halved and a blind target its magic defense rate,
+and a target with focus ignores its magic defense multiplier. The hit rate and
+evasion rules can be halved or unchanged, the others x0.5, x1 or x2. Barrier and
+Image, which block hits, and the back row, which is not a status, are not here.
+Under them are three timers: poison takes the max HP divided by 8 every tick
+(2 to 64, at least 1 HP), HP leak takes 2 HP every tick, and sleep and paralyze
+last (300 minus 4 times the spirit of the target) divided by 6 ticks, each of
+the four numbers can be changed (the 4 can be 1, 2 or 4).
+
 Dispel and Black Hole: two spell effects that take statuses off their target.
 The window lists the statuses with a column for each effect, and Enter on a
 cell switches removes and keeps. The statuses are curse, float, paralyze, sleep,
@@ -1857,7 +1890,7 @@ VERSION HISTORY
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Recall can skip its MP check and its MP cost
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
-    - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the turn timer, the Count (doom) timer, what Armor and Shell add, and what Dispel and Black Hole remove
+    - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the turn timer, the Count (doom) timer, what Armor and Shell add, what Dispel and Black Hole remove, the statuses that change the damage and the other status modifiers
     - Battle Formulas editor: Fight, Kick, Dark Wave and Throw formulas (moved from Commands), spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book
     - Commands: overview of all commands with what changed, and the names of the four internal commands
     - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)

@@ -1,3 +1,148 @@
+function BattleFormulas.UmLdaOffset(r as Integer) as UInteger
+
+ 'The rules that test a status byte of the attacker ($2683 to $2686) or of the target ($2703 to $2706) with a
+ ' lda and an "and #mask" and then change a number. This is the address of the operand of the lda. The
+ ' rules: 1 a blind attacker halves its hit rate, 2 a blind target halves its evasion, 3 berserk adds 50% to
+ ' the attack power, 4 jump or focus doubles it, 5 curse halves it, 6 a cursed target has half the defense,
+ ' 7 defend doubles the defense, 8 focus halves it, 9 and 10 spells: a blind attacker halves the hit rate
+ ' and a blind target the magic defense rate, 11 a target with focus has no magic defense multiplier.
+
+ select case r
+  case 1: return &h1C717
+  case 2: return &h1C7B6
+  case 3: return &h1C8C8
+  case 4: return &h1C8E8
+  case 5: return &h1C8F5
+  case 6: return &h1C914
+  case 7: return &h1C934
+  case 8: return &h1C941
+  case 9: return &h1D0D9
+  case 10: return &h1D2B0
+  case 11: return &h1D2F4
+ end select
+
+ return 0
+
+end function
+
+
+function BattleFormulas.UmMaskOffset(r as Integer) as UInteger
+
+ 'The operand of the "and #mask" that follows.
+
+ select case r
+  case 1: return &h1C71A
+  case 2: return &h1C7B9
+  case 3: return &h1C8CB
+  case 4: return &h1C8EB
+  case 5: return &h1C8F8
+  case 6: return &h1C917
+  case 7: return &h1C937
+  case 8: return &h1C944
+  case 9: return &h1D0DC
+  case 10: return &h1D2B3
+  case 11: return &h1D2F7
+ end select
+
+ return 0
+
+end function
+
+
+function BattleFormulas.UmEffectOffset(r as Integer) as UInteger
+
+ 'The bytes that make the change, 0 if the rule has none that can change: 3 bytes (lsr of the hit rate or the
+ ' defense rate) or 6 bytes (a shift of a 16 bit attack power or defense).
+
+ select case r
+  case 1: return &h1C71D
+  case 2: return &h1C7BC
+  case 4: return &h1C8EE
+  case 5: return &h1C8FB
+  case 6: return &h1C91A
+  case 7: return &h1C93A
+  case 8: return &h1C947
+  case 9: return &h1D0DF
+  case 10: return &h1D2B6
+ end select
+
+ return 0
+
+end function
+
+
+function BattleFormulas.UmKind(r as Integer) as Integer
+
+ 'What the effect bytes of the rule are: 0 none, 1 the hit rate or the evasion (3 bytes), 2 the attack power
+ ' ($3902, 6 bytes), 3 the defense ($3904, 6 bytes).
+
+ select case r
+  case 1, 2, 9, 10: return 1
+  case 4, 5: return 2
+  case 6, 7, 8: return 3
+ end select
+
+ return 0
+
+end function
+
+
+function BattleFormulas.UmUnit(r as Integer) as Integer
+
+ 'Whose status the rule tests: 1 the attacker, 2 the target.
+
+ select case r
+  case 1, 3, 4, 5, 9: return 1
+ end select
+
+ return 2
+
+end function
+
+
+function BattleFormulas.UmEffectNames(r as Integer) as String
+
+ if UmKind(r) = 1 then return "halved, original|unchanged"
+
+ return "x0.5|x1|x2"
+
+end function
+
+
+function BattleFormulas.UmEffectBytes(r as Integer, choice as Integer) as String
+
+ 'The bytes of an effect in hex: the first is the one that shifts right, then none, then the one that shifts
+ ' left (kinds 2 and 3). Which shifts is the original depends on the rule.
+
+ select case UmKind(r)
+  case 1
+   if choice = 1 then
+    select case r
+     case 1: return "4EF838"
+     case 2: return "4EF938"
+     case else: return "4EFA38"
+    end select
+   end if
+   return "EAEAEA"
+  case 2
+   select case choice
+    case 1: return "4E03396E0239"
+    case 2: return "EAEAEAEAEAEA"
+    case 3: return "0E02392E0339"
+   end select
+  case 3
+   select case choice
+    case 1: return "4E05396E0439"
+    case 2: return "EAEAEAEAEAEA"
+    case 3: return "0E04392E0539"
+   end select
+ end select
+
+ return ""
+
+end function
+
+
 function BattleFormulas.PowerNames() as String
 
  return "x4, original|x2|x1"
@@ -198,6 +343,73 @@ sub BattleFormulas.ReadFromROM()
  next
  plus_known = (ByteAt(&h19E41) = &h1A or ByteAt(&h19E41) = &hEA)
  plus_on = (ByteAt(&h19E41) = &h1A)
+ 'The statuses that change the damage (battle/fight.asm, battle/magic.asm). Each rule is a test of the status 1
+ ' byte of the attacker ($2683) or the target ($2703) with an "and #mask": the original has toad plus mini ($30)
+ ' for every rule of Fight and toad ($20) for the magic defense multiplier. Pig does nothing in the original.
+ ' 1: an attacker with it does 1 attack power (ldx #1) and no crits. 2: a target with it takes the attack power
+ ' times 2 (asl, rol) and has no defense (clr_ax, stx $3904). 3: it has no defense multiplier. 4: spells ignore
+ ' the magic defense multiplier of a target with it (the same code also ignores it for focus). 5: an attacker with
+ ' it inflicts no status. 6: an attacker with it uses no arrow.
+ for k as Integer = 1 to 6
+  st_known(k) = false
+ next
+ st_mask(1) = ByteAt(&h1C951): st_known(1) = (ByteAt(&h1C950) = &h29 and ByteAt(&h1C954) = &hA2)
+ st_mask(2) = ByteAt(&h1C961): st_known(2) = (ByteAt(&h1C960) = &h29)
+ st_mask(3) = ByteAt(&h1C7EE): st_known(3) = (ByteAt(&h1C7ED) = &h29 and ByteAt(&h1C7F1) = &h9C)
+ st_mask(4) = ByteAt(&h1D2F0): st_known(4) = (ByteAt(&h1D2EF) = &h29)
+ st_mask(5) = ByteAt(&h1CAA3): st_known(5) = (ByteAt(&h1CAA2) = &h29)
+ st_mask(6) = ByteAt(&h1CB28): st_known(6) = (ByteAt(&h1CB27) = &h29)
+ st_power = ByteAt(&h1C955) + ByteAt(&h1C956) * &h100
+ st_mult = 0
+ if MenuCommand.BytesAre(&h1C964, "4E03396E0239") then st_mult = 1
+ if MenuCommand.BytesAre(&h1C964, "EAEAEAEAEAEA") then st_mult = 2
+ if MenuCommand.BytesAre(&h1C964, "0E02392E0339") then st_mult = 3
+ if st_mult = 0 then st_known(2) = false
+ st_defense_zero = MenuCommand.BytesAre(&h1C96A, "7BAA8E0439")
+ if not st_defense_zero and not MenuCommand.BytesAre(&h1C96A, "EAEAEAEAEA") then st_known(2) = false
+
+
+ 'The other status rules, see UmLdaOffset. The lda picks the byte (list 1 to 4), the mask the statuses.
+ dim unit_base as Integer
+ dim lda_offset as UInteger
+ dim effect_offset as UInteger
+ dim effect_text as String
+ for r as Integer = 1 to 11
+  um_known(r) = false
+  um_list(r) = 0
+  um_mask(r) = 0
+  um_effect(r) = 0
+  lda_offset = UmLdaOffset(r)
+  if UmUnit(r) = 1 then unit_base = &h83 else unit_base = &h03
+  if ByteAt(lda_offset - 1) = &hAD and ByteAt(UmMaskOffset(r) - 1) = &h29 and ByteAt(lda_offset) >= unit_base and ByteAt(lda_offset) <= unit_base + 3 and ByteAt(lda_offset + 1) = iif(UmUnit(r) = 1, &h26, &h27) then
+   um_known(r) = true
+   um_list(r) = ByteAt(lda_offset) - unit_base + 1
+   um_mask(r) = ByteAt(UmMaskOffset(r))
+   effect_offset = UmEffectOffset(r)
+   if effect_offset > 0 then
+    for c as Integer = 1 to iif(UmKind(r) = 1, 2, 3)
+     effect_text = UmEffectBytes(r, c)
+     if effect_text <> "" and MenuCommand.BytesAre(effect_offset, effect_text) then um_effect(r) = c
+    next
+    if um_effect(r) = 0 then um_known(r) = false
+   end if
+  end if
+ next
+
+ 'poison: the max HP is divided by a call to one of the Lsr routines, sap: 2 HP, sleep and paralyze: see below
+ poison_known = (ByteAt(&h1AB2F) = &hBD and ByteAt(&h1AB32) = &h20 and ByteAt(&h1AB34) = &h84 and ByteAt(&h1AB33) >= &h82 and ByteAt(&h1AB33) <= &h87)
+ poison_div = &h87 - ByteAt(&h1AB33) + 1
+ sap_known = (ByteAt(&h1AC54) = &hA9 and ByteAt(&h1AC56) = &h9D)
+ sap_damage = ByteAt(&h1AC55)
+ sleep_known = (ByteAt(&h1A0E1) = &hA9 and ByteAt(&h1A0E7) = &hA9 and ByteAt(&h1A0FC) = &hA2 and ByteAt(&h1A0E0) = &h38)
+ sleep_base = ByteAt(&h1A0E2) + ByteAt(&h1A0E8) * &h100
+ sleep_div = ByteAt(&h1A0FD)
+ sleep_mult = 0
+ if MenuCommand.BytesAre(&h1A0DC, "EAEAEAEA") then sleep_mult = 1
+ if MenuCommand.BytesAre(&h1A0DC, "06ADEAEA") then sleep_mult = 2
+ if MenuCommand.BytesAre(&h1A0DC, "06AD06AD") then sleep_mult = 3
+ if sleep_mult = 0 then sleep_known = false
+
  'Dispel (magic effect $10) and Black hole ($2A) work on a copy of the status bytes of the target: each does
  ' "and #mask" on status 2 ($2704) and on status 4 ($2706), so the bits that are 0 in the mask are removed.
  ' Only the bits that make sense to remove are offered: status 2 without the petrify bits, status 4 without
@@ -322,6 +534,60 @@ sub BattleFormulas.WriteToROM()
  next
  if plus_known then
   if plus_on then WriteByte(&h19E41, &h1A) else WriteByte(&h19E41, &hEA)
+ end if
+
+ 'the other status rules
+ for r as Integer = 1 to 11
+  if um_known(r) then
+   if UmUnit(r) = 1 then WriteByte(UmLdaOffset(r), &h83 + um_list(r) - 1) else WriteByte(UmLdaOffset(r), &h03 + um_list(r) - 1)
+   WriteByte(UmMaskOffset(r), um_mask(r))
+   if UmEffectOffset(r) > 0 then
+    dim effect_text as String = UmEffectBytes(r, um_effect(r))
+    for i as Integer = 0 to len(effect_text) \ 2 - 1
+     WriteByte(UmEffectOffset(r) + i, val("&h" + mid(effect_text, i * 2 + 1, 2)))
+    next
+   end if
+  end if
+ next
+ if poison_known then WriteByte(&h1AB33, &h87 - poison_div + 1)
+ if sap_known then WriteByte(&h1AC55, sap_damage)
+ if sleep_known then
+  WriteByte(&h1A0E2, sleep_base mod &h100)
+  WriteByte(&h1A0E8, sleep_base \ &h100)
+  WriteByte(&h1A0FD, sleep_div)
+  select case sleep_mult
+   case 1: WriteByte(&h1A0DC, &hEA): WriteByte(&h1A0DD, &hEA): WriteByte(&h1A0DE, &hEA): WriteByte(&h1A0DF, &hEA)
+   case 2: WriteByte(&h1A0DC, &h06): WriteByte(&h1A0DD, &hAD): WriteByte(&h1A0DE, &hEA): WriteByte(&h1A0DF, &hEA)
+   case else: WriteByte(&h1A0DC, &h06): WriteByte(&h1A0DD, &hAD): WriteByte(&h1A0DE, &h06): WriteByte(&h1A0DF, &hAD)
+  end select
+ end if
+
+ 'the statuses that change the damage
+ dim mask_offsets(1 to 6) as UInteger = {&h1C951, &h1C961, &h1C7EE, &h1D2F0, &h1CAA3, &h1CB28}
+ for k as Integer = 1 to 6
+  if st_known(k) then WriteByte(mask_offsets(k), st_mask(k))
+ next
+ if st_known(1) then
+  WriteByte(&h1C955, st_power mod &h100)
+  WriteByte(&h1C956, st_power \ &h100)
+ end if
+ if st_known(2) then
+  dim mult_text as String
+  select case st_mult
+   case 1: mult_text = "4E03396E0239"
+   case 2: mult_text = "EAEAEAEAEAEA"
+   case else: mult_text = "0E02392E0339"
+  end select
+  for i as Integer = 0 to 5
+   WriteByte(&h1C964 + i, val("&h" + mid(mult_text, i * 2 + 1, 2)))
+  next
+  if st_defense_zero then
+   WriteByte(&h1C96A, &h7B): WriteByte(&h1C96B, &hAA): WriteByte(&h1C96C, &h8E): WriteByte(&h1C96D, &h04): WriteByte(&h1C96E, &h39)
+  else
+   for i as Integer = 0 to 4
+    WriteByte(&h1C96A + i, &hEA)
+   next
+  end if
  end if
  if dispel_known then
   WriteByte(&h1DAC1, &hFF - dispel_s2)

@@ -16,6 +16,24 @@ type BattleFormulas
  buff_known as Boolean 'Armor (protect) and Shell: the numbers they add to the defense and to the magic defense
  protect_add as UByte 'added to the defense of the target by magic effect $0d, 5 in the original
  shell_add as UByte 'added to the magic defense by magic effect $0e, 3 in the original
+ um_known(11) as Boolean 'the other status rules of the damage formulas, see UmLdaOffset: whether the code is the original
+ um_list(11) as UByte 'the status byte the rule tests: 1 persistent (status 1), 2 temporary, 3 system, 4 hidden
+ um_mask(11) as UByte 'the statuses of that byte that switch the rule on
+ um_effect(11) as UByte 'what the rule does: 1 to 3, the order of the names of the effect (0 if the code is not a known one)
+ poison_div as UByte 'poison takes the max HP divided by 2 (1), 4, 8 (3, original), 16, 32 or 64 (6) every tick
+ poison_known as Boolean
+ sap_damage as UByte 'the HP an HP leak takes every tick, 2 in the original
+ sap_known as Boolean
+ sleep_known as Boolean 'sleep and paralyze last (base minus multiplier x spirit) divided by a number, in ticks
+ sleep_base as UInteger 'the base, 300 in the original
+ sleep_mult as UByte 'the multiplier of the spirit: 1 x1, 2 x2, 3 x4 (original)
+ sleep_div as UByte 'the divisor, 6 in the original
+ st_known(6) as Boolean 'the statuses (of status 1) that make the damage formulas of Fight and spells change, see below
+ st_mask(6) as UByte '1 weak attacker, 2 hurt target, 3 target with no defense multiplier, 4 target with no magic defense
+  ' multiplier, 5 attacker that inflicts no status, 6 attacker that uses no arrows: the statuses that trigger it
+ st_power as UInteger 'the attack power of a weak attacker, 1 in the original
+ st_mult as UByte 'what the attack power of a hurt target is multiplied by: 1 x0.5, 2 x1, 3 x2 (original)
+ st_defense_zero as Boolean 'the defense of a hurt target becomes 0 (original) or stays
  dispel_known as Boolean 'Dispel (magic effect $10) removes the status bits that are not kept by two masks
  dispel_s2 as UByte 'the bits of status 2 that Dispel removes: curse 80, float 40, paralyze 20, sleep 10, charm 08, berserk 04
  dispel_s4 as UByte 'and of status 4: hp leak 40, reflect 20, barrier 10, image 0C
@@ -41,6 +59,13 @@ type BattleFormulas
  speed_add as UInteger
  summon_book(9) as UByte 'the 10 summons the Summon Book can call: the spell, plus 80h for one random target
 
+ declare static function UmLdaOffset(r as Integer) as UInteger
+ declare static function UmMaskOffset(r as Integer) as UInteger
+ declare static function UmEffectOffset(r as Integer) as UInteger
+ declare static function UmKind(r as Integer) as Integer
+ declare static function UmUnit(r as Integer) as Integer
+ declare static function UmEffectBytes(r as Integer, choice as Integer) as String
+ declare static function UmEffectNames(r as Integer) as String
  declare static function PowerNames() as String
  declare static function PowerBytes() as String
  declare static function SummonNames() as String
