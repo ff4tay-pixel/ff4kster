@@ -172,6 +172,34 @@ sub MenuCommand.WriteReverse(index as UByte)
 end sub
 
 
+sub MenuCommand.ReadThrow()
+
+ 'Throw (dart): damage is the item's attack power times one of the user's stats (the level) plus a random
+ ' amount, at most 9999 (battle/cmd.asm, Cmd_16). The stat is an address in the code ($2680 + n), the cap
+ ' is a 16 bit value that is in the code twice (compare and load).
+
+ throw_known = (ByteAt(&h1E595) = &hAD and ByteAt(&h1E597) = &h26 and ByteAt(&h1E596) >= &h80)
+ throw_known = throw_known and ByteAt(&h1E5B4) = &hE0 and ByteAt(&h1E5B9) = &hA2
+ throw_known = throw_known and ByteAt(&h1E5B5) = ByteAt(&h1E5BA) and ByteAt(&h1E5B6) = ByteAt(&h1E5BB)
+ throw_stat = ByteAt(&h1E596) mod &h80
+ throw_cap = ByteAt(&h1E5B5) + ByteAt(&h1E5B6) * &h100
+
+end sub
+
+
+sub MenuCommand.WriteThrow()
+
+ if not throw_known then exit sub
+
+ WriteByte(&h1E596, &h80 + throw_stat)
+ WriteByte(&h1E5B5, throw_cap mod &h100)
+ WriteByte(&h1E5B6, throw_cap \ &h100)
+ WriteByte(&h1E5BA, throw_cap mod &h100)
+ WriteByte(&h1E5BB, throw_cap \ &h100)
+
+end sub
+
+
 sub MenuCommand.ReadAim()
 
  'Aim saves the target's evasion and the user's hit rate, sets them to 0 and 255, attacks and puts them
@@ -269,6 +297,7 @@ function MenuCommand.CodeRows(index as UByte) as Integer
   case 6: return 3 'Dark Wave
   case 15: return 2 'Kick
   case 21: return 1 'Peep
+  case 23: return 1 'Throw
  end select
 
  return 0
@@ -288,6 +317,8 @@ function MenuCommand.CodeTitle(index as UByte, row as Integer) as String
    return "Base damage, both:    "
   case 21
    return "Bosses:               "
+  case 23
+   return "Random part added:    "
  end select
 
  return ""
@@ -307,6 +338,8 @@ function MenuCommand.CodeOffset(index as UByte, row as Integer) as UInteger
    return &h1E93A
   case 21
    return &h1E356
+  case 23
+   return &h1E5A2
  end select
 
  return 0
@@ -328,6 +361,8 @@ function MenuCommand.CodeNames(index as UByte, row as Integer) as String
    return "x0.5, original|x1|x2"
   case 21
    return "Cannot be peeked at, original|Can be peeked at"
+  case 23
+   return "0 to 98, original|None|0 to 255"
  end select
 
  return ""
@@ -354,6 +389,8 @@ function MenuCommand.CodeBytes(index as UByte, row as Integer) as String
    return "46E466E3|EAEAEAEA|06E326E4"
   case 21
    return "1003|8003"
+  case 23
+   return "208B85|A900EA|209385"
  end select
 
  return ""
@@ -594,6 +631,7 @@ sub MenuCommand.ReadFromROM(index as UByte)
   case 23 'Throw
    action_stance = ByteAt(&h1434C)
    message(1) = ByteAt(&h1E56D) 'Failure message
+   ReadThrow()
 
   case 24 'Steal
    action_stance = ByteAt(&h149F3)
@@ -916,6 +954,7 @@ sub MenuCommand.WriteToROM(index as UByte)
   case 23 'Throw
    WriteByte(&h1434C, action_stance)
    WriteByte(&h1E56D, message(1))
+   WriteThrow()
    
   case 24 'Steal
    WriteByte(&h1E3F1, misc_bytes(1)) 'Base

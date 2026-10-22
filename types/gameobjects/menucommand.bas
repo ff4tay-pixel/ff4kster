@@ -33,6 +33,9 @@ type MenuCommand
  aim_user_stat as UByte 'byte of the user properties that Aim changes (the game sets it to 255)
  aim_target_set as Boolean
  aim_user_set as Boolean
+ throw_known as Boolean 'false if the Throw damage code is not the original
+ throw_stat as UByte 'byte of the user's properties the item power is multiplied by (the level)
+ throw_cap as UInteger 'largest damage a thrown item does
  behaves_like as UByte 'command 22 only: the command whose routine it runs (0 = none)
 
  declare static function ReverseParts(index as UByte) as Integer
@@ -51,6 +54,8 @@ type MenuCommand
  declare static function HasParameters(index as UByte) as Boolean
  declare static function TargetsCorrectly(index as UByte) as Boolean
  
+ declare sub ReadThrow()
+ declare sub WriteThrow()
  declare sub ReadAim()
  declare sub WriteAim()
  declare sub ReadReverse(index as UByte)

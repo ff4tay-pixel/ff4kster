@@ -844,7 +844,12 @@ Item and the spell commands (White, Black, Call, Ninja) use the delay of the
 item or spell instead, and Jump always waits the ticks set on its Parameters
 screen, so the screen shows their value as not used.
 
-Jump and Throw have the message shown when they fail. Jump also has the ticks
+Jump and Throw have the message shown when they fail. Throw's damage is
+the thrown item's attack power times one of the user's stats (the level in the
+original game) plus a random amount, at most 9999. Its Parameters screen lets
+you pick the stat, whether the random amount is 0 to 98 (original), none or 0
+to 255, and the largest damage (1 to 9999). The first two are shown as custom,
+not changed, if other changes have altered that code. Jump also has the ticks
 it waits before leaving and the ticks it stays in the air (4 each in the
 original game; a tick is the game's smallest timer step).
 
@@ -1715,7 +1720,7 @@ VERSION HISTORY
     - Commands: Dark Wave and Kick have code settings (HP cost, damage to undead, Kick multiplier, shared base damage) and Peep has one (bosses)
     - Commands: Aim can use any stat of the target and the user, Boast and Cry can be reversed (raise or lower)
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
-    - Commands: Jump and Throw have a Parameters screen with their failure message
+    - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)
     - Commands: the unused command 22 can "Behave like" another command (runs its routine and animation)
     - Messages editor: the list shows the start of each message, changed ones are yellow, the space of the
       bank is always shown, a menu (Space) has find text, add, insert, delete, move, copy, revert, undo and

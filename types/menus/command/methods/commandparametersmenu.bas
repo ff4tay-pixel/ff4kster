@@ -350,9 +350,22 @@ sub CommandParametersMenu.Display()
    if id = 7 then
     fail_menu.ChangeOption(2, FF4Text("Wait before jump: " + str(menucommands(id).jump_wait) + " ticks"), 15)
     fail_menu.ChangeOption(3, FF4Text("Time in the air:   " + str(menucommands(id).jump_air) + " ticks"), 15)
-   else
+   elseif not menucommands(id).throw_known then
+    fail_menu.ChangeOption(2, FF4Text("Damage code is custom, not changed"), 15)
+    fail_menu.Remove(4)
     fail_menu.Remove(3)
-    fail_menu.Remove(2)
+   else
+    fail_menu.ChangeOption(2, FF4Text("Item power times user's: ") + Pad(stat_menu.options.ItemAt((menucommands(id).throw_stat mod &h80) + 1), stat_menu.options.Width(),, FF4Text(" ")), 15)
+    if menucommands(id).code_choice(1) = 0 then
+     temp = FF4Text("Custom, not changed")
+    else
+     temp = FF4Text(MenuCommand.CodeItem(MenuCommand.CodeNames(23, 1), menucommands(id).code_choice(1)))
+    end if
+    fail_menu.ChangeOption(3, FF4Text("Random part added:      ") + temp, 15)
+    fail_menu.ChangeOption(4, FF4Text("Damage is at most:      " + str(menucommands(id).throw_cap)), 15)
+   end if
+   if id = 7 then
+    fail_menu.Remove(4)
    end if
    fail_menu.Display()
    
@@ -883,6 +896,43 @@ sub CommandParametersMenu.UserSelect()
       message_menu.ChangeSelected(menucommands(id).message(1) + 2)
       message_menu.UserSelect()
       if not message_menu.cancelled and message_menu.selected > 1 then menucommands(id).message(1) = message_menu.selected - 2
+     elseif id = 23 and not menucommands(id).throw_known then
+      'custom code: nothing to change here
+     elseif id = 23 then
+      select case fail_menu.selected
+       case 2 'the stat that the item power is multiplied by
+        stat_menu.x = x + 26
+        stat_menu.y = y + 1
+        stat_menu.ChangeSelected((menucommands(id).throw_stat mod &h80) + 1)
+        stat_menu.UserSelect()
+        if not stat_menu.cancelled then menucommands(id).throw_stat = stat_menu.selected - 1
+        stat_menu.Hide()
+       case 3 'the random part
+        code_choice_menu.ClearAll()
+        n = 1
+        do
+         temp = MenuCommand.CodeItem(MenuCommand.CodeNames(23, 1), n)
+         if temp = "" then exit do
+         code_choice_menu.AddOption(FF4Text(temp))
+         n += 1
+        loop
+        code_choice_menu.x = x + 26
+        code_choice_menu.y = y + 2
+        code_choice_menu.top_row = 1
+        code_choice_menu.ChangeSelected(Max(1, menucommands(id).code_choice(1)))
+        code_choice_menu.UserSelect()
+        if not code_choice_menu.cancelled then menucommands(id).code_choice(1) = code_choice_menu.selected
+        code_choice_menu.Hide()
+       case 4 'the damage cap
+        success_input.x = x + 26
+        success_input.y = y + 3
+        success_input.min_value = 1
+        success_input.max_value = 9999
+        success_input.starting_number = menucommands(id).throw_cap
+        success_input.UserSelect()
+        menucommands(id).throw_cap = success_input.number
+        success_input.min_value = 0
+      end select
      else
       success_input.x = x + 28
       success_input.y = y + fail_menu.selected - 1
