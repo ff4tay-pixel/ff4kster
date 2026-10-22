@@ -11,6 +11,7 @@
 #include once "types/gameobjects/methods/job.bas"
 #include once "types/gameobjects/methods/character.bas"
 #include once "types/gameobjects/methods/menucommand.bas"
+#include once "types/gameobjects/methods/battleformulas.bas"
 #include once "types/gameobjects/methods/actor.bas"
 #include once "types/gameobjects/methods/event.bas"
 #include once "types/gameobjects/methods/eventcall.bas"

@@ -78,6 +78,12 @@ sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
    HelpLine(lines(), n, "Ctrl-R revert  Ctrl-C / V copy / paste")
    HelpLine(lines(), n, "Ctrl-Z undo the last change in this list")
    HelpLine(lines(), n, "In sub-menus: Tab switches between boxes.")
+  case 36
+   HelpLine(lines(), n, "Enter opens the formulas of the highlighted")
+   HelpLine(lines(), n, "line. Its settings are listed on the right.")
+   HelpLine(lines(), n, "Enter on a setting changes it, Esc goes back.")
+   HelpLine(lines(), n, "A setting that says custom code was changed by")
+   HelpLine(lines(), n, "something else, it is left alone.")
   case 13 to 14
    HelpLine(lines(), n, "Enter opens the entry's editor.")
    HelpLine(lines(), n, "Yellow names are changed since load.")

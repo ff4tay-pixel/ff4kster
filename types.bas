@@ -13,6 +13,7 @@
 #include once "types/gameobjects/job.bas"
 #include once "types/gameobjects/character.bas"
 #include once "types/gameobjects/menucommand.bas"
+#include once "types/gameobjects/battleformulas.bas"
 #include once "types/gameobjects/actor.bas"
 #include once "types/gameobjects/event.bas"
 #include once "types/gameobjects/eventcall.bas"

@@ -3,7 +3,7 @@ function MenuCommand.HasParameters(index as UByte) as Boolean
  dim temp as Boolean
  
  select case index
-  case 1, 14, 24, 26
+  case 14, 24, 26
    temp = true
   case 8 to 12
    temp = true
@@ -13,7 +13,7 @@ function MenuCommand.HasParameters(index as UByte) as Boolean
    temp = true
   case 7, 23
    temp = true
-  case 6, 13, 15, 21
+  case 13, 21
    temp = true
  end select
 
@@ -429,10 +429,10 @@ function MenuCommand.CodeNames(index as UByte, row as Integer) as String
   case 6
    if row = 1 then return "1/2 of max HP|1/4 of max HP|1/8 of max HP, original|1/16 of max HP|1/32 of max HP|1/64 of max HP|None"
    if row = 2 then return "Full damage|Half damage|Quarter damage, original"
-   return "x0.5, original|x1|x2"
+   return "x0.25|x0.5, original|x1|x1.5|x2|x3|x4|x8"
   case 15
    if row = 1 then return "Half, original|Full|Double"
-   return "x0.5, original|x1|x2"
+   return "x0.25|x0.5, original|x1|x1.5|x2|x3|x4|x8"
   case 21
    return "Cannot be peeked at, original|Can be peeked at"
   case 23
@@ -450,17 +450,18 @@ function MenuCommand.CodeBytes(index as UByte, row as Integer) as String
  ' 16 bit value right by N (Lsr_N in the disassembly) or "lda #0". Damage to undead: two shift pairs
  ' (lsr/ror) of which the choices keep two, one or none. Kick: lsr, nothing or asl on the multiplier.
  ' Base damage: the shared half of multiplier x power (lsr/ror), nothing, or doubled (asl/rol), used by
- ' both commands, so it is the same bytes on both screens.
+ ' both commands, so it is the same bytes on both screens. The other multipliers call a routine in free space
+ ' (see CodeRegion).
  ' Peep: the branch that skips bosses (bpl) or an always taken branch (bra).
 
  select case index
   case 6
    if row = 1 then return "208784|208684|208584|208484|208384|208284|A90000"
    if row = 2 then return "EAEAEAEAEAEAEAEA|46CA66C9EAEAEAEA|46CA66C946CA66C9"
-   return "46E466E3|EAEAEAEA|06E326E4"
+   return "2000FFEA@20100=46E466E346E466E360|46E466E3|EAEAEAEA|2000FFEA@20100=A6E38E3D394E3E396E3D3918A5E36D3D3985E3A5E46D3E3985E49006A2FFFF86E36060|06E326E4|2000FFEA@20100=A6E38E3D3906E326E49006A2FFFF86E36018A5E36D3D3985E3A5E46D3E3985E49006A2FFFF86E36060|2000FFEA@20100=06E326E49006A2FFFF86E36006E326E49006A2FFFF86E36060|2000FFEA@20100=06E326E49006A2FFFF86E36006E326E49006A2FFFF86E36006E326E49006A2FFFF86E36060"
   case 15
    if row = 1 then return "46DF|EAEA|06DF"
-   return "46E466E3|EAEAEAEA|06E326E4"
+   return "2000FFEA@20100=46E466E346E466E360|46E466E3|EAEAEAEA|2000FFEA@20100=A6E38E3D394E3E396E3D3918A5E36D3D3985E3A5E46D3E3985E49006A2FFFF86E36060|06E326E4|2000FFEA@20100=A6E38E3D3906E326E49006A2FFFF86E36018A5E36D3D3985E3A5E46D3E3985E49006A2FFFF86E36060|2000FFEA@20100=06E326E49006A2FFFF86E36006E326E49006A2FFFF86E36060|2000FFEA@20100=06E326E49006A2FFFF86E36006E326E49006A2FFFF86E36006E326E49006A2FFFF86E36060"
   case 21
    return "1003|8003"
   case 23
@@ -468,6 +469,35 @@ function MenuCommand.CodeBytes(index as UByte, row as Integer) as String
  end select
 
  return ""
+
+end function
+
+
+function MenuCommand.CodeRegion(index as UByte, row as Integer) as UInteger
+
+ 'Where the routine of a choice lives (&h40 bytes of unused space at the end of the battle code bank, 0 if
+ ' the row has none). The base damage of Kick and Dark Wave, for the multipliers that need more than the
+ ' 4 bytes of the original code: the 4 bytes become a call (jsr) to a short routine that scales the damage.
+
+ if (index = 6 and row = 3) or (index = 15 and row = 2) then return &h20100
+
+ return 0
+
+end function
+
+
+function MenuCommand.CodeItemMatches(offset as UInteger, item as String) as Boolean
+
+ 'Whether the ROM has this choice at offset. A choice is the bytes at offset, optionally followed by @ and
+ ' the offset of its routine, = and the bytes of the routine.
+
+ dim at_sign as Integer = instr(item, "@")
+ dim equals as Integer = instr(item, "=")
+
+ if at_sign = 0 then return BytesAre(offset, item)
+ if not BytesAre(offset, left(item, at_sign - 1)) then return false
+
+ return BytesAre(val("&h" + mid(item, at_sign + 1, equals - at_sign - 1)), mid(item, equals + 1))
 
 end function
 
@@ -496,7 +526,6 @@ sub MenuCommand.ReadCode(index as UByte)
 
  dim names as String
  dim wanted as String
- dim found as String
  dim n as Integer
  dim bytes_text as String
 
@@ -507,11 +536,7 @@ sub MenuCommand.ReadCode(index as UByte)
   do
    wanted = CodeItem(bytes_text, n)
    if wanted = "" then exit do
-   found = ""
-   for i as Integer = 0 to len(wanted) \ 2 - 1
-    found += hex(ByteAt(CodeOffset(index, row) + i), 2)
-   next
-   if found = wanted then
+   if CodeItemMatches(CodeOffset(index, row), wanted) then
     code_choice(row) = n
     exit do
    end if
@@ -529,6 +554,17 @@ sub MenuCommand.WriteCode(index as UByte)
  for row as Integer = 1 to CodeRows(index)
   if code_choice(row) > 0 then
    wanted = CodeItem(CodeBytes(index, row), code_choice(row))
+   if CodeRegion(index, row) > 0 then
+    for i as Integer = 0 to &h3F
+     WriteByte(CodeRegion(index, row) + i, &hFF)
+    next
+   end if
+   if instr(wanted, "@") > 0 then
+    for i as Integer = 0 to (len(wanted) - instr(wanted, "=")) \ 2 - 1
+     WriteByte(val("&h" + mid(wanted, instr(wanted, "@") + 1, instr(wanted, "=") - instr(wanted, "@") - 1)) + i, val("&h" + mid(wanted, instr(wanted, "=") + 1 + i * 2, 2)))
+    next
+    wanted = left(wanted, instr(wanted, "@") - 1)
+   end if
    for i as Integer = 0 to len(wanted) \ 2 - 1
     WriteByte(CodeOffset(index, row) + i, val("&h" + mid(wanted, i * 2 + 1, 2)))
    next

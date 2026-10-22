@@ -31,6 +31,7 @@ type CommandParametersMenu
  aim_menu as BlueMenu 'Aim: which stats it changes
  code_menu as BlueMenu 'Dark Wave and Kick: the code settings
  code_choice_menu as BlueMenu
+ throw_menu as BlueMenu 'the Throw damage formula (id 123, in the Battle Formulas editor)
  fail_menu as BlueMenu 'Jump and Throw: the message when the action fails
  source_menu as BlueMenu
  source_ids(26) as UByte

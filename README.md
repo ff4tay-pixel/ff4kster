@@ -250,7 +250,7 @@ Party, Story and text, World, Battles, Overview); the cursor skips the
 headings. The editors are in this order: Features, Spells, Spell Sets,
 Weapons, Armors, Medicines, Tools, Shops, Jobs, Battle Sprites, Portraits, Characters,
 Commands, Actors, Messages, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
-Monsters, Formations, Encounters, Autobattles and Solobattles, followed by
+Monsters, Formations, Encounters, Autobattles, Solobattles and Battle Formulas, followed by
 Search Everywhere, Space Usage and Changed Entries. "Edit World Maps" (under World) first lists
 the three worlds, like the list of maps, with a picture of the selected one and how
 full its data is; Enter edits it. The editor looks and works like the map editor:
@@ -833,7 +833,8 @@ to. Information has the command's name, target, delay index, the persistent
 and temporary statuses that disable it, and the waiting and acting stances.
 Parameters shows the details that go with the command if it has any that can
 be edited (for example base values, multipliers and the stats and elements
-involved).
+involved). The damage formulas of Fight, Kick, Dark Wave and Throw
+are not here, they are in the Battle Formulas editor.
 
 The menu you get with Enter on a command also has two entries that are about
 all commands. "Overview of all commands" is one screen with every command: its
@@ -863,12 +864,7 @@ With the check off but the cost on, the spell fails with the game's "not enough
 MP" message when the MP is short. With both off, Recall is free. Either one is
 shown as custom code, not changed, if other changes have altered those bytes.
 
-Jump and Throw have the message shown when they fail. Throw's damage is
-the thrown item's attack power times one of the user's stats (the level in the
-original game) plus a random amount, at most 9999. Its Parameters screen lets
-you pick the stat, whether the random amount is 0 to 98 (original), none or 0
-to 255, and the largest damage (1 to 9999). The first two are shown as custom,
-not changed, if other changes have altered that code. Jump also has the ticks
+Jump and Throw have the message shown when they fail. Jump also has the ticks
 it waits before leaving and the ticks it stays in the air (4 each in the
 original game; a tick is the game's smallest timer step).
 
@@ -880,18 +876,6 @@ for the second cast and how long Regen lasts. A value of 0 means no wait, 1 to
 means that many turns after subtracting 128 (the original Regen is 138, ten
 turns).
 
-Dark Wave and Kick have code settings. They are not data bytes: the editor
-swaps a few bytes of the game's code for another known sequence of the same
-length (found in the battle code of the disassembly), and offers only those
-known sequences. Dark Wave: the HP the user loses (1/2 to 1/64 of max HP, or
-none; the original is 1/8) and the damage to undead targets (full, half, or
-the original quarter). Kick: the attack multiplier used (half, the original,
-full, or double). Both screens also have "Base damage, both": Kick and Dark
-Wave work out damage with the same instructions (attack multiplier times
-attack power, divided by 2, plus a random amount), and this setting changes
-that division to x0.5 (original), x1 or x2, so it changes both commands. If another patch has changed those bytes, the screen says
-"Custom, not changed" and leaves them alone until you pick one of the known
-choices.
 Peep has a code setting too: it skips bosses, and the setting lets it work on
 them.
 
@@ -919,12 +903,35 @@ action still carries the original command's name. White, Black, Call and
 Ninja cannot be chosen because the spell menu runs them, not a routine. Type
 a few letters in the list to jump to a command.
 
-Fight's parameters are the elemental multipliers (extra weak, weak, immune,
-resists), the race multipliers (hurts race, resists race) and the two stats used
-to work out the chance of adding a status: the attacker's stat minus the
-target's stat. A multiplier of x1 is the normal damage. Aim, Jump (when it
-lands) and Focus (its attack) run the same routine, so these parameters apply
-to them as well. Kick, Dark Wave and spells have their own formulas.
+Commands such as Sing and Fight have "If" lines that test one byte of the
+battle properties of the unit that uses the command (128 bytes each, the list
+is in the order of those bytes). Their names come from the disassembly
+(everything8215/ff4, the battle code and its RAM map): bytes the game reads are
+named after what it does with them ("Base critical hit rate", "Action type
+flags", "Action data pointer", ...), and the others are listed as "Unused byte
+NNh" because nothing in the game uses them.
+
+
+BATTLE FORMULAS
+---------------
+
+This editor has the formulas the battle uses to work out damage. The list on
+the left has a line for each formula, the settings of the highlighted line are
+shown on the right, and Enter on a line changes them (Esc goes back). Most of
+them are not data bytes but small pieces of the game's code: the editor swaps
+a few bytes for another known sequence of the same length (found in the battle
+code of the disassembly, everything8215/ff4), and offers only those known
+sequences. If other changes have altered those bytes the setting says custom
+code, not changed, and the editor leaves it alone until you pick one of the
+choices. Nothing here changes the game until you pick something other than the
+original choice, and nothing is written until Save ROM.
+
+Fight has the elemental multipliers (extra weak, weak, immune, resists), the
+race multipliers (hurts race, resists race) and the two stats used to work out
+the chance of adding a status: the attacker's stat minus the target's stat. A
+multiplier of x1 is the normal damage. Aim, Jump (when it lands) and Focus (its
+attack) run the same routine, so these apply to them as well. Kick, Dark Wave
+and spells have their own formulas.
 
 Only the multipliers x0, x0.5, x1, x2, x3 and x4 work in the original game: its
 damage routine shifts the stored number right before using it, so x1.5, x2.5
@@ -938,13 +945,42 @@ nothing changes until you pick one. With Half steps off the picker offers only
 the six working multipliers, and a half step already in the ROM is shown as
 "acts as" the whole step it really does.
 
-Commands such as Sing and Fight have "If" lines that test one byte of the
-battle properties of the unit that uses the command (128 bytes each, the list
-is in the order of those bytes). Their names come from the disassembly
-(everything8215/ff4, the battle code and its RAM map): bytes the game reads are
-named after what it does with them ("Base critical hit rate", "Action type
-flags", "Action data pointer", ...), and the others are listed as "Unused byte
-NNh" because nothing in the game uses them.
+Dark Wave: the HP the user loses (1/2 to 1/64 of max HP, or none; the
+original is 1/8) and the damage to undead targets (full, half, or the original
+quarter). Kick: the attack multiplier used (half, the original, full, or
+double). Both have "Base damage, both": Kick and Dark Wave work out damage
+with the same instructions (attack multiplier times attack power, divided by
+2, plus a random amount), and this setting scales that part: x0.25, x0.5
+(original), x1, x1.5, x2, x3, x4 or x8. It changes both commands, so the two
+screens always show the same choice. The original code has room for only x0.5,
+x1 and x2. For the others the editor writes a short routine of its own into
+the unused bytes at the end of the battle code bank and makes the damage
+calculation call it, and the result stops at 65535. Choosing x0.5, x1 or x2
+again puts the original code back and clears the routine.
+
+Throw (dart): the damage is the thrown item's attack power times one of the
+user's stats (the level in the original game) plus a random amount, at most
+9999. You can pick the stat, whether the random amount is 0 to 98 (original),
+none or 0 to 255, and the largest damage (1 to 9999).
+
+Spell damage: the base damage of a spell is its power times 4 (times 8 for a
+summon) plus a random part of up to half of that. It is multiplied by the hits
+that land: each cast tries a number of hits, (the caster's stat divided by 4)
+plus 1, and each try lands at the spell's hit rate. The stat is Wisdom for
+black magic and summons and Will for white magic. Summons and spells cast from
+items skip the tries and always count 8 hits. The settings are the power scale
+of spells (x4, x2 or x1) and of summons (x8, x4, x2 or x1), the divisor of the
+stat for the tries (2 to 64), which two stats are used (black magic, then
+white magic: Strength and Agility, Agility and Vitality, Vitality and Wisdom, or
+Wisdom and Will, the original), which is also the stat of the hit rate, and
+the number of hits of summons and spells cast from items. The base damage, the
+random part and the damage cap are shared with the other formulas.
+
+Summon Book: the item of that name calls one of ten summons at random. Each
+has its summon and whether it hits all targets or one random target.
+
+A spell cast from a weapon also skips the tries and counts a fixed number of
+hits: the weapon's Power, which is in the Casts box of the Weapons editor.
 
 
 ACTORS
@@ -1760,6 +1796,7 @@ VERSION HISTORY
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Recall can skip its MP check and its MP cost
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
+    - Battle Formulas editor: Fight, Kick, Dark Wave and Throw formulas (moved from Commands), spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book
     - Commands: overview of all commands with what changed, and the names of the four internal commands
     - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)
     - Commands: the unused command 22 can "Behave like" another command (runs its routine and animation)

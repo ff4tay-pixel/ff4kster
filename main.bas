@@ -22,6 +22,7 @@ const menu_portraits = 32 'Edit Portraits
 const menu_monster_sprites = 33 'Edit Monster Sprites
 const menu_restore = 34 'Restore from Backup
 const menu_delete_backups = 35 'Delete Backups
+const menu_formulas = 36 'Edit Battle Formulas
 dim shared menu_id(1 to 60) as Integer
 dim shared menu_rows as Integer
 dim shared entry_number as Integer
@@ -178,6 +179,7 @@ AddMainEntry(editor_menu, "Edit Formations")
 AddMainEntry(editor_menu, "Edit Encounters")
 AddMainEntry(editor_menu, "Edit Autobattles")
 AddMainEntry(editor_menu, "Edit Solobattles")
+AddMainEntry(editor_menu, "Edit Battle Formulas", menu_formulas)
 AddMainHeader(editor_menu, "Overview")
 AddMainEntry(editor_menu, "Search Everywhere")
 AddMainEntry(editor_menu, "Space Usage")
@@ -209,7 +211,7 @@ do
  if not editor_menu.cancelled then
 
   'Start every editor on a black screen so nothing from the main menu is left behind.
-  if (choice >= menu_first_editor and choice <= menu_last_editor) or choice = menu_world_map or choice = menu_portraits or choice = menu_monster_sprites then cls
+  if (choice >= menu_first_editor and choice <= menu_last_editor) or choice = menu_world_map or choice = menu_portraits or choice = menu_monster_sprites or choice = menu_formulas then cls
 
   help_entry = choice
 
@@ -250,6 +252,7 @@ do
    case menu_world_map: EditWorldMaps()
    case menu_portraits: EditPortraits()
    case menu_monster_sprites: EditMonsterSprites()
+   case menu_formulas: EditFormulas()
 
    case menu_restore
     if RestoreFromBackup(filename, modified) then
@@ -288,7 +291,7 @@ do
   help_entry = 0
 
   'Work out whether anything really changed (opening an editor and leaving does not count).
-  if (choice >= menu_first_editor and choice <= menu_last_editor) or choice = menu_world_map or choice = menu_portraits or choice = menu_monster_sprites then
+  if (choice >= menu_first_editor and choice <= menu_last_editor) or choice = menu_world_map or choice = menu_portraits or choice = menu_monster_sprites or choice = menu_formulas then
    modified = HasUnsavedEdits()
   end if
   editor_menu.ChangeOption(menu_save, FF4Text(iif(modified, "Save ROM *", "Save ROM")))

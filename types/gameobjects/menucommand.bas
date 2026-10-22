@@ -56,6 +56,8 @@ type MenuCommand
  declare static function CodeNames(index as UByte, row as Integer) as String
  declare static function CodeBytes(index as UByte, row as Integer) as String
  declare static function CodeItem(s as String, n as Integer) as String
+ declare static function CodeItemMatches(offset as UInteger, item as String) as Boolean
+ declare static function CodeRegion(index as UByte, row as Integer) as UInteger
  declare static function CanBeCopied(index as UByte) as Boolean
  declare static function HasParameters(index as UByte) as Boolean
  declare static function TargetsCorrectly(index as UByte) as Boolean
