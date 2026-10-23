@@ -207,6 +207,28 @@ sub MenuCommand.WriteHalfSteps()
 end sub
 
 
+sub MenuCommand.ReadFightClears()
+
+ 'When a Fight attack lands (DoFightCmd in battle/fight.asm) the attacker's temporary statuses ($2004) are
+ ' ANDed with F7, which is how Charm ends. The mask is the immediate of that and, at &h1C84C: lda $2004,x /
+ ' sta $a9 / and #mask / sta $2004,x. The editor shows the statuses removed, the mask's complement. Aim,
+ ' Jump and Focus use the same routine.
+
+ fightclears_known = BytesAre(&h1C846, "BD042085A929") and BytesAre(&h1C84D, "9D0420")
+ fightclears = ByteAt(&h1C84C) xor &hFF
+
+end sub
+
+
+sub MenuCommand.WriteFightClears()
+
+ if not fightclears_known then exit sub
+
+ WriteByte(&h1C84C, fightclears xor &hFF)
+
+end sub
+
+
 sub MenuCommand.ReadRecall()
 
  'Recall picks a random spell and then (Cmd_07 in battle/cmd.asm) does nothing at all if the user has
@@ -655,7 +677,10 @@ sub MenuCommand.ReadFromROM(index as UByte)
  charging_stance = ByteAt(&hB7E60 + (index - 1))
  ReadCode(index)
  if index = 8 then ReadRecall()
- if index = 1 then ReadHalfSteps()
+ if index = 1 then
+  ReadHalfSteps()
+  ReadFightClears()
+ end if
  action_stance = &hFF
  action_stance2 = &hFF
  action_stance3 = &hFF
@@ -862,7 +887,10 @@ sub MenuCommand.WriteToROM(index as UByte)
  WriteByte(&hB7E60 + (index - 1), charging_stance)
  WriteCode(index)
  if index = 8 then WriteRecall()
- if index = 1 then WriteHalfSteps()
+ if index = 1 then
+  WriteHalfSteps()
+  WriteFightClears()
+ end if
  
  select case index
  

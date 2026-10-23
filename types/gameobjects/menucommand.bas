@@ -46,6 +46,8 @@ type MenuCommand
  recall_uses_mp as Boolean 'Recall takes the spell's MP
  halfsteps_known as Boolean 'Fight: false if the damage multiplier routine is not the original or the half step one
  halfsteps_on as Boolean 'Fight: the damage multiplier routine understands half steps (x1.5, x2.5, x3.5)
+ fightclears_known as Boolean 'Fight: false if the code that clears Charm is not the original
+ fightclears as UByte 'Fight: the temporary statuses (bit mask) that the attacker loses when its attack hits, Charm (08h) in the original
  behaves_known as Boolean 'command 22 only: false if its jump table entry is a routine of the ROM that is none of the commands'
  steal_known as Boolean 'Steal: false if the chance code is not the original (the lowest and highest chance, being caught)
  steal_min as UByte 'Steal: the lowest chance, 1 in the original
@@ -75,6 +77,8 @@ type MenuCommand
  
  declare sub ReadHalfSteps()
  declare sub WriteHalfSteps()
+ declare sub ReadFightClears()
+ declare sub WriteFightClears()
  declare sub ReadRecall()
  declare sub WriteRecall()
  declare sub ReadThrow()

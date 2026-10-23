@@ -240,12 +240,19 @@ sub CommandParametersMenu.Display()
     temp = FF4Text("Half steps x1.5 x2.5 x3.5: Off")
    end if
    fight_menu.ChangeOption(9, temp, 15)
+   if not menucommands(1).fightclears_known then
+    temp = FF4Text("Attacker is cured of: custom code")
+   else
+    temp = FF4Text("Attacker is cured of: ") + Pad(StatusList(menucommands(1).fightclears, "temporary"), 28,, FF4Text(" "))
+   end if
+   fight_menu.ChangeOption(10, temp, 15)
    fight_menu.Display()
-   BlueBox(x, y + 12, 51, 3)
+   BlueBox(x, y + 12, 51, 4)
    WriteText(FF4Text(" Notes "), x + 1, y + 12, 14)
    WriteText(FF4Text("Aim, Jump and Focus use these too."), x + 1, y + 13, 15)
    WriteText(FF4Text("Half steps change the damage code, so they work for"), x + 1, y + 14, 15)
    WriteText(FF4Text("all attacks and spells. Off: x1.5 acts as x1."), x + 1, y + 15, 15)
+   WriteText(FF4Text("Cured when the attack hits. Original: Charm."), x + 1, y + 16, 15)
  
   case 8 'Recall
    for i as Integer = 1 to 8
@@ -608,6 +615,19 @@ sub CommandParametersMenu.UserSelect()
        end if
       case 9 'half steps in the damage code
        if menucommands(1).halfsteps_known then menucommands(1).halfsteps_on = not menucommands(1).halfsteps_on
+      case 10 'temporary statuses that a landing attack removes from the attacker
+       if menucommands(1).fightclears_known then
+        dim cure_menu as FlagMenu = FlagMenu(x + 24, y + 9, "temporary status")
+        for k as Integer = 0 to 7
+         if menucommands(1).fightclears and 2^k then cure_menu.SetFlag(k + 1)
+        next
+        cure_menu.UserSelect()
+        menucommands(1).fightclears = 0
+        for k as Integer = 0 to 7
+         if cure_menu.flags(k + 1) then menucommands(1).fightclears += 2^k
+        next
+        cure_menu.Hide()
+       end if
       case 7 to 8
        stat_menu.ChangeSelected((menucommands(1).misc_bytes(fight_menu.selected) + 1) mod &h80)
        stat_menu.y = y + fight_menu.selected - 1

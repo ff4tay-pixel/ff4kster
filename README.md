@@ -950,6 +950,17 @@ nothing changes until you pick one. With Half steps off the picker offers only
 the six working multipliers, and a half step already in the ROM is shown as
 "acts as" the whole step it really does.
 
+The "Attacker is cured of" line on the Fight screen is the list of temporary
+statuses that the attacker loses when its attack hits. In the original game
+that is Charm only: a charmed unit that attacks is cured by the blow (nothing
+happens if the attack misses). Enter opens the list of the eight temporary
+statuses (Calcify 1 and 2, Berserk, Charm, Sleep, Stun, Float, Curse); the ones
+shown in yellow are removed. Pick none to make Fight cure nothing. Like the
+multipliers, Aim, Jump (when it lands) and Focus run the same routine, so they
+cure the same statuses. Only the one byte of the game's code that holds the
+list changes. The line says custom code, not changed, if other changes have
+altered that code.
+
 Dark Wave: the HP the user loses (1/2 to 1/64 of max HP, or none; the
 original is 1/8) and the damage to undead targets (full, half, or the original
 quarter). Kick: the attack multiplier used (half, the original, full, or
@@ -2056,6 +2067,7 @@ VERSION HISTORY
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Recall can skip its MP check and its MP cost
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
+    - Commands: Fight has the list of temporary statuses that its attack cures in the attacker (Charm in the original)
     - Characters: the starting data has the critical hit rate and bonus
     - Commands: Steal has its lowest and highest chance, the chance of being caught and what a caught thief loses
     - Battle Formulas: spell effect 29, the unused copy of Count, can raise or lower a stat of its target like Armor
