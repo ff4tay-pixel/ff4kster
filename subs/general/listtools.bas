@@ -347,7 +347,7 @@ function CommandChanges(i as Integer) as String
   for j as Integer = 1 to 3
    if .code_choice(j) <> orig_menucommands(i).code_choice(j) then code = true
   next
-  if .regen_every <> orig_menucommands(i).regen_every then parameters = true
+  if .regen_every <> orig_menucommands(i).regen_every or .cry_allies <> orig_menucommands(i).cry_allies then parameters = true
   if .steal_min <> orig_menucommands(i).steal_min or .steal_max <> orig_menucommands(i).steal_max then parameters = true
   if .steal_caught_fixed <> orig_menucommands(i).steal_caught_fixed or .steal_caught <> orig_menucommands(i).steal_caught then parameters = true
   if .steal_shift <> orig_menucommands(i).steal_shift then parameters = true

@@ -950,6 +950,12 @@ a stat by half the user's and stops at 1; reversed it raises it by that
 amount up to 99. If other changes have altered that code the line says
 "custom code, not changed" and leaves it alone.
 
+Cry also has a "Works on" line: all enemies (the original game) or all allies. Cry
+goes through the units on its own and ignores the target set for the command, so
+this line is the only way to change who it works on. With all allies it lowers
+the chosen stat of every party member present, the user included, by half the
+user's stat. Boast always works on its user, whatever its target is.
+
 Command 22 (named "Dummy") is not used by the original game. Its Parameters
 screen has "Behaves like": pick another command and 22 runs that command's
 routine and animation in battle, so you can give it its own name, target,
@@ -1961,7 +1967,7 @@ VERSION HISTORY
     - Commands: the unknown bytes in the If lists are named from the disassembly (or shown as unused bytes)
     - Commands: Dark Wave and Kick have code settings (HP cost, damage to undead, Kick multiplier, shared base damage) and Peep has one (bosses)
     - Commands: Aim can use any stat of the target and the user, Boast and Cry can be reversed (raise or lower)
-    - Commands: Regen has the ticks between its heals
+    - Commands: Regen has the ticks between its heals, Cry can work on the allies instead of the enemies
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Recall can skip its MP check and its MP cost
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored

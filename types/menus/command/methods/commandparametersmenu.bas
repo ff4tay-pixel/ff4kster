@@ -372,6 +372,13 @@ sub CommandParametersMenu.Display()
     temp = FF4Text("Effect: lowers the stat, stops at 1")
    end if
    cry_menu.ChangeOption(4, temp, 15)
+   if not menucommands(id).cry_known then
+    cry_menu.ChangeOption(5, FF4Text("Works on: custom code, not changed"), 15)
+   elseif menucommands(id).cry_allies then
+    cry_menu.ChangeOption(5, FF4Text("Works on: all allies"), 15)
+   else
+    cry_menu.ChangeOption(5, FF4Text("Works on: all enemies"), 15)
+   end if
    cry_menu.Display()
    
   case 20 'Cover
@@ -965,6 +972,8 @@ sub CommandParametersMenu.UserSelect()
        if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
       case 4 'Raise or lower
        if menucommands(id).reverse_known then menucommands(id).reversed = not menucommands(id).reversed
+      case 5 'Enemies or allies
+       if menucommands(id).cry_known then menucommands(id).cry_allies = not menucommands(id).cry_allies
      end select
     end if
     Display()

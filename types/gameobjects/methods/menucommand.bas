@@ -780,6 +780,11 @@ sub MenuCommand.ReadFromROM(index as UByte)
    misc_bytes(1) = ByteAt(&h1ECF3) 'Read stat
    misc_bytes(2) = ByteAt(&h1ED0C) 'Write stat
    ReadReverse(index)
+   'The loop over the units (battle/cmd.asm, Cmd_12): ldx #first, stx $ab at 1ECF8 and cmp #end at 1ED1D, the
+   ' monsters are the slots 5 to 12 (the end is 13), the party the slots 0 to 4.
+   cry_known = (ByteAt(&h1ECF8) = &hA2 and ByteAt(&h1ECFA) = 0 and ByteAt(&h1ED1D) = &hC9)
+   cry_allies = (ByteAt(&h1ECF9) = 0 and ByteAt(&h1ED1E) = 5)
+   if not cry_allies and not (ByteAt(&h1ECF9) = 5 and ByteAt(&h1ED1E) = 13) then cry_known = false
    message(1) = ByteAt(&h1ED22) 'Message
    
   case 20 'Cover
@@ -1097,6 +1102,13 @@ sub MenuCommand.WriteToROM(index as UByte)
    WriteByte(&h1ECF3, misc_bytes(1))
    WriteByte(&h1ED0C, misc_bytes(2))
    WriteByte(&h1ED17, misc_bytes(2))
+   if cry_known then
+    if cry_allies then
+     WriteByte(&h1ECF9, 0): WriteByte(&h1ED1E, 5)
+    else
+     WriteByte(&h1ECF9, 5): WriteByte(&h1ED1E, 13)
+    end if
+   end if
    WriteReverse(index)
    WriteByte(&h1ED22, message(1))
    if message(1) = &hFF then
