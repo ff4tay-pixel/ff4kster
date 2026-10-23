@@ -206,11 +206,12 @@ sub FsLayout()
   "Magic defense rate|when the target has |@U10", _
   "|its magic defense rate is |@E10"}
  dim page3b(1 to 1) as String = {"Magic def mult is 0|when the target has |@U11"}
- dim page4(1 to 4) as String = { _
+ dim page4(1 to 5) as String = { _
   "Protect, Armor|adds |@PA| to the defense of the target", _
   "Shell|adds |@SA| to the magic defense of the target", _
   "Armor, Zeromus|in the Zeromus battle Armor |@PZ", _
-  "Shell, Zeromus|in the Zeromus battle Shell |@SZ"}
+  "Shell, Zeromus|in the Zeromus battle Shell |@SZ", _
+  "Effect 29|@AU|: |@AM| its |@AS| by |@AA"}
  dim page5(1 to 9) as String = { _
   "Turn wait, top|@AN|@NU", _
   "|divided by My AGI x |@MU| plus |@AD", _
@@ -271,7 +272,7 @@ sub FsLayout()
    FsFill(page5(), 9)
   case 4
    fs_x0 = 24
-   FsFill(page4(), 4)
+   FsFill(page4(), 5)
   case 3
    for i as Integer = 1 to 19
     joined(i) = page3(i)
@@ -383,6 +384,10 @@ function FsFieldText(code as String) as String
   case "SA": if not formulas.buff_known then return "?" else return str(formulas.shell_add)
   case "PZ": if not formulas.zeromus_known then return "?" else return iif(formulas.protect_zeromus, "works", "does nothing")
   case "SZ": if not formulas.zeromus_known then return "?" else return iif(formulas.shell_zeromus, "works", "does nothing")
+  case "AU": if not formulas.fx_known then return "?" else return iif(formulas.fx_on, "on", "unused")
+  case "AM": if not formulas.fx_known then return "?" else return iif(formulas.fx_lower, "lowers", "raises")
+  case "AS": if not formulas.fx_known then return "?" else return MenuCommand.CodeItem(BattleFormulas.Effect29StatNames(), formulas.fx_stat)
+  case "AA": if not formulas.fx_known then return "?" else return str(formulas.fx_amount)
   case "V1": if not formulas.st_known(1) then return "?" else return str(formulas.st_power)
   case "PD": if not formulas.poison_known then return "?" else return MenuCommand.CodeItem("2|4|8|16|32|64", formulas.poison_div)
   case "SD": if not formulas.sap_known then return "?" else return str(formulas.sap_damage)
@@ -480,7 +485,7 @@ sub FsDraw()
  dim shown as String
  dim field_number as Integer
  dim page_titles(1 to 8) as String = {" Formulas of the stats of the party in battle ", " Statuses that weaken a unit ", " Other adjustments of the statuses ", " Armor and Shell ", " Timers ", " Bonus of the first slot ", " The back row ", " The start of the battle "}
- dim page_heights(1 to 8) as Integer = {17, 22, 33, 10, 17, 17, 11, 21}
+ dim page_heights(1 to 8) as Integer = {17, 22, 33, 13, 17, 17, 11, 21}
  dim page_texts(1 to 8) as String = {"Monsters have stats of their own that are not changed here.", _
   "Each rule is for a set of statuses of the unit: none switches the rule off.", _
   "Each rule is for a set of statuses of the unit: none switches the rule off.", _
@@ -918,6 +923,32 @@ sub FsEditField(code as String)
     pick = FmlPick(px, py, "does nothing, original|works", iif(formulas.shell_zeromus, 2, 1))
     if pick > 0 then formulas.shell_zeromus = (pick = 2)
    end if
+  case "AU"
+   if formulas.fx_known then
+    pick = FmlPick(px, py, "unused, original|on", iif(formulas.fx_on, 2, 1))
+    if pick > 0 then
+     formulas.fx_on = (pick = 2)
+     formulas.SyncEffectName()
+    end if
+   end if
+  case "AM"
+   if formulas.fx_known then
+    pick = FmlPick(px, py, "raises|lowers", iif(formulas.fx_lower, 2, 1))
+    if pick > 0 then formulas.fx_lower = (pick = 2)
+   end if
+  case "AS"
+   if formulas.fx_known then
+    pick = FmlPick(px, py, BattleFormulas.Effect29StatNames(), formulas.fx_stat)
+    if pick > 0 then formulas.fx_stat = pick
+   end if
+  case "AA"
+   if formulas.fx_known then
+    fml_number.x = px: fml_number.y = py
+    fml_number.min_value = 0: fml_number.max_value = 255
+    fml_number.starting_number = formulas.fx_amount
+    fml_number.UserSelect()
+    formulas.fx_amount = fml_number.number
+   end if
   case "CT"
    if formulas.doom_known then
     fml_number.x = px: fml_number.y = py
@@ -964,6 +995,10 @@ sub FsHint()
     case "AD": message = "Enter types the number that is added to the divisor, 0 in the original."
     case "PA": message = "Enter types the number that Armor adds to the defense, 5 in the original."
     case "SA": message = "Enter types the number Shell adds to the magic defense, 3 in the original."
+    case "AU": message = "Enter picks if effect 29 is unused or changes a stat of its target."
+    case "AM": message = "Enter picks if effect 29 adds the number to the stat or subtracts it."
+    case "AS": message = "Enter picks the stat of the target that effect 29 changes."
+    case "AA": message = "Enter types the number that effect 29 adds or subtracts, 0 to 255."
     case "PZ": message = "Enter chooses if Armor works in the Zeromus battle, original: does nothing."
     case "SZ": message = "Enter chooses if Shell works in the Zeromus battle, original: does nothing."
     case "RA1", "RA2": message = "Enter picks what happens to the hit rate: halved, unchanged or doubled."
@@ -1039,7 +1074,7 @@ function FmlGroupData(entry as Integer, f as BattleFormulas ptr) as String
 
  select case entry
   case 5: s = str(f->power_choice) + "," + str(f->summon_choice) + "," + str(f->divisor_choice) + "," + str(f->stats_choice) + "," + str(f->fixed_hits)
-  case 6: s = str(f->protect_add) + "," + str(f->shell_add) + "," + str(f->protect_zeromus) + "," + str(f->shell_zeromus)
+  case 6: s = str(f->protect_add) + "," + str(f->shell_add) + "," + str(f->protect_zeromus) + "," + str(f->shell_zeromus) + "," + str(f->fx_on) + "," + str(f->fx_stat) + "," + str(f->fx_lower) + "," + str(f->fx_amount)
   case 7: s = str(f->dispel_s2) + "," + str(f->dispel_s4) + "," + str(f->hole_s2) + "," + str(f->hole_s4) + "," + str(f->hole_speed)
   case 8
    for i as Integer = 0 to 9
@@ -1095,6 +1130,8 @@ sub FmlGroupCopy(entry as Integer, df as BattleFormulas ptr, sf as BattleFormula
   case 6
    df->protect_add = sf->protect_add: df->shell_add = sf->shell_add
    df->protect_zeromus = sf->protect_zeromus: df->shell_zeromus = sf->shell_zeromus
+   df->fx_on = sf->fx_on: df->fx_stat = sf->fx_stat: df->fx_lower = sf->fx_lower: df->fx_amount = sf->fx_amount
+   if df = @formulas then df->SyncEffectName()
   case 7
    df->dispel_s2 = sf->dispel_s2: df->dispel_s4 = sf->dispel_s4: df->hole_s2 = sf->hole_s2: df->hole_s4 = sf->hole_s4
    df->hole_speed = sf->hole_speed
@@ -1333,13 +1370,14 @@ end sub
 
 sub FsNotes4()
 
- BlueBox(1, 15, 76, 6)
- WriteText(FF4Text(" Notes "), 2, 15, 14)
- WriteText(FF4Text("Ctrl-R reverts this page to the loaded ROM, Ctrl-Z undoes, Space shows both."), 2, 21, 15)
- WriteText(FF4Text("Armor and Shell add their number every time they are cast, up to 255."), 2, 16, 15)
- WriteText(FF4Text("The original game makes them do nothing in the Zeromus battle."), 2, 17, 15)
- WriteText(FF4Text("Every spell that has the same effect in the Spells editor does the same,"), 2, 19, 15)
- WriteText(FF4Text("and so does the Brace command, which casts Armor."), 2, 20, 15)
+ BlueBox(1, 17, 76, 6)
+ WriteText(FF4Text(" Notes "), 2, 17, 14)
+ WriteText(FF4Text("Ctrl-R reverts this page to the loaded ROM, Ctrl-Z undoes, Space shows both."), 2, 23, 15)
+ WriteText(FF4Text("Armor and Shell add their number every time they are cast, up to 255."), 2, 18, 15)
+ WriteText(FF4Text("The original game makes them do nothing in the Zeromus battle."), 2, 19, 15)
+ WriteText(FF4Text("Effect 29 is a copy of Count the game never uses. It can change a stat of"), 2, 20, 15)
+ WriteText(FF4Text("its target for the rest of the battle. Give a spell that effect. Spells"), 2, 21, 15)
+ WriteText(FF4Text("with the same effect do the same, and so does Brace, which casts Armor."), 2, 22, 15)
 
 end sub
 

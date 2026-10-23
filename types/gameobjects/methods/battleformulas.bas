@@ -1,3 +1,79 @@
+function Effect29Table() as UInteger
+
+ 'The entry of magic effect $1D in the jump table of battle/magic.asm.
+
+ return &h1E2CB
+
+end function
+
+
+function Effect29Routine() as UInteger
+
+ 'The free space of bank 3 before the routines of the speed formulas (FEE3 to FEFF), the attack up routine is 24 bytes.
+
+ return &h200E3
+
+end function
+
+
+function Effect29Length() as Integer
+
+ return 24
+
+end function
+
+
+function Effect29Hex(amount as Integer, lower as Boolean, address as UInteger) as String
+
+ 'Adding: lda stat, cmp #$FF, bne +3, jmp $E02D (RemoveTarget: the spell has no effect, as Armor when it cannot add),
+ ' clc, lda stat, adc #amount, bcc +2, lda #$FF, sta stat, rts. Subtracting: the same with cmp #0, sec, sbc, bcs
+ ' and lda #0. The stat is a byte of the properties of the target, $2700 plus its place in the 128 bytes.
+
+ dim stat_text as String = hex(address mod &h100, 2) + hex(address \ &h100, 2)
+
+ if lower then return "AD" + stat_text + "C900D0034C2DE038AD" + stat_text + "E9" + hex(amount, 2) + "B002A9008D" + stat_text + "60"
+
+ return "AD" + stat_text + "C9FFD0034C2DE018AD" + stat_text + "69" + hex(amount, 2) + "9002A9FF8D" + stat_text + "60"
+
+end function
+
+
+static function BattleFormulas.Effect29StatNames() as String
+
+ return "attack multiplier|hit rate|attack power|magic def multiplier|magic def rate|magic defense|defense multiplier|defense rate|defense|critical rate|critical bonus"
+
+end function
+
+
+static function BattleFormulas.Effect29StatAddress(n as Integer) as UInteger
+
+ 'Places in the properties of a unit (battle/magic.asm reads them at $2700 for the target, the RAM map of the
+ ' disassembly has the list): +1B attack multiplier, +1C hit rate, +1D attack power, +22 magic def multiplier,
+ ' +23 magic def rate, +24 magic defense, +28 defense multiplier, +29 defense rate, +2A defense, +2D critical rate, +2E critical bonus.
+
+ dim places(1 to 11) as UInteger = {&h1B, &h1C, &h1D, &h22, &h23, &h24, &h28, &h29, &h2A, &h2D, &h2E}
+
+ return &h2700 + places(n)
+
+end function
+
+
+sub BattleFormulas.SyncEffectName()
+
+ 'The name of effect 29 in the lists of the Spells editor follows the routine.
+
+ static original_name as String
+
+ if original_name = "" then original_name = spell_effects.ItemAt(30)
+ if fx_on then
+  spell_effects.Assign(30, FF4Text("Change a stat, set in Battle Formulas"))
+ else
+  spell_effects.Assign(30, original_name)
+ end if
+
+end sub
+
+
 function BackEffectOffset(r as Integer) as UInteger
 
  'The back row in Fight (battle/fight.asm): a unit in the back row, bit 7 of byte 1 of its properties, has its hit
@@ -847,6 +923,34 @@ sub BattleFormulas.ReadFromROM()
  shell_zeromus = (ByteAt(&h1DA87) = &hEA)
  shell_add = ByteAt(&h1DA8E)
 
+ 'Magic effect $1D is a copy of Count that the game never uses (both entries of the jump table, 1E2C9 and 1E2CB,
+ ' point at the same routine). Attack up uses it: a routine in free space at the end of bank 3 like Armor, but
+ ' it adds a number to the attack power of the target ($271D, 255 at most) and the entry points at it.
+ fx_known = false
+ fx_on = false
+ fx_stat = 3
+ fx_lower = false
+ fx_amount = 5
+ if MenuCommand.BytesAre(Effect29Table(), "B5DB") then
+  fx_known = true
+  for i as Integer = 0 to Effect29Length() - 1
+   if ByteAt(Effect29Routine() + i) <> &hFF then fx_known = false
+  next
+ elseif MenuCommand.BytesAre(Effect29Table(), "E3FE") then
+  fx_lower = (ByteAt(Effect29Routine() + 4) = 0)
+  fx_amount = ByteAt(Effect29Routine() + 15)
+  for n as Integer = 1 to 11
+   if ByteAt(Effect29Routine() + 1) + ByteAt(Effect29Routine() + 2) * &h100 = Effect29StatAddress(n) then
+    if MenuCommand.BytesAre(Effect29Routine(), Effect29Hex(fx_amount, fx_lower, Effect29StatAddress(n))) then
+     fx_known = true
+     fx_on = true
+     fx_stat = n
+    end if
+   end if
+  next
+ end if
+ SyncEffectName()
+
  'Count (doom, magic effect $1c in battle/magic.asm): the spell's power is the starting count and the timer
  ' loop (battle/battle.asm) steps the count down once every "extra doom counter" ticks, a counter of 2 per
  ' unit that is set when the battle starts and again every time it reaches 0. Both are an immediate in the
@@ -1147,6 +1251,22 @@ sub BattleFormulas.WriteToROM()
  if buff_known then
   WriteByte(&h1DA6A, protect_add)
   WriteByte(&h1DA8E, shell_add)
+ end if
+
+ if fx_known then
+  dim fx_bytes as String = Effect29Hex(fx_amount, fx_lower, Effect29StatAddress(fx_stat))
+  for i as Integer = 0 to Effect29Length() - 1
+   if fx_on then
+    WriteByte(Effect29Routine() + i, val("&h" + mid(fx_bytes, i * 2 + 1, 2)))
+   else
+    WriteByte(Effect29Routine() + i, &hFF)
+   end if
+  next
+  if fx_on then
+   WriteByte(Effect29Table(), &hE3): WriteByte(Effect29Table() + 1, &hFE)
+  else
+   WriteByte(Effect29Table(), &hB5): WriteByte(Effect29Table() + 1, &hDB)
+  end if
  end if
  if zeromus_known then
   if protect_zeromus then

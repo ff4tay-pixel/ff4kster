@@ -1018,6 +1018,17 @@ the Brace command, which casts Armor. The game makes both do nothing in the
 final battle with Zeromus (battle number 01B7); the two Zeromus lines switch that
 off, so they work there too.
 
+Effect 29: the game has two copies of the Count (doom) effect, 28 and 29, and
+effect 29 is never used. The last line of the Armor and Shell page turns it into
+an effect that works like Armor: it raises or lowers one stat of its target by a
+number (0 to 255, stopping at 255 or 0), for the rest of the battle. The stats
+are the attack multiplier, hit rate, attack power, magic def multiplier, magic
+def rate, magic defense, defense multiplier, defense rate, defense, critical
+rate and critical bonus. Give a spell effect 29 in the Spells editor, where the
+effect is then named Change a stat. The routine goes in free space at the end of
+bank 3 (1FEE3 to 1FEFA) and the effect's entry of the jump table points at it;
+switching it off puts both back.
+
 Dispel and Black Hole: two spell effects that take statuses off their target.
 The window lists the statuses with a column for each effect, and Enter on a
 cell switches removes and keeps. The statuses are curse, float, paralyze, sleep,
@@ -1994,6 +2005,7 @@ VERSION HISTORY
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
     - Characters: the starting data has the critical hit rate and bonus
     - Commands: Steal has its lowest and highest chance, the chance of being caught and what a caught thief loses
+    - Battle Formulas: spell effect 29, the unused copy of Count, can raise or lower a stat of its target like Armor
     - Battle Formulas: the start of the battle (who is surprised or strikes first, back attacks, waiting)
     - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the Armor and Shell numbers, what Dispel and Black Hole remove, the bonus of the first slot or of units with a status, the back row, the statuses that weaken a unit and the other status adjustments, and the timers (turn wait, Count, poison, HP leak, sleep)
     - Battle Formulas editor: spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book

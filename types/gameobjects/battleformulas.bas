@@ -16,6 +16,11 @@ type BattleFormulas
  buff_known as Boolean 'Armor (protect) and Shell: the numbers they add to the defense and to the magic defense
  protect_add as UByte 'added to the defense of the target by magic effect $0d, 5 in the original
  shell_add as UByte 'added to the magic defense by magic effect $0e, 3 in the original
+ fx_known as Boolean 'effect 29 (the copy of Count the game never uses) can change a stat of its target like Armor: its free space and table entry are free or ours
+ fx_on as Boolean 'the routine is installed and spells with effect 29 use it
+ fx_stat as UByte 'the stat it changes, 1 to 11 as in Effect29StatNames
+ fx_lower as Boolean 'it subtracts the number instead of adding it
+ fx_amount as UByte 'the number added or subtracted by effect 29
  back_known as Boolean 'the back row rules of Fight, see BackEffectOffset: whether the code is the original
  back_hit(2) as UByte 'the hit rate of an attacker in the back row (1) and against a target in the back row (2): 1 halved, 2 unchanged, 3 doubled
  back_flag(2) as Boolean 'a unit with the no back row penalty flag (the bow) is not affected
@@ -113,5 +118,8 @@ type BattleFormulas
 
  declare sub ReadFromROM()
  declare sub WriteToROM()
+ declare static function Effect29StatNames() as String
+ declare static function Effect29StatAddress(n as Integer) as UInteger
+ declare sub SyncEffectName()
 
 end type
