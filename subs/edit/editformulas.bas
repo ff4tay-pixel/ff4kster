@@ -242,9 +242,24 @@ sub FsLayout()
   "|ignored if the attacker has that flag: |@RX2", _
   "|ignored if the attacker is jumping: |@RJ2", _
   "|and its defense is |@RD"}
+ dim page8(1 to 11) as String = { _
+  "Party roll|its average |@BP| is compared with a number from 0 to |@BR", _
+  "Monster roll|its average |@BM| is compared with a number from 0 to 98", _
+  "Party wins|the roll: |@BW", _
+  "Monsters win|the roll: |@BS", _
+  "Back attack|after a surprise: |@BB", _
+  "Waiting|the side that wins acts after |@BT| ticks", _
+  "|the other side waits |@BD", _
+  "Forced back|attack: the party waits |@BF", _
+  "No roll|in a boss battle: |@BX1", _
+  "|when running is not allowed: |@BX2", _
+  "|in a battle on the moon: |@BX3"}
  dim joined(1 to 20) as String
 
  select case fs_page
+  case 8
+   fs_x0 = 15
+   FsFill(page8(), 11)
   case 7
    fs_x0 = 24
    FsFill(page7(), 7)
@@ -388,6 +403,15 @@ function FsFieldText(code as String) as String
   case "RX1", "RX2": if not formulas.back_known then return "?" else return iif(formulas.back_flag(val(mid(code, 3))), "yes", "no")
   case "RJ1", "RJ2": if not formulas.back_known then return "?" else return iif(formulas.back_jump(val(mid(code, 3))), "yes", "no")
   case "RD": if not formulas.back_known then return "?" else return MenuCommand.CodeItem("x0.5|x1|x2", formulas.back_def)
+  case "BP", "BM": if not formulas.bs_known then return "?" else return MenuCommand.CodeItem("level|strength|agility|vitality|wisdom|will", iif(code = "BP", formulas.bs_pstat, formulas.bs_mstat))
+  case "BR": if not formulas.bs_known then return "?" else return str(formulas.bs_roll)
+  case "BW": if not formulas.bs_known then return "?" else return iif(formulas.bs_first, "a first strike", "nothing")
+  case "BS": if not formulas.bs_known then return "?" else return iif(formulas.bs_surprise, "a surprise attack", "nothing")
+  case "BB": if not formulas.bs_known then return "?" else return MenuCommand.CodeItem("never|a roll below half the monster average|a roll below the monster average|a roll below twice that|always", formulas.bs_back)
+  case "BT": if not formulas.bs_known then return "?" else return str(formulas.bs_ticks)
+  case "BD": if not formulas.bs_known then return "?" else return MenuCommand.CodeItem("twice as long|the normal time", formulas.bs_slow)
+  case "BF": if not formulas.bs_known then return "?" else return MenuCommand.CodeItem("like a surprise|the normal time|like a first strike", formulas.bs_forced)
+  case "BX1", "BX2", "BX3": if not formulas.bs_known then return "?" else return iif(formulas.bs_skip(val(mid(code, 3))), "yes", "no")
   case "FT4": if not formulas.slot_known(4) then return "?" else return MenuCommand.CodeItem("magic def rate|magic def base", formulas.slot_stat(4))
   case "FU1", "FU2", "FU3", "FU4": if not formulas.slot_known(val(mid(code, 3))) then return "?" else return iif(formulas.slot_unit(val(mid(code, 3))), "target", "attacker")
   case "CT": if not formulas.doom_known then return "?" else return str(formulas.doom_ticks)
@@ -455,15 +479,16 @@ sub FsDraw()
  dim piece as String
  dim shown as String
  dim field_number as Integer
- dim page_titles(1 to 7) as String = {" Formulas of the stats of the party in battle ", " Statuses that weaken a unit ", " Other adjustments of the statuses ", " Armor and Shell ", " Timers ", " Bonus of the first slot ", " The back row "}
- dim page_heights(1 to 7) as Integer = {17, 22, 33, 10, 17, 17, 11}
- dim page_texts(1 to 7) as String = {"Monsters have stats of their own that are not changed here.", _
+ dim page_titles(1 to 8) as String = {" Formulas of the stats of the party in battle ", " Statuses that weaken a unit ", " Other adjustments of the statuses ", " Armor and Shell ", " Timers ", " Bonus of the first slot ", " The back row ", " The start of the battle "}
+ dim page_heights(1 to 8) as Integer = {17, 22, 33, 10, 17, 17, 11, 21}
+ dim page_texts(1 to 8) as String = {"Monsters have stats of their own that are not changed here.", _
   "Each rule is for a set of statuses of the unit: none switches the rule off.", _
   "Each rule is for a set of statuses of the unit: none switches the rule off.", _
   "Spells with these effects add to the defense stats of their target.", _
   "A tick is one pass of the battle loop, its length depends on the battle speed.", _
   "Rates multiplied by a number divided by 4, for the first slot or a status.", _
-  "The back row rules of Fight, Aim, Jump and Focus. Spells are not affected."}
+  "The back row rules of Fight, Aim, Jump and Focus. Spells are not affected.", _
+  "Who is surprised or strikes first, and how long each side waits."}
 
  BlueBox(1, 3, 76, page_heights(fs_page))
  WriteText(FF4Text(page_titles(fs_page)), 2, 3, 14)
@@ -705,6 +730,60 @@ sub FsEditField(code as String)
     fml_number.UserSelect()
     formulas.slot_mult(n) = fml_number.number
    end if
+  case "BP", "BM"
+   if formulas.bs_known then
+    pick = FmlPick(px, py, "level, original|strength|agility|vitality|wisdom|will", iif(code = "BP", formulas.bs_pstat, formulas.bs_mstat))
+    if pick > 0 then
+     if code = "BP" then formulas.bs_pstat = pick else formulas.bs_mstat = pick
+    end if
+   end if
+  case "BR"
+   if formulas.bs_known then
+    fml_number.x = px: fml_number.y = py
+    fml_number.min_value = 1: fml_number.max_value = 255
+    fml_number.starting_number = formulas.bs_roll
+    fml_number.UserSelect()
+    formulas.bs_roll = fml_number.number
+   end if
+  case "BW"
+   if formulas.bs_known then
+    pick = FmlPick(px, py, "a first strike, original|nothing", iif(formulas.bs_first, 1, 2))
+    if pick > 0 then formulas.bs_first = (pick = 1)
+   end if
+  case "BS"
+   if formulas.bs_known then
+    pick = FmlPick(px, py, "a surprise attack, original|nothing", iif(formulas.bs_surprise, 1, 2))
+    if pick > 0 then formulas.bs_surprise = (pick = 1)
+   end if
+  case "BB"
+   if formulas.bs_known then
+    pick = FmlPick(px, py, "never|a roll below half the monster average, original|a roll below the monster average|a roll below twice that|always", formulas.bs_back)
+    if pick > 0 then formulas.bs_back = pick
+   end if
+  case "BT"
+   if formulas.bs_known then
+    fml_number.x = px: fml_number.y = py
+    fml_number.min_value = 1: fml_number.max_value = 255
+    fml_number.starting_number = formulas.bs_ticks
+    fml_number.UserSelect()
+    formulas.bs_ticks = fml_number.number
+   end if
+  case "BD"
+   if formulas.bs_known then
+    pick = FmlPick(px, py, "twice as long, original|the normal time", formulas.bs_slow)
+    if pick > 0 then formulas.bs_slow = pick
+   end if
+  case "BF"
+   if formulas.bs_known then
+    pick = FmlPick(px, py, "like a surprise, original|the normal time|like a first strike", formulas.bs_forced)
+    if pick > 0 then formulas.bs_forced = pick
+   end if
+  case "BX1", "BX2", "BX3"
+   if formulas.bs_known then
+    n = val(mid(code, 3))
+    pick = FmlPick(px, py, "yes, original|no", iif(formulas.bs_skip(n), 1, 2))
+    if pick > 0 then formulas.bs_skip(n) = (pick = 1)
+   end if
   case "FT4"
    if formulas.slot_known(4) then
     pick = FmlPick(px, py, "magic def rate, original|magic def base", formulas.slot_stat(4))
@@ -894,6 +973,15 @@ sub FsHint()
     case "FW1", "FW2", "FW3", "FW4": message = "Enter picks who gets it: slot 0 of both sides, of the party, all, or a status."
     case "FS1", "FS2", "FS3", "FS4": message = "Enter picks the status list and the statuses that switch this rule on."
     case "FM1", "FM2", "FM3", "FM4": message = "Enter types the number the rate is multiplied by, divided by 4: 5 is 25% more."
+    case "BP", "BM": message = "Enter picks the stat that is averaged over the characters or the monsters."
+    case "BR": message = "Enter types the highest number the party rolls, 99 in the original."
+    case "BW": message = "Enter picks what happens when the party wins the roll, a first strike originally."
+    case "BS": message = "Enter picks what happens when the monsters win, a surprise attack originally."
+    case "BB": message = "Enter picks when a surprise also becomes a back attack."
+    case "BT": message = "Enter types the ticks the winning side waits before its first action, 1 originally."
+    case "BD": message = "Enter picks how long the losing side waits, twice as long in the original."
+    case "BF": message = "Enter picks how the waiting goes in a back attack that the formation forces."
+    case "BX1", "BX2", "BX3": message = "Enter picks if the roll is skipped here, yes in the original game."
     case "FT4": message = "Enter picks the number that is multiplied: the magic defense rate or the base."
     case "FU1", "FU2", "FU3", "FU4": message = "Enter picks whose slot or status decides: the attacker or the target."
     case "PD": message = "Enter picks the number that the max HP is divided by, 8 in the original."
@@ -934,7 +1022,9 @@ dim shared fml_in_hook as Boolean
 function FmlEntryOf(row as Integer) as Integer
 
  'The setting group (the entry numbers used everywhere) that a row of the list shows: the rows 1 to 10 are the
- ' groups 5 to 14 (1 to 4 were the commands, which are in the Commands editor).
+ ' groups 5 to 14 (1 to 4 were the commands, which are in the Commands editor), and the last row is group 15.
+
+ if row = 11 then return 15
 
  return row + 4
 
@@ -960,6 +1050,9 @@ function FmlGroupData(entry as Integer, f as BattleFormulas ptr) as String
     s += str(f->term_stat(i)) + "/" + str(f->term_div(i)) + ","
    next
    s += str(f->plus_on) + "," + str(f->yang_stat) + "," + str(f->yang_mult) + "," + str(f->yang_plus)
+  case 15
+   s = str(f->bs_pstat) + "," + str(f->bs_mstat) + "," + str(f->bs_roll) + "," + str(f->bs_first) + "," + str(f->bs_surprise) + "," + str(f->bs_back) + ","
+   s += str(f->bs_ticks) + "," + str(f->bs_slow) + "," + str(f->bs_forced) + "," + str(f->bs_skip(1)) + str(f->bs_skip(2)) + str(f->bs_skip(3))
   case 10
    for i as Integer = 1 to 4
     s += str(f->slot_who(i)) + "/" + str(f->slot_mult(i)) + "/" + str(f->slot_list(i)) + "/" + str(f->slot_mask(i)) + "/" + str(f->slot_stat(i)) + ","
@@ -1014,6 +1107,13 @@ sub FmlGroupCopy(entry as Integer, df as BattleFormulas ptr, sf as BattleFormula
     df->term_stat(i) = sf->term_stat(i): df->term_div(i) = sf->term_div(i)
    next
    df->plus_on = sf->plus_on: df->yang_stat = sf->yang_stat: df->yang_mult = sf->yang_mult: df->yang_plus = sf->yang_plus
+  case 15
+   df->bs_pstat = sf->bs_pstat: df->bs_mstat = sf->bs_mstat: df->bs_roll = sf->bs_roll: df->bs_first = sf->bs_first
+   df->bs_surprise = sf->bs_surprise: df->bs_back = sf->bs_back: df->bs_ticks = sf->bs_ticks: df->bs_slow = sf->bs_slow
+   df->bs_forced = sf->bs_forced
+   for i as Integer = 1 to 3
+    df->bs_skip(i) = sf->bs_skip(i)
+   next
   case 10
    for i as Integer = 1 to 4
     df->slot_who(i) = sf->slot_who(i): df->slot_mult(i) = sf->slot_mult(i)
@@ -1295,9 +1395,28 @@ sub FsNotes7()
 end sub
 
 
+sub FsNotes8()
+
+ BlueBox(1, 25, 76, 12)
+ WriteText(FF4Text(" Notes "), 2, 25, 14)
+ WriteText(FF4Text("At the start of a battle the game averages one stat of the characters"), 2, 26, 15)
+ WriteText(FF4Text("present and of the monsters present, the level in the original game."), 2, 27, 15)
+ WriteText(FF4Text("Each side rolls a number, and gets a point if it is below its average."), 2, 28, 15)
+ WriteText(FF4Text("The side with more points wins: the party gets a first strike, the"), 2, 29, 15)
+ WriteText(FF4Text("monsters a surprise attack. A surprise can become a back attack, which"), 2, 30, 15)
+ WriteText(FF4Text("also turns the party around, front row to back and back to front."), 2, 31, 15)
+ WriteText(FF4Text("The winning side waits 1 tick, the other side twice as long as usual."), 2, 32, 15)
+ WriteText(FF4Text("A battle with a forced back attack, set in the Formations editor, has"), 2, 33, 15)
+ WriteText(FF4Text("the same waiting as a surprise. The monsters roll 0 to 98 always."), 2, 34, 15)
+ WriteText(FF4Text("Ctrl-R reverts this page, Ctrl-Z undoes, Space shows both."), 2, 35, 15)
+
+end sub
+
+
 sub FsNotes()
 
  select case fs_page
+  case 8: FsNotes8()
   case 7: FsNotes7()
   case 6: FsNotes6()
   case 2: FsNotes2()
@@ -1332,7 +1451,7 @@ sub EditStatFormulas(page as Integer = 1)
  cls
 
  fs_page = page
- dim entry_of_page(1 to 7) as Integer = {9, 12, 13, 6, 14, 10, 11}
+ dim entry_of_page(1 to 8) as Integer = {9, 12, 13, 6, 14, 10, 11, 15}
  fs_entry = entry_of_page(page)
  FsLayout()
  fs_line = 1
@@ -1588,6 +1707,9 @@ sub FmlShow(entry as Integer)
   case 13
    FmlNote(3, "The other places where a status changes a number:|a blind attacker or target, berserk, jump, curse,|defend and focus, for attacks and for spells.||Enter opens them as rules with fields you can change.|Each rule can have statuses of any of the four lists.")
 
+  case 15
+   FmlNote(3, "The start of the battle: who is surprised and who|strikes first, from a roll of each side's average level,|how a surprise becomes a back attack, how long each|side waits for its first action, and the battles that|have no roll.||Enter opens them as lines with fields you can change.")
+
   case 14
    FmlNote(3, "The timers of the battle: the turn wait of every unit,|Count, also called doom, poison, HP leak and|the length of sleep and paralyze.||Enter opens them as lines with fields you can change.")
 
@@ -1605,6 +1727,7 @@ sub FmlShow(entry as Integer)
   case 12: WriteText(FF4Text("Enter opens the statuses that weaken a unit, with rules you can change."), 1, 57, 14)
   case 13: WriteText(FF4Text("Enter opens the other status rules, with fields you can change."), 1, 57, 14)
   case 14: WriteText(FF4Text("Enter opens the timers, with fields you can change."), 1, 57, 14)
+  case 15: WriteText(FF4Text("Enter opens the start of the battle, with fields you can change."), 1, 57, 14)
  end select
 
 end sub
@@ -1697,6 +1820,7 @@ sub FmlEdit(entry as Integer)
   case 12: EditStatFormulas(2): FmlShow(12)
   case 13: EditStatFormulas(3): FmlShow(13)
   case 14: EditStatFormulas(5): FmlShow(14)
+  case 15: EditStatFormulas(8): FmlShow(15)
  end select
 
  fml_hook_entry = 0
@@ -1731,6 +1855,7 @@ sub EditFormulas()
  fml_hub.AddOption(FF4Text("Weakening statuses"))
  fml_hub.AddOption(FF4Text("Status adjustments"))
  fml_hub.AddOption(FF4Text("Timers"))
+ fml_hub.AddOption(FF4Text("Battle start"))
  fml_x = fml_hub.WindowWidth() + 4
 
  fml_spells = BlueMenu(fml_x, 3)
@@ -1755,7 +1880,7 @@ sub EditFormulas()
 
  do
   FmlShow(FmlEntryOf(fml_hub.selected))
-  for i as Integer = 1 to 10
+  for i as Integer = 1 to 11
    if FmlGroupChanged(FmlEntryOf(i)) then fml_hub.ChangeOption(i, "", 14) else fml_hub.ChangeOption(i, "", 15)
   next
   fml_hub.cancelled = false

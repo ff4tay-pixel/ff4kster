@@ -983,7 +983,7 @@ This editor has the formulas and numbers the battle uses that are not the
 settings of one command (those are in the Commands editor, under Parameters). The list on the left
 has a line for each group, in this order: the spells (Spell damage, Armor and Shell, Dispel and Black Hole, the
 Summon Book); the stats of the party (Party stats, First slot bonus, Back row); the statuses (Weakening
-statuses, Status adjustments); and the Timers. The settings of the highlighted
+statuses, Status adjustments); the Timers; and the Battle start. The settings of the highlighted
 line are shown on the right, and Enter on a line changes them (Esc goes back).
 A line of the list that has changes is yellow. Ctrl-R puts the highlighted line
 (or the line whose menus or page are open) back the way it was when the ROM was
@@ -1154,6 +1154,27 @@ the WIS and the WIL of a character times 2 plus 30 ticks (both numbers can be
 changed). Sleep and paralyze last (300 minus 4 times
 the spirit of the target) divided by 6 ticks, and the 300, the 4 (1, 2 or 4) and
 the 6 can be changed.
+
+Battle start: how a battle begins. The game averages one stat of the characters
+present and of the monsters present (the level in the original game) and each
+side rolls a number that gets it a point if it is below the average (the party
+rolls 0 to 99, the monsters 0 to 98). The side with more points wins: the party
+gets a first strike, the monsters a surprise attack, and with equal points the
+battle starts normally. The winner waits 1 tick before its first action and the
+other side waits twice as long as usual. After a surprise a second roll, from 0
+to the party's average, can make it a back attack when it is below half the
+monster average; a back attack also turns the party around (front row to back,
+back to front). A formation can force a back attack (Formations editor), which
+waits like a surprise. The roll is not made in a boss battle, when running is not
+allowed (a formation flag) or in a battle on the moon. Everything can be changed:
+the stat averaged for each side (level, strength, agility, vitality, wisdom or
+will), how high the party rolls, whether winning does anything for the party and
+for the monsters, when a surprise becomes a back attack (never, below half the
+monster average, below it, below twice it, always), the ticks the winner waits,
+whether the other side waits twice as long or the normal time, how the waiting
+goes in a forced back attack (like a surprise, normal, like a first strike) and
+which battles skip the roll. All of these are changes of single bytes in the
+battle code, and no routine is needed.
 
 
 ACTORS
@@ -1973,6 +1994,7 @@ VERSION HISTORY
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
     - Characters: the starting data has the critical hit rate and bonus
     - Commands: Steal has its lowest and highest chance, the chance of being caught and what a caught thief loses
+    - Battle Formulas: the start of the battle (who is surprised or strikes first, back attacks, waiting)
     - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the Armor and Shell numbers, what Dispel and Black Hole remove, the bonus of the first slot or of units with a status, the back row, the statuses that weaken a unit and the other status adjustments, and the timers (turn wait, Count, poison, HP leak, sleep)
     - Battle Formulas editor: spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book
     - Commands: overview of all commands with what changed, and the names of the four internal commands

@@ -26,6 +26,17 @@ type BattleFormulas
  slot_mult(4) as UByte 'the rate is multiplied by this and divided by 4: 5 in the original, 25% more
  slot_stat(4) as UByte 'rule 4 only: 1 the magic defense rate (original), 2 the magic defense (the base of the defense, 16 bits)
  slot_free16 as Boolean 'the free space for the routine of the 16 bit rate (bank 3, 20180) is free or has it
+ bs_known as Boolean 'the start of the battle (who is surprised, who strikes first), see BsStatByte: whether the code is the original
+ bs_pstat as UByte 'the stat of the characters that the roll uses, 1 to 6 (level, strength, agility, vitality, wisdom, will)
+ bs_mstat as UByte 'the same for the monsters
+ bs_roll as UByte 'the party rolls a number from 0 to this one, 99 in the original
+ bs_first as Boolean 'the party wins the roll: a first strike (the original game)
+ bs_surprise as Boolean 'the monsters win the roll: a surprise attack (the original game)
+ bs_back as UByte 'a back attack after a surprise: 1 never, 2 below half the monster average (original), 3 below the average, 4 below twice, 5 always
+ bs_ticks as UByte 'the side that wins the roll waits this many ticks before its first action, 1 in the original
+ bs_slow as UByte 'the other side: 1 waits twice as long (the original game), 2 waits the normal time
+ bs_forced as UByte 'a forced back attack: 1 waits like a surprise (original), 2 the normal time, 3 like a first strike
+ bs_skip(3) as Boolean 'no roll in a boss battle (1), when running away is not allowed (2), in a moon battle (3): all true in the original
  slot_free as Boolean 'the free space for the shared routine of the status rules (bank 3, 201D0) is free or has it
  slot_list(4) as UByte 'the status list (1 to 4) that a rule with who = 4 looks at
  slot_mask(4) as UByte 'its statuses

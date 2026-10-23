@@ -175,6 +175,36 @@ function SlotCallText(r as Integer, stat as Integer, who as Integer, target as B
 end function
 
 
+function BsStatByte(n as Integer) as Integer
+
+ 'The stats that the average of the roll can use: the operand of "lda $2002,x" (level) in InitObjects of
+ ' battle/init.asm, or the strength, agility, vitality, wisdom or will of the unit ($2014 to $2018).
+
+ select case n
+  case 1: return &h02
+  case 2: return &h14
+  case 3: return &h15
+  case 4: return &h16
+  case 5: return &h17
+  case 6: return &h18
+ end select
+
+ return 0
+
+end function
+
+
+function BsStatNumber(value as Integer) as Integer
+
+ for n as Integer = 1 to 6
+  if BsStatByte(n) = value then return n
+ next
+
+ return 0
+
+end function
+
+
 function BattleFormulas.UmLdaOffset(r as Integer) as UInteger
 
  'The rules that test a status byte of the attacker ($2683 to $2686) or of the target ($2703 to $2706) with a
@@ -665,6 +695,66 @@ sub BattleFormulas.ReadFromROM()
   slot_unit(r) = slot_target_unit
  next
 
+ 'The start of the battle (battle/init.asm, InitObjects): the average of one stat of the characters and of the monsters
+ ' present, a roll for each side (a point when the number is below the average), the side with more points wins:
+ ' first strike or surprise. A surprise can also become a back attack. The winning side waits 1 tick and the other
+ ' twice as long. The roll is not made in a boss battle, when running is not allowed or in a moon battle.
+ bs_known = true
+ bs_pstat = BsStatNumber(ByteAt(&h18EA0))
+ bs_mstat = BsStatNumber(ByteAt(&h18EBE))
+ if ByteAt(&h18E9F) <> &hBD or ByteAt(&h18EBD) <> &hBD or bs_pstat = 0 or bs_mstat = 0 then bs_known = false
+ bs_roll = ByteAt(&h18F0A)
+ if ByteAt(&h18F09) <> &hA9 or not MenuCommand.BytesAre(&h18F0B, "207983") then bs_known = false
+ bs_first = true
+ if MenuCommand.BytesAre(&h18F27, "EAEAEAEAEAEA") then
+  bs_first = false
+ elseif not MenuCommand.BytesAre(&h18F27, "EED738EED838") then
+  bs_known = false
+ end if
+ bs_surprise = true
+ if ByteAt(&h18F25) <> &h90 then bs_known = false
+ if ByteAt(&h18F26) = &h27 then
+  bs_surprise = false
+ elseif ByteAt(&h18F26) <> &h08 then
+  bs_known = false
+ end if
+ bs_back = 0
+ if MenuCommand.BytesAre(&h18F47, "8005") then bs_back = 1
+ if MenuCommand.BytesAre(&h18F47, "EAEA") then bs_back = 5
+ if MenuCommand.BytesAre(&h18F47, "B005") then
+  select case ByteAt(&h18F3A)
+   case &h4A: bs_back = 2
+   case &hEA: bs_back = 3
+   case &h0A: bs_back = 4
+  end select
+ end if
+ if bs_back = 0 then bs_known = false
+ bs_ticks = ByteAt(&h19053)
+ if ByteAt(&h19052) <> &hA9 then bs_known = false
+ bs_slow = 0
+ if MenuCommand.BytesAre(&h1903C, "06D426D5") then bs_slow = 1
+ if MenuCommand.BytesAre(&h1903C, "EAEAEAEA") then bs_slow = 2
+ if bs_slow = 0 then bs_known = false
+ bs_forced = 0
+ if ByteAt(&h18E77) = &hA9 then
+  select case ByteAt(&h18E78)
+   case &h80: bs_forced = 1
+   case &h00: bs_forced = 2
+   case &h01: bs_forced = 3
+  end select
+ end if
+ if bs_forced = 0 then bs_known = false
+ dim bs_skip_text(3) as String = {"", "D0F8", "D0F1", "D0EC"}
+ dim bs_skip_offset(3) as UInteger = {0, &h18E82, &h18E89, &h18E8E}
+ for k as Integer = 1 to 3
+  bs_skip(k) = true
+  if MenuCommand.BytesAre(bs_skip_offset(k), "EAEA") then
+   bs_skip(k) = false
+  elseif not MenuCommand.BytesAre(bs_skip_offset(k), bs_skip_text(k)) then
+   bs_known = false
+  end if
+ next
+
  'The other status rules, see UmLdaOffset. The lda picks the byte (list 1 to 4), the mask the statuses.
  dim unit_base as Integer
  dim lda_offset as UInteger
@@ -923,6 +1013,52 @@ sub BattleFormulas.WriteToROM()
  elseif MenuCommand.BytesAre(&h20180, SlotRoutine16Text()) then
   for i as Integer = 0 to &h4F
    WriteByte(&h20180 + i, &hFF)
+  next
+ end if
+
+ 'the start of the battle
+ if bs_known then
+  WriteByte(&h18EA0, BsStatByte(bs_pstat))
+  WriteByte(&h18EBE, BsStatByte(bs_mstat))
+  WriteByte(&h18F0A, bs_roll)
+  if bs_first then
+   for i as Integer = 0 to 5
+    WriteByte(&h18F27 + i, val("&h" + mid("EED738EED838", i * 2 + 1, 2)))
+   next
+  else
+   for i as Integer = 0 to 5
+    WriteByte(&h18F27 + i, &hEA)
+   next
+  end if
+  if bs_surprise then WriteByte(&h18F26, &h08) else WriteByte(&h18F26, &h27)
+  select case bs_back
+   case 1: WriteByte(&h18F47, &h80): WriteByte(&h18F48, &h05)
+   case 5: WriteByte(&h18F47, &hEA): WriteByte(&h18F48, &hEA)
+   case else
+    WriteByte(&h18F47, &hB0): WriteByte(&h18F48, &h05)
+    if bs_back = 2 then WriteByte(&h18F3A, &h4A)
+    if bs_back = 3 then WriteByte(&h18F3A, &hEA)
+    if bs_back = 4 then WriteByte(&h18F3A, &h0A)
+  end select
+  WriteByte(&h19053, bs_ticks)
+  if bs_slow = 1 then
+   WriteByte(&h1903C, &h06): WriteByte(&h1903D, &hD4): WriteByte(&h1903E, &h26): WriteByte(&h1903F, &hD5)
+  else
+   for i as Integer = 0 to 3
+    WriteByte(&h1903C + i, &hEA)
+   next
+  end if
+  select case bs_forced
+   case 1: WriteByte(&h18E78, &h80)
+   case 2: WriteByte(&h18E78, &h00)
+   case else: WriteByte(&h18E78, &h01)
+  end select
+  dim bs_write_text(3) as String = {"", "D0F8", "D0F1", "D0EC"}
+  dim bs_write_offset(3) as UInteger = {0, &h18E82, &h18E89, &h18E8E}
+  for k as Integer = 1 to 3
+   for i as Integer = 0 to 1
+    if bs_skip(k) then WriteByte(bs_write_offset(k) + i, val("&h" + mid(bs_write_text(k), i * 2 + 1, 2))) else WriteByte(bs_write_offset(k) + i, &hEA)
+   next
   next
  end if
 
