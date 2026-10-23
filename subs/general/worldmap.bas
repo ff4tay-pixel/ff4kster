@@ -537,6 +537,92 @@ function WorldRedo() as Boolean
 end function
 
 
+type WorldHistory
+
+ 'The undo of one world, kept while another world is edited (the wu_ arrays hold the world being edited)
+
+ ops as Integer
+ cur as Integer
+ cells as Integer
+ pos as UInteger ptr
+ vals as UShort ptr
+ op_start(world_undo_ops + 1) as Integer
+
+end type
+
+dim shared world_hist(2) as WorldHistory
+
+
+sub WorldStashHistory(w as Integer)
+
+ 'Keeps the undo of world w for the next time it is opened
+
+ if world_hist(w).pos <> 0 then
+  deallocate(world_hist(w).pos)
+  deallocate(world_hist(w).vals)
+  world_hist(w).pos = 0
+  world_hist(w).vals = 0
+ end if
+
+ world_hist(w).ops = wu_ops
+ world_hist(w).cur = wu_cur
+ world_hist(w).cells = wu_cells
+ if wu_cells > 0 then
+  world_hist(w).pos = allocate(wu_cells * sizeof(UInteger))
+  world_hist(w).vals = allocate(wu_cells * sizeof(UShort))
+  for i as Integer = 0 to wu_cells - 1
+   world_hist(w).pos[i] = wu_pos(i)
+   world_hist(w).vals[i] = wu_val(i)
+  next
+ end if
+ for k as Integer = 0 to wu_ops
+  world_hist(w).op_start(k) = wu_op_start(k)
+ next
+
+end sub
+
+
+sub WorldRestoreHistory(w as Integer)
+
+ 'Puts the undo of world w back (an empty one if it has none)
+
+ wu_ops = world_hist(w).ops
+ wu_cur = world_hist(w).cur
+ wu_cells = world_hist(w).cells
+ for i as Integer = 0 to wu_cells - 1
+  wu_pos(i) = world_hist(w).pos[i]
+  wu_val(i) = world_hist(w).vals[i]
+ next
+ for k as Integer = 0 to wu_ops
+  wu_op_start(k) = world_hist(w).op_start(k)
+ next
+ if wu_ops = 0 then wu_op_start(0) = 0
+
+end sub
+
+
+sub WorldRevertToLoaded(w as Integer)
+
+ 'Ctrl-R: puts every tile of world w back as it was when the ROM was loaded, as one undoable step
+
+ if not WorldChanged(w) then
+  InfoBox("This world has no changes.||Press any key")
+  exit sub
+ end if
+
+ if not ConfirmBox("Revert this world to the loaded ROM?") then exit sub
+
+ WorldBeginOp()
+ for y as Integer = 0 to world_size(w) - 1
+  for x as Integer = 0 to world_size(w) - 1
+   if world_tiles(w, y, x) <> world_orig(w, y, x) then WorldSetTile(w, x, y, world_orig(w, y, x))
+  next
+ next
+ WorldEndOp()
+
+end sub
+
+
 '--- editing operations (each one group for Undo) ---------------------------------------------
 
 sub WorldSelectionRect(byref x0 as Integer, byref y0 as Integer, byref x1 as Integer, byref y1 as Integer)
@@ -1097,11 +1183,8 @@ sub EditOneWorld(w as Integer)
  wv_map_active = true
  WorldPickTile(world_tiles(w, wv_cursor_y, wv_cursor_x) and 127)
 
- 'Undo covers this visit to the world
- wu_ops = 0
- wu_cur = 0
- wu_cells = 0
- wu_op_start(0) = 0
+ 'Undo is kept for each world, also after leaving it
+ WorldRestoreHistory(w)
 
  cls
  do
@@ -1237,6 +1320,8 @@ sub EditOneWorld(w as Integer)
       end if
      case 26
       if not WorldUndo() then redraw = false
+     case 18 'Ctrl-R: the world as the ROM had it (Ctrl-Z brings the edits back)
+      if wv_map_active then WorldRevertToLoaded(w)
      case 25
       if not WorldRedo() then redraw = false
      case else
@@ -1247,6 +1332,7 @@ sub EditOneWorld(w as Integer)
  loop until done
 
  if painting then WorldEndOp()
+ WorldStashHistory(w)
  'End with a draw on the screen itself so no destroyed image stays the drawing target
  pset (0, 0), point(0, 0)
  cls

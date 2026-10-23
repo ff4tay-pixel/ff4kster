@@ -271,7 +271,9 @@ map: Enter places the palette tile (over the selected block, if there is one), S
 flood fills, R replaces every tile like the one under the cursor in the whole world,
 Backspace picks the tile under the cursor into the palette, Shift with the arrows
 selects a block, Ctrl-C copies the block, Ctrl-V shows it as a preview that the arrows
-move, Enter places and Esc cancels, and Ctrl-Z / Ctrl-Y undo and redo. Esc goes back to
+move, Enter places and Esc cancels, and Ctrl-Z / Ctrl-Y undo and redo (each world keeps its
+own undo, also after you leave it). Ctrl-R reverts the whole world to how the ROM had it (it
+asks first and Ctrl-Z brings the edits back). Esc goes back to
 the list of worlds. M opens a menu of every action with its key (choosing one does
 it as if the key had been pressed). O cycles the overlay: the world's triggers are drawn as yellow frames (the
 status box says where the one under the cursor goes), and the encounter zones as dashed lines
@@ -2082,6 +2084,7 @@ VERSION HISTORY
     - Battle Sprites, Portraits, Field Sprites: Ctrl-R reverts (as in Monster Sprites and the lists); all four sprite editors step the brush color with [ or Minus and ] or Plus and list their actions in the same order, with Previous / Next for the item (Portraits and Field Sprites keep Go to)
     - Maps and World Maps: M opens a menu of every action with its key, like the sprite editors' Enter menu
     - Maps: Ctrl-R reverts a map to the loaded ROM (in the list and in the map editor), and the undo of a map is kept after leaving it
+    - World Maps: Ctrl-R reverts a world to the loaded ROM, and the undo of each world is kept after leaving it
     - Main menu: under Party the data editors (Characters, Commands, Actors) come before the picture editors (Battle Sprites, Portraits, Field Sprites); the key help for Features names what it edits
     - F1 also works on the editing screens (sprite and portrait editors, maps, world maps, tile properties, battle formulas, level ups, the AI editor and the item forms), not only in menus
     - Characters: the starting data has the critical hit rate and bonus

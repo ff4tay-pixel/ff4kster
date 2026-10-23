@@ -166,6 +166,7 @@ function WorldActions(map_panel as Boolean) as UInteger
   SmAdd("Paste the copy", "Ctrl-V", 22)
   SmAdd("Undo", "Ctrl-Z", 26)
   SmAdd("Redo", "Ctrl-Y", 25)
+  SmAdd("Revert the world to the loaded ROM", "Ctrl-R", 18)
   SmAdd("Edit the trigger here", "T", asc("t"))
   SmAdd("Add a trigger here", "Insert", INSERT_KEY)
   SmAdd("Remove the trigger here", "Delete", DELETE_KEY)
