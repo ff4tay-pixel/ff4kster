@@ -2069,6 +2069,7 @@ VERSION HISTORY
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
     - Commands: Fight has the list of temporary statuses that its attack cures in the attacker (Charm in the original)
     - Battle Sprites, Monster Sprites, Portraits, Field Sprites: every BMP export asks for confirmation first, like the imports
+    - Lists: the Space menu only offers "Show where it is used" for the lists that track it; the key help no longer says Medicines and Tools can swap entries
     - Characters: the starting data has the critical hit rate and bonus
     - Commands: Steal has its lowest and highest chance, the chance of being caught and what a caught thief loses
     - Battle Formulas: spell effect 29, the unused copy of Count, can raise or lower a stat of its target like Armor

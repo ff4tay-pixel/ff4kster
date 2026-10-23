@@ -924,10 +924,25 @@ function UndoPop(kind as String, byref i as Integer) as Boolean
 end function
 
 
-function EntryActionKey() as UInteger
+function UsageTracked(kind as String) as Boolean
+
+ 'Whether Ctrl-U can say where an entry of this kind is used (UsageText has no list for the others)
+
+ select case kind
+  case "shops", "jobs", "commands", "actors", "solobattles", "autobattles", "spellsets", "encounters"
+   return false
+ end select
+
+ return true
+
+end function
+
+
+function EntryActionKey(kind as String) as UInteger
 
  'Space in a list opens a menu of the actions on the entry, so none of them needs a key to be learned. Returns the
- ' key the chosen entry stands for (the list handles it as if it had been pressed), 0 if cancelled.
+ ' key the chosen entry stands for (the list handles it as if it had been pressed), 0 if cancelled. "Show where it
+ ' is used" is only offered for the kinds that track it.
 
  dim m as BlueMenu
  dim labels(1 to 5) as String = {"Revert to the loaded ROM", "Copy this entry", "Paste over this entry", "Undo the last change", "Show where it is used"}
@@ -935,15 +950,18 @@ function EntryActionKey() as UInteger
  dim keys(1 to 5) as UInteger = {18, 3, 22, 26, 21}
  dim label_width as Integer
  dim text_width as Integer
+ dim count as Integer = 5
 
- for i as Integer = 1 to 5
+ if not UsageTracked(kind) then count = 4
+
+ for i as Integer = 1 to count
   label_width = Max(label_width, len(labels(i)))
  next
  text_width = label_width + 2 + 6
  m = BlueMenu(78 - (text_width + 2), 3)
  m.title = "This entry"
  m.min_width = text_width
- for i as Integer = 1 to 5
+ for i as Integer = 1 to count
   m.AddOption(FF4Text(labels(i) + space(label_width - len(labels(i)) + 2) + hints(i)))
  next
  m.UserSelect()
@@ -994,7 +1012,7 @@ function ListInput(list_menu as BlueMenu, kind as String) as Boolean
  last_list_pos(k) = list_menu.selected
 
  key = list_menu.last_key
- if key = SPACE_KEY then key = EntryActionKey()
+ if key = SPACE_KEY then key = EntryActionKey(kind)
 
  select case key
   case 18 'Ctrl+R
