@@ -6,3 +6,4 @@ exports/
 lastrom.cfg
 *.smc
 *.bak
+config/fieldpalettes.dat
