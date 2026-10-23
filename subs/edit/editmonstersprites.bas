@@ -903,7 +903,7 @@ sub EditMonsterSprite(index_start as Integer)
       end if
      case asc("e"), asc("E")
       MsCommit()
-      InfoBox(ExportMonsterImage(index) + "||Press any key", 4, 20)
+      if ConfirmExport("this monster") then InfoBox(ExportMonsterImage(index) + "||Press any key", 4, 20)
      case asc("i"), asc("I")
       if ConfirmBox("Import replaces this monster's tiles and palette. Continue?") then
        message = ImportMonsterImage(index)

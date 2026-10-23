@@ -901,7 +901,7 @@ sub EditFieldSheet(sheet_start as Integer)
     case asc("f"), asc("F")
      FieldFill(sheet, pixel_x, pixel_y, brush)
     case asc("e"), asc("E")
-     InfoBox(ExportFieldSheet(sheet, pal) + "||Press any key", 4, 20)
+     if ConfirmExport("this sheet") then InfoBox(ExportFieldSheet(sheet, pal) + "||Press any key", 4, 20)
     case asc("i"), asc("I")
      if ConfirmBox("Import replaces this sheet and the colors of palette " + str(pal) + ". Continue?") then
       InfoBox(ImportOneFieldSheet(sheet) + "||Press any key", 4, 20)
@@ -1206,9 +1206,9 @@ sub EditFieldSprites()
    elseif sheet_list.selected = total_field_sheets + 1 then
     which = PickFieldSheet("Export which sheet?")
     if which = 0 then
-     InfoBox(ExportFieldSheets() + "||Press any key", 4, 20)
+     if ConfirmExport("all sheets") then InfoBox(ExportFieldSheets() + "||Press any key", 4, 20)
     elseif which > 0 then
-     InfoBox(ExportFieldSheet(which - 1, FieldViewPalette(which - 1)) + "||Press any key", 4, 20)
+     if ConfirmExport("that sheet") then InfoBox(ExportFieldSheet(which - 1, FieldViewPalette(which - 1)) + "||Press any key", 4, 20)
     end if
    else
     which = PickFieldSheet("Import which sheet?")

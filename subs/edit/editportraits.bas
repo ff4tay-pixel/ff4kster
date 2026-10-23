@@ -472,7 +472,7 @@ sub EditPortrait(portrait_start as Integer)
     case asc("f"), asc("F")
      PortraitFill(portrait, pixel_x, pixel_y, brush)
     case asc("e"), asc("E")
-     InfoBox(ExportPortrait(portrait, pal) + "||Press any key", 4, 20)
+     if ConfirmExport("this portrait") then InfoBox(ExportPortrait(portrait, pal) + "||Press any key", 4, 20)
     case asc("i"), asc("I")
      if ConfirmBox("Import replaces this portrait and its palette. Continue?") then
       InfoBox(ImportOnePortrait(portrait) + "||Press any key", 4, 20)
@@ -792,9 +792,9 @@ sub EditPortraits()
    elseif select_portrait.selected = total_portraits + 1 then
     which = PickPortrait("Export which portrait?")
     if which = 0 then
-     InfoBox(ExportPortraits() + "||Press any key", 4, 20)
+     if ConfirmExport("all portraits") then InfoBox(ExportPortraits() + "||Press any key", 4, 20)
     elseif which > 0 then
-     InfoBox(ExportPortrait(which - 1, PortraitDefaultPalette(which - 1)) + "||Press any key", 4, 20)
+     if ConfirmExport("that portrait") then InfoBox(ExportPortrait(which - 1, PortraitDefaultPalette(which - 1)) + "||Press any key", 4, 20)
     end if
    else
     which = PickPortrait("Import which portrait?")

@@ -602,7 +602,7 @@ sub EditBattleSheet(sheet as Integer)
     case asc("p"), asc("P")
      mode = 2
     case asc("e"), asc("E")
-     InfoBox(ExportBattleSheet(sheet, pal) + "||Press any key", 4, 20)
+     if ConfirmExport("this character") then InfoBox(ExportBattleSheet(sheet, pal) + "||Press any key", 4, 20)
     case asc("i"), asc("I")
      if ConfirmBox("Import replaces the sprites and palette of this character. Continue?") then
       InfoBox(ImportOneBattleSheet(sheet) + "||Press any key", 4, 20)
@@ -713,9 +713,9 @@ sub EditBattleSprites()
    elseif select_sheet.selected = total_battle_char_sheets + 1 then
     which = PickBattleSheet("Export which character?")
     if which = 0 then
-     InfoBox(ExportBattleSprites() + "||Press any key", 4, 20)
+     if ConfirmExport("all characters") then InfoBox(ExportBattleSprites() + "||Press any key", 4, 20)
     elseif which > 0 then
-     InfoBox(ExportBattleSheet(which - 1, which - 1) + "||Press any key", 4, 20)
+     if ConfirmExport("that character") then InfoBox(ExportBattleSheet(which - 1, which - 1) + "||Press any key", 4, 20)
     end if
    else
     which = PickBattleSheet("Import which character?")

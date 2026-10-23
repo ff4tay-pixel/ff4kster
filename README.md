@@ -2068,6 +2068,7 @@ VERSION HISTORY
     - Commands: Recall can skip its MP check and its MP cost
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
     - Commands: Fight has the list of temporary statuses that its attack cures in the attacker (Charm in the original)
+    - Battle Sprites, Monster Sprites, Portraits, Field Sprites: every BMP export asks for confirmation first, like the imports
     - Characters: the starting data has the critical hit rate and bonus
     - Commands: Steal has its lowest and highest chance, the chance of being caught and what a caught thief loses
     - Battle Formulas: spell effect 29, the unused copy of Count, can raise or lower a stat of its target like Armor

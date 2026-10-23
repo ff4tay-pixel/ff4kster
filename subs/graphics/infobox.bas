@@ -113,6 +113,15 @@ function ConfirmBox(message as String) as Boolean
 end function
 
 
+function ConfirmExport(what as String) as Boolean
+
+ 'Every BMP export asks first: it writes into the exports folder and replaces files of the same name.
+
+ return ConfirmBox("Export " + what + " to the exports folder, replacing same names. Continue?")
+
+end function
+
+
 declare sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
 
 
