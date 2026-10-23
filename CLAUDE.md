@@ -12,7 +12,7 @@ memory and written only by "Save ROM". `README.md` documents every editor, key a
 keep it in sync when behavior changes (its version-history entry for 1.0 is the one to extend until the next release; 0.9 is released and stays as it was).
 
 Editors on the main menu: Features, Spells (with animation preview), Spell Sets (both lists on one screen), Weapons (with sprite
-preview), Armors, Medicines, Tools, Shops, Jobs, **Battle Sprites** (tile/palette editor, BMP export/import), **Portraits** (menu faces, 32x32 3bpp, entry 32),
+preview), Armors, Medicines, Tools, Shops, Jobs, **Battle Sprites** (tile/palette editor, BMP export/import), **Portraits** (menu faces, 32x32 3bpp, entry 32), **Field Sprites** (walking sprites of the party and NPCs, 107 sheets, entry 37, `subs/edit/editfieldsprites.bas`),
 Characters (full-screen **level up editor** with totals), Commands, Actors, Messages (banks with space meter, previews, search by text), Events, Triggers and NPCs
 (with overview minimaps), Tilesets, Map Info, Maps (paste preview, redo, replace tile, NPC/trigger overlay),
 Monsters (sprite preview, reorganized screen, **full screen AI editor** `subs/edit/editai.bas` with the pickers in `aitools.bas`), Formations (**battlefield preview**), Encounters, Autobattles,
@@ -138,6 +138,7 @@ the rip JSON and in `.asm` comments are SNES `bank/address` or file offsets: use
 | Weapon sprites | `&hE5B00` | sprite N starts at tile 4N; 8 tiles = two 16x16 frames |
 | Weapon visuals (palette, sprite, slash, swing) | `&h7A010` | 4 bytes per weapon |
 | Battle character graphics | `&hD0200` | 15 sheets x 0x800, 4bpp; poses: tile table `&h6FB61`, positions `&h6FA61`, pose to position `&h6FA3C` |
+| Field sprites | sheets `&hD8200`, palettes `&h68200` | 107 sheets in one full bank, sizes 0x300 (0-16), 0x180 (17-47), 0xC0 (48-69), 0x60 (70-106), 3bpp; a frame is 4 tiles (top left, top right, bottom left, bottom right); 36 palettes x 8 colors; party sheets 0-13 use `PlayerPalTbl` (`&hAB4FA`, 0-3), other sheets the palette of the NPC placement: placement palette 0-3 picks from the two palettes of each map nibble n (13+2n, 14+2n), so a sheet has no fixed palette; the editor remembers a pick in `config/fieldpalettes.dat`; `npcs(n).sprite` is the sheet number (the table at `&h97200` is indexed by NPC number) |
 | Menu portraits | gfx `&hED5C0`, palettes `&h688D0` | 17 x 0x180 bytes (4x4 tiles, 3bpp, 24 bytes each); 16 palettes x 8 colors; palette number = portrait number, Pig/Small/Toad use the transformed character's |
 | Level up data | pointers `&h7B700`, data from `&h7B728` | 5 bytes per level; rules in `battle/win.asm` |
 | World maps | see header of `subs/general/worldmap.bas` | one RLE row per pointer: overworld/underground 256x256, moon 64x64, fixed room 4000h/1D00h/1E80h bytes, only changed worlds are rewritten; the disassembly writes addresses as bank*10000h+address, so convert with `(a shr 16)*&h8000 + (a and &h7FFF)` (+&h200) |

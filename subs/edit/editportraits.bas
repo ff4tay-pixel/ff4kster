@@ -684,8 +684,8 @@ function ImportPortraitImage(p as Integer, byref report as String) as Integer
  if len(name_found) = 0 then return 0
 
  if len(name_found) >= 18 then
-  number = val(mid(name_found, 16, 2))
-  if number >= 0 and number <= 15 and mid(name_found, 16, 2) = Pad(str(number), 2, true, "0") then pal = number
+  number = val(mid(name_found, 17, 2))
+  if number >= 0 and number <= 15 and mid(name_found, 17, 2) = Pad(str(number), 2, true, "0") then pal = number
  end if
  if ReadPortraitBMP(PortraitPath(name_found), p, pal, problem) then return 1
  report += "|" + name_found + ": " + problem

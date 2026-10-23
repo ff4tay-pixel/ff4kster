@@ -239,6 +239,7 @@ sub ApplyDataToROM()
  SaveSpellColorNames()
  SaveBattleCharGfx()
  SavePortraits()
+ SaveFieldSprites()
 
 end sub
 

@@ -253,7 +253,7 @@ whatever means your operating system provides for doing so.
 The main menu groups the editors under yellow headings (Items and magic,
 Party, Story and text, World, Battles, Overview); the cursor skips the
 headings. The editors are in this order: Features, Spells, Spell Sets,
-Weapons, Armors, Medicines, Tools, Shops, Jobs, Battle Sprites, Portraits, Characters,
+Weapons, Armors, Medicines, Tools, Shops, Jobs, Battle Sprites, Portraits, Field Sprites, Characters,
 Commands, Actors, Messages, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
 Monsters, Formations, Encounters, Autobattles, Solobattles and Battle Formulas, followed by
 Search Everywhere, Space Usage and Changed Entries. "Edit World Maps" (under World) first lists
@@ -664,6 +664,57 @@ color with the bracket keys in the palette editor instead). A pixel above color
 that name the same palette must agree on its colors. Older 33x32 files that
 store the palette as pixels in the top right corner are still read. Like
 everything else it only changes the in-memory data until Save ROM.
+
+
+FIELD SPRITES
+-------------
+
+"Edit Field Sprites" (in the Party group, after Edit Portraits) edits the walking
+sprites of the party and of the NPCs on the maps. The list holds the 107 sheets,
+named as in config\npcsprites.dat, and the window next to it shows every frame of the
+selected sheet four times as large, at real size and double size, the palette, the
+size of the sheet (8, 4, 2 or 1 frames of 16x16) and where it starts in the ROM.
+"NPC numbers" are the NPCs of the NPCs editor whose sprite is this sheet; the same
+sheet is used by many NPCs. The sizes are fixed in the ROM (the bank is full), so
+only the pixels and the palette colors change, never the number of frames.
+
+Enter on a sheet opens the editor: the picture of the whole sheet, with its frames
+four to a row, is painted pixel by pixel. Arrows move, 0 to 7 paint with that color,
+Space paints with the brush color, F fills, X and Y flip the frame under the cursor
+(a left facing frame from a right facing one), Ctrl-C and Ctrl-V copy and paste a frame
+(to another sheet too), Ctrl-Z undoes, R reverts the sheet, PgUp and PgDn change
+sheet, P edits the palette colors (Q A, W S, E D change red, green and blue of the
+color picked with Left and Right) and Comma and Period change the palette. Enter
+opens a menu with every action and its key. E and I export and import the sheet.
+
+A sheet has no palette of its own. There are 36 palettes of 8 colors. The game
+draws the party sheets (0 to 13) with the palette of a fixed table, 0 to 3. Any
+other sheet takes its palette from the NPC placement on the map: a placement has
+a palette 0 to 3 that picks one of the two palettes of each of the two numbers in
+the map's NPC palettes (Edit Map Info), so the same sheet can have other colors on
+other maps. The window shows which palettes the maps use a sheet with ("Maps use
+it with: 14 x5, 13 x4" is palette 14 on 5 placements and 13 on 4) and the editor
+starts with the one used most. You can pick any other palette for a sheet (Comma
+and Period, or the Choose the palette menu entry, which also shows how many
+placements use each palette), the editor remembers the choice for next time in
+config\fieldpalettes.dat (lines "NNN PP", delete one to forget it) and "Use the
+palette of the maps" goes back to the usual one. The choice only changes what you
+see and what a BMP export uses, nothing in the ROM. Changing a palette color
+changes every sprite that is drawn with that palette, and color 0 is always
+transparent. The palette editor can also rearrange the colors: the bracket keys
+move the picked color left or right, and the menu entry "Swap it with another
+color" swaps it with any other. A swap keeps every sprite looking the same by
+renumbering its pixels, and because a sheet can be drawn with several palettes
+the same two colors are swapped in all the palettes that belong together (it asks
+first and says how many palettes and sheets it touches, often most of the NPC
+ones) and clears undo.
+
+The last two list entries export and import BMP files, field_NNN_pal_PP.bmp in
+exports\fieldsprites, for all sheets or one. The picture is the sheet with its frames
+four to a row (64x32 for a sheet of 8 frames) and the color table of the BMP is the
+palette: entry N is color N and a pixel's value is its color number, so your image
+editor must not renumber the colors. Import also sets the colors 1 to 7 of palette
+PP. Like everything else it only changes the in-memory data until Save ROM.
 
 
 BATTLE SPRITES
@@ -1991,6 +2042,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.0
+    - Added Field Sprites editor: the 107 walking sprite sheets of the party and the NPCs (pixels, 36 palettes, BMP export and import)
     - Extended ROMs (2 MiB hacks and the like) open and save without changing a byte you did not edit; the Commands editor leaves unedited commands alone.
     - Enemy AI editor: one list of pairs in the style of the monster editor's AI box (WHEN, AND and
       THEN lines, a blank line between pairs, the set and condition numbers and how many places use them),

@@ -419,6 +419,7 @@ sub ReadData(filename as String)
 
  print "Reading menu portraits... ";
  ReadPortraits()
+ ReadFieldSprites()
  print "DONE"
 
  print "Reading world maps... ";
