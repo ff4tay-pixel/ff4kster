@@ -22,12 +22,12 @@ type BattleFormulas
  back_jump(2) as Boolean 'a jumping unit is not affected
  back_def as UByte 'the defense of a target in the back row: 1 x0.5, 2 x1, 3 x2 (original)
  slot_known(4) as Boolean 'the bonus of the unit in the first slot, see SlotUnitOffset: whether the code is the original
- slot_who(4) as UByte 'who gets it: 1 the first slot of both sides (original), 2 the first slot of the party, 3 the whole party
+ slot_who(4) as UByte 'who gets it: 1 the first slot of both sides (original), 2 the first slot of the party, 3 the whole party, 4 units with a status
  slot_mult(4) as UByte 'the rate is multiplied by this and divided by 4: 5 in the original, 25% more
- slot_target as Boolean 'rule 4 only: the slot of the target decides, not the slot of the attacker (the original game)
- crit_known as Boolean 'the damage of a critical hit of Fight, see CritRoutine: whether the code is the original or ours
- crit_mult as UByte 'the damage is multiplied by this and divided by 4 (4 in the original, no change)
- crit_bonus as Boolean 'the weapon's critical bonus is added afterwards (the original game)
+ slot_free as Boolean 'the free space for the shared routine of the status rules (bank 3, 201D0) is free or has it
+ slot_list(4) as UByte 'the status list (1 to 4) that a rule with who = 4 looks at
+ slot_mask(4) as UByte 'its statuses
+ slot_unit(4) as Boolean 'the unit that the rule looks at: false the attacker, true the target. The original game: the attacker for rules 1, 3 and 4 (4 is probably a mistake), the target for rule 2
  um_known(11) as Boolean 'the other status rules of the damage formulas, see UmLdaOffset: whether the code is the original
  um_list(11) as UByte 'the status byte the rule tests: 1 persistent (status 1), 2 temporary, 3 system, 4 hidden
  um_mask(11) as UByte 'the statuses of that byte that switch the rule on

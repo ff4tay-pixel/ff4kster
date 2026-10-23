@@ -765,8 +765,7 @@ starting stats and levelups).
 The starting data also has the critical hit rate (a percentage, 0 to 99) and the
 critical hit bonus (0 to 255) of the character. A critical hit is a random number
 below the rate, and it adds the bonus to the damage. Equipment changes them in
-battle (a bow triples the rate), and Battle Formulas, Critical hits, changes what
-the bonus does. A game that is already saved keeps the values it has.
+battle (a bow triples the rate). A game that is already saved keeps the values it has.
 
 The levelups from the character's starting level to level 70 each consist of
 a set of stats which will increase, the amount by which they will each
@@ -847,7 +846,7 @@ be edited (for example base values, multipliers and the stats and elements
 involved). Fight, Kick, Dark Wave and Throw have their damage formulas
 here, and Regen the ticks between its heals; the Battle Formulas editor is for
 what is not one command's own (spells, the stats of the party, statuses,
-timers and critical hits).
+and timers).
 
 The menu you get with Enter on a command also has two entries that are about
 all commands. "Overview of all commands" is one screen with every command: its
@@ -978,7 +977,7 @@ This editor has the formulas and numbers the battle uses that are not the
 settings of one command (those are in the Commands editor, under Parameters). The list on the left
 has a line for each group, in this order: the spells (Spell damage, Armor and Shell, Dispel and Black Hole, the
 Summon Book); the stats of the party (Party stats, First slot bonus, Back row); the statuses (Weakening
-statuses, Status adjustments); the Timers; and the Critical hits. The settings of the highlighted
+statuses, Status adjustments); and the Timers. The settings of the highlighted
 line are shown on the right, and Enter on a line changes them (Esc goes back).
 A line of the list that has changes is yellow. Ctrl-R puts the highlighted line
 (or the line whose menus or page are open) back the way it was when the ROM was
@@ -1056,8 +1055,20 @@ party member and also the first monster (the game ignores which side it is on).
 Each rate is multiplied by 5 and divided by 4; the number can be changed from 0
 to 10 (4 is no bonus, 8 is double), and so can who gets it: slot 0 of both
 sides, only slot 0 of the party, or every member of the party. The magic defense
-rate looks at the slot of the attacker in the original game, probably by mistake:
-it can be switched to the target, so the bonus is for the unit that is attacked.
+rate looks at the slot of the attacker in the original game, probably by mistake.
+Each rule can look at the attacker or at the target (the attacker for the hit
+rates, the target for the evasion in the original game), whatever is looked at,
+the same rate is changed: the attacker's hit rate, the target's evasion, the
+attacker's spell hit rate or the target's magic defense rate.
+
+Instead of the slot, each of the four rules can be for the units that have some
+status: pick "with a status", then the status list (persistent, temporary,
+system or hidden) and the statuses; a unit with any of them gets the bonus (for
+example a unit that is Charging), the attacker or the target as chosen for the
+rule. With no status chosen the rule is switched off.
+This needs a short routine of its own in the free space at the end of bank 3 (file
+offset 1FFD0), shared by the four rules; the original code is put back when no rule
+uses a status, and a ROM that already uses that space cannot use the option.
 
 Back row: in the original game a unit in the back row has its hit rate halved
 when it attacks, and a target in the back row halves the hit rate against it and
@@ -1067,17 +1078,6 @@ the hit rate of the attacker and the hit rate against the target can be halved,
 unchanged or doubled, the defense of the target x0.5, x1 or x2, and the two
 exceptions (the flag and jumping) can be switched off for each of the two hit
 rate rules. They are for Fight, Aim, Jump and Focus; spells ignore the back row.
-
-Critical hits: the critical hit rate and bonus belong to the character (set under
-Characters, Edit starting data, as "Crit rate" and "Crit bonus"; they are not
-the weapon's; a bow triples the rate
-and adds the arrow's attack to the bonus, two weapons double the rate). In the
-original game a critical hit adds the bonus to the damage before the defense is
-taken off. The page lets the damage be multiplied first (a number divided by 4,
-so 4 changes nothing, 8 doubles and 6 gives half again; 0 to 16) and the bonus be
-left out. Fight, Jump and Kick use this code. The new code is a short routine in
-free space at the end of bank 3 (file offset 1FF80); with the original settings
-the original bytes are put back.
 
 Weakening statuses: the statuses that change the damage formulas, written as rules
 with the statuses in yellow. In the original game Toad and Mini do all of
@@ -1961,10 +1961,9 @@ VERSION HISTORY
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Recall can skip its MP check and its MP cost
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
-    - Battle Formulas: the damage of critical hits (multiplier and bonus)
     - Characters: the starting data has the critical hit rate and bonus
     - Commands: Steal has its lowest and highest chance, the chance of being caught and what a caught thief loses
-    - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the Armor and Shell numbers, what Dispel and Black Hole remove, the bonus of the first slot, the back row, the statuses that weaken a unit and the other status adjustments, and the timers (turn wait, Count, poison, HP leak, sleep)
+    - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the Armor and Shell numbers, what Dispel and Black Hole remove, the bonus of the first slot or of units with a status, the back row, the statuses that weaken a unit and the other status adjustments, and the timers (turn wait, Count, poison, HP leak, sleep)
     - Battle Formulas editor: spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book
     - Commands: overview of all commands with what changed, and the names of the four internal commands
     - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)

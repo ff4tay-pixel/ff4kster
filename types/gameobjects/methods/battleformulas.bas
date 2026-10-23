@@ -80,22 +80,67 @@ function SlotMultOffset(r as Integer) as UInteger
 end function
 
 
-function CritRoutine(mult as Integer, bonus as Boolean) as String
+function SlotBlockOffset(r as Integer) as UInteger
 
- 'The routine in free space that replaces the 14 bytes in CalcDmg (battle/damage.asm) which add the critical
- ' bonus of the weapon to the damage ($a4, 16 bits). It multiplies the damage by mult (Mult16 at 83B9, 32 bit
- ' result in $3941), divides by 4 and caps it at $FFFF, then adds the bonus if wanted, and returns.
+ 'The 31 bytes of a first slot rule, from its lda: "lda $cd" (the attacker) or "lda $ce" (the target), "and #mask",
+ ' "bne" over the rest, then the rate (lda $38f8, sta $df), "lda #5, sta $e1, jsr Mult8", a shift right by 2 and
+ ' "lda $e3, sta $38f8". A rule that looks at a status instead is "lda status, and #mask, beq" over the rest,
+ ' "lda #mult", "ldx #rate", a call to the shared routine (SlotRoutineText) and nops.
+
+ return SlotUnitOffset(r) - 1
+
+end function
+
+
+function SlotVarAddr(r as Integer) as UInteger
+
+ 'The address of the rate that rule r changes: the hit rate, the evasion, then (spells) twice the same one.
+
+ select case r
+  case 1: return &h38F8
+  case 2: return &h38F9
+ end select
+
+ return &h38FA
+
+end function
+
+
+function SlotRoutineText() as String
+
+ 'The routine at 201D0 (bank 3, FFD0) that the status rules call: A is the number, X the address of the rate.
+ ' rate = rate times the number divided by 4 (the Mult8 of the game).
+
+ return "85E1BD000085DFDA20E08346E466E346E466E3A5E3FA9D000060"
+
+end function
+
+
+function SlotHexAddr(address as UInteger) as String
+
+ return hex(address mod &h100, 2) + hex(address \ &h100, 2)
+
+end function
+
+
+function SlotOriginalText(r as Integer, who as Integer, mult as Integer, target as Boolean) as String
 
  dim s as String
+ dim mask as Integer = &h80
 
- if mult <> 4 then
-  s = "A6A48E3D39A2" + hex(mult, 2) + "008E3F3920B983"
-  s += "C2204E43396E41394E43396E4139AD4339F005A9FFFF8003AD413985A4E220"
- end if
- if bonus then s += "18A5A46D013985A4A5A5690085A5"
- s += "60"
+ if who = 1 then mask = &h7F
+ if who = 2 then mask = &hFF
+ s = "A5" + iif(target, "CE", "CD") + "29" + hex(mask, 2) + "D019"
+ s += "AD" + SlotHexAddr(SlotVarAddr(r)) + "85DFA9" + hex(mult, 2) + "85E120E08346E466E346E466E3A5E38D" + SlotHexAddr(SlotVarAddr(r))
 
  return s
+
+end function
+
+
+function SlotStatusText(r as Integer, address as UInteger, mask as Integer, mult as Integer) as String
+
+ return "AD" + SlotHexAddr(address) + "29" + hex(mask, 2) + "F018A9" + hex(mult, 2) + "A2" + SlotHexAddr(SlotVarAddr(r)) + "20D0FF" + "EAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEA"
 
 end function
 
@@ -471,25 +516,6 @@ sub BattleFormulas.ReadFromROM()
  if not st_defense_zero and not MenuCommand.BytesAre(&h1C96A, "EAEAEAEAEA") then st_known(2) = false
 
 
- 'The damage of a critical hit: the 14 bytes at 1CBEE add the weapon's bonus, or they are a jsr to our routine.
- crit_known = false
- crit_mult = 4
- crit_bonus = true
- if MenuCommand.BytesAre(&h1CBEE, "18A5A46D013985A4A5A5690085A5") then
-  crit_known = true
-  for i as Integer = 0 to &h7F 'the free space for the routine must be free, a ROM hack may keep data there
-   if ByteAt(&h20180 + i) <> &hFF then crit_known = false
-  next
- elseif MenuCommand.BytesAre(&h1CBEE, "2080FF"+"EAEAEAEAEAEAEAEAEAEAEA") and ByteAt(&h1CBE9 + 4) = &h0E then
-  for m as Integer = 0 to 16
-   for b as Integer = 0 to 1
-    if MenuCommand.BytesAre(&h20180, CritRoutine(m, (b = 1))) then
-     crit_known = true: crit_mult = m: crit_bonus = (b = 1)
-    end if
-   next
-  next
- end if
-
  'The back row, see BackEffectOffset.
  back_known = true
  for r as Integer = 1 to 2
@@ -513,23 +539,58 @@ sub BattleFormulas.ReadFromROM()
  if MenuCommand.BytesAre(BackEffectOffset(3), "0E04392E0539") then back_def = 3
  if back_def = 0 then back_known = false
 
- 'The bonus of the first slot, see SlotUnitOffset. The mask says who: 7F the unit number without the monster bit
- ' (slot 0 of the party and of the monsters), FF only the party slot 0, 80 any member of the party.
+ 'The bonus of the first slot, see SlotUnitOffset and SlotBlockOffset. The mask says who: 7F the unit number
+ ' without the monster bit (slot 0 of the party and of the monsters), FF only the party slot 0, 80 any member of
+ ' the party. A rule can also test a status byte of the unit instead (who 4), with the shared routine in free space.
+ dim slot_start as UInteger
+ dim slot_var as String
+ dim slot_address as UInteger
+ dim slot_target_unit as Boolean
+ dim slot_routine_here as Boolean = MenuCommand.BytesAre(&h201D0, SlotRoutineText())
+ slot_free = slot_routine_here
+ if not slot_free then
+  slot_free = true
+  for i as Integer = 0 to &h2F
+   if ByteAt(&h201D0 + i) <> &hFF then slot_free = false
+  next
+ end if
  for r as Integer = 1 to 4
-  slot_known(r) = (ByteAt(SlotMaskOffset(r) - 1) = &h29 and ByteAt(SlotMultOffset(r) - 1) = &hA9)
+  slot_known(r) = false
   slot_who(r) = 0
-  select case ByteAt(SlotMaskOffset(r))
-   case &h7F: slot_who(r) = 1
-   case &hFF: slot_who(r) = 2
-   case &h80: slot_who(r) = 3
-  end select
-  if slot_who(r) = 0 then slot_known(r) = false
-  slot_mult(r) = ByteAt(SlotMultOffset(r))
+  slot_list(r) = 1
+  slot_mask(r) = 0
+  slot_mult(r) = 5
+  slot_start = SlotBlockOffset(r)
+  slot_var = SlotHexAddr(SlotVarAddr(r))
+  slot_target_unit = false
+  if ByteAt(slot_start) = &hA5 and (ByteAt(slot_start + 1) = &hCD or ByteAt(slot_start + 1) = &hCE) and ByteAt(slot_start + 2) = &h29 _
+   and ByteAt(slot_start + 4) = &hD0 and ByteAt(slot_start + 5) = &h19 and MenuCommand.BytesAre(slot_start + 6, "AD" + slot_var + "85DFA9") _
+   and MenuCommand.BytesAre(slot_start + 13, "85E120E08346E466E346E466E3A5E38D" + slot_var) then
+   slot_target_unit = (ByteAt(slot_start + 1) = &hCE)
+   select case ByteAt(slot_start + 3)
+    case &h7F: slot_who(r) = 1
+    case &hFF: slot_who(r) = 2
+    case &h80: slot_who(r) = 3
+   end select
+   slot_mult(r) = ByteAt(slot_start + 12)
+   slot_known(r) = (slot_who(r) > 0)
+  elseif ByteAt(slot_start) = &hAD and ByteAt(slot_start + 3) = &h29 and MenuCommand.BytesAre(slot_start + 5, "F018A9") _
+   and MenuCommand.BytesAre(slot_start + 9, "A2" + slot_var + "20D0FF" + "EAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEA") and slot_routine_here then
+   slot_address = ByteAt(slot_start + 1) + ByteAt(slot_start + 2) * &h100
+   if slot_address >= &h2683 and slot_address <= &h2686 then
+    slot_list(r) = slot_address - &h2682
+    slot_known(r) = true
+   elseif slot_address >= &h2703 and slot_address <= &h2706 then
+    slot_list(r) = slot_address - &h2702
+    slot_target_unit = true
+    slot_known(r) = true
+   end if
+   slot_who(r) = 4
+   slot_mask(r) = ByteAt(slot_start + 4)
+   slot_mult(r) = ByteAt(slot_start + 8)
+  end if
+  slot_unit(r) = slot_target_unit
  next
- if ByteAt(SlotUnitOffset(2)) <> &hCE then slot_known(2) = false
- if ByteAt(SlotUnitOffset(1)) <> &hCD or ByteAt(SlotUnitOffset(3)) <> &hCD then slot_known(1) = false: slot_known(3) = false
- slot_target = (ByteAt(SlotUnitOffset(4)) = &hCE)
- if ByteAt(SlotUnitOffset(4)) <> &hCD and ByteAt(SlotUnitOffset(4)) <> &hCE then slot_known(4) = false
 
  'The other status rules, see UmLdaOffset. The lda picks the byte (list 1 to 4), the mask the statuses.
  dim unit_base as Integer
@@ -721,30 +782,6 @@ sub BattleFormulas.WriteToROM()
   if plus_on then WriteByte(&h19E41, &h1A) else WriteByte(&h19E41, &hEA)
  end if
 
- 'critical hits
- if crit_known then
-  if crit_mult = 4 and crit_bonus then
-   wanted = "18A5A46D013985A4A5A5690085A5"
-   if not MenuCommand.BytesAre(&h1CBEE, wanted) then 'our routine is there: free the space again
-    for i as Integer = 0 to &h7F
-     WriteByte(&h20180 + i, &hFF)
-    next
-   end if
-  else
-   wanted = "2080FF"+"EAEAEAEAEAEAEAEAEAEAEA"
-   for i as Integer = 0 to &h7F
-    WriteByte(&h20180 + i, &hFF)
-   next
-   dim crit_text as String = CritRoutine(crit_mult, crit_bonus)
-   for i as Integer = 0 to len(crit_text) \ 2 - 1
-    WriteByte(&h20180 + i, val("&h" + mid(crit_text, i * 2 + 1, 2)))
-   next
-  end if
-  for i as Integer = 0 to 13
-   WriteByte(&h1CBEE + i, val("&h" + mid(wanted, i * 2 + 1, 2)))
-  next
- end if
-
  'the back row
  if back_known then
   dim back_text as String
@@ -771,18 +808,37 @@ sub BattleFormulas.WriteToROM()
  end if
 
  'the bonus of the first slot
+ dim slot_status_used as Boolean
+ dim slot_text as String
+ dim slot_unit_is_target as Boolean
  for r as Integer = 1 to 4
   if slot_known(r) then
-   select case slot_who(r)
-    case 1: WriteByte(SlotMaskOffset(r), &h7F)
-    case 2: WriteByte(SlotMaskOffset(r), &hFF)
-    case else: WriteByte(SlotMaskOffset(r), &h80)
-   end select
-   WriteByte(SlotMultOffset(r), slot_mult(r))
+   slot_unit_is_target = slot_unit(r)
+   if slot_who(r) = 4 then
+    slot_status_used = true
+    if slot_unit_is_target then
+     slot_text = SlotStatusText(r, &h2703 + slot_list(r) - 1, slot_mask(r), slot_mult(r))
+    else
+     slot_text = SlotStatusText(r, &h2683 + slot_list(r) - 1, slot_mask(r), slot_mult(r))
+    end if
+   else
+    slot_text = SlotOriginalText(r, slot_who(r), slot_mult(r), slot_unit_is_target)
+   end if
+   for i as Integer = 0 to len(slot_text) \ 2 - 1
+    WriteByte(SlotBlockOffset(r) + i, val("&h" + mid(slot_text, i * 2 + 1, 2)))
+   next
   end if
  next
- if slot_known(4) then
-  if slot_target then WriteByte(SlotUnitOffset(4), &hCE) else WriteByte(SlotUnitOffset(4), &hCD)
+ if slot_status_used then
+  if slot_free then
+   for i as Integer = 0 to len(SlotRoutineText()) \ 2 - 1
+    WriteByte(&h201D0 + i, val("&h" + mid(SlotRoutineText(), i * 2 + 1, 2)))
+   next
+  end if
+ elseif MenuCommand.BytesAre(&h201D0, SlotRoutineText()) then
+  for i as Integer = 0 to &h2F
+   WriteByte(&h201D0 + i, &hFF)
+  next
  end if
 
  'the other status rules
