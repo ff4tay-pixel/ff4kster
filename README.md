@@ -1060,6 +1060,10 @@ Each rule can look at the attacker or at the target (the attacker for the hit
 rates, the target for the evasion in the original game), whatever is looked at,
 the same rate is changed: the attacker's hit rate, the target's evasion, the
 attacker's spell hit rate or the target's magic defense rate.
+The last rule can instead change the magic defense itself, the base that is taken
+off the damage (a 16 bit number), which needs a second short routine of its own in
+the free space at the end of bank 3 (file offset 1FF80); it is put back to the
+original code when the rule is set back to the magic defense rate.
 
 Instead of the slot, each of the four rules can be for the units that have some
 status: pick "with a status", then the status list (persistent, temporary,

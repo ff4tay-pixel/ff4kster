@@ -138,9 +138,39 @@ function SlotOriginalText(r as Integer, who as Integer, mult as Integer, target 
 end function
 
 
-function SlotStatusText(r as Integer, address as UInteger, mask as Integer, mult as Integer) as String
+function SlotRoutine16Text() as String
 
- return "AD" + SlotHexAddr(address) + "29" + hex(mask, 2) + "F018A9" + hex(mult, 2) + "A2" + SlotHexAddr(SlotVarAddr(r)) + "20D0FF" + "EAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEA"
+ 'The routine at 20180 (bank 3, FF80) for a value of 16 bits ($3904, the magic defense): the same as the other
+ ' routine but with the Mult16 of the game, and the result stops at 65535.
+
+ return "8D3F399C4039C220BD00008D3D39E220DA20B983FAC2204E43396E41394E43396E4139AD4339F005A9FFFF8003AD41399D0000E22060"
+
+end function
+
+
+function SlotCallText(r as Integer, stat as Integer, who as Integer, target as Boolean, address as UInteger, mask as Integer, mult as Integer) as String
+
+ 'A rule that calls a routine of ours: the test is the status byte (who 4: lda, and, beq) or the slot (lda $cd or
+ ' $ce, and, bne), then "lda #mult, ldx #rate, jsr routine" and nops, 31 bytes like the original rule.
+
+ dim s as String
+ dim var_text as String = SlotHexAddr(SlotVarAddr(r))
+ dim routine as String = "20D0FF"
+ dim slot_mask as Integer = &h80
+
+ if stat = 2 then
+  var_text = SlotHexAddr(&h3904)
+  routine = "2080FF"
+ end if
+ if who = 4 then
+  s = "AD" + SlotHexAddr(address) + "29" + hex(mask, 2) + "F018A9" + hex(mult, 2) + "A2" + var_text + routine + "EAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEA"
+ else
+  if who = 1 then slot_mask = &h7F
+  if who = 2 then slot_mask = &hFF
+  s = "A5" + iif(target, "CE", "CD") + "29" + hex(slot_mask, 2) + "D019A9" + hex(mult, 2) + "A2" + var_text + routine + "EAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEA"
+ end if
+
+ return s
 
 end function
 
@@ -547,11 +577,22 @@ sub BattleFormulas.ReadFromROM()
  dim slot_address as UInteger
  dim slot_target_unit as Boolean
  dim slot_routine_here as Boolean = MenuCommand.BytesAre(&h201D0, SlotRoutineText())
+ dim slot_routine16_here as Boolean = MenuCommand.BytesAre(&h20180, SlotRoutine16Text())
+ dim slot_form as Integer
+ dim slot_call_var as UInteger
+ dim slot_call_routine as UInteger
  slot_free = slot_routine_here
  if not slot_free then
   slot_free = true
   for i as Integer = 0 to &h2F
    if ByteAt(&h201D0 + i) <> &hFF then slot_free = false
+  next
+ end if
+ slot_free16 = slot_routine16_here
+ if not slot_free16 then
+  slot_free16 = true
+  for i as Integer = 0 to &h4F
+   if ByteAt(&h20180 + i) <> &hFF then slot_free16 = false
   next
  end if
  for r as Integer = 1 to 4
@@ -560,12 +601,28 @@ sub BattleFormulas.ReadFromROM()
   slot_list(r) = 1
   slot_mask(r) = 0
   slot_mult(r) = 5
+  slot_stat(r) = 1
   slot_start = SlotBlockOffset(r)
   slot_var = SlotHexAddr(SlotVarAddr(r))
   slot_target_unit = false
+  slot_form = 0
   if ByteAt(slot_start) = &hA5 and (ByteAt(slot_start + 1) = &hCD or ByteAt(slot_start + 1) = &hCE) and ByteAt(slot_start + 2) = &h29 _
    and ByteAt(slot_start + 4) = &hD0 and ByteAt(slot_start + 5) = &h19 and MenuCommand.BytesAre(slot_start + 6, "AD" + slot_var + "85DFA9") _
    and MenuCommand.BytesAre(slot_start + 13, "85E120E08346E466E346E466E3A5E38D" + slot_var) then
+   slot_form = 1 'the original rule
+  elseif ByteAt(slot_start) = &hAD and ByteAt(slot_start + 3) = &h29 and MenuCommand.BytesAre(slot_start + 5, "F018A9") _
+   and ByteAt(slot_start + 9) = &hA2 and ByteAt(slot_start + 12) = &h20 and MenuCommand.BytesAre(slot_start + 15, "EAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEA") then
+   slot_form = 2 'a status rule that calls a routine of ours
+   slot_call_var = ByteAt(slot_start + 10) + ByteAt(slot_start + 11) * &h100
+   slot_call_routine = ByteAt(slot_start + 13) + ByteAt(slot_start + 14) * &h100
+  elseif ByteAt(slot_start) = &hA5 and (ByteAt(slot_start + 1) = &hCD or ByteAt(slot_start + 1) = &hCE) and ByteAt(slot_start + 2) = &h29 _
+   and ByteAt(slot_start + 4) = &hD0 and ByteAt(slot_start + 5) = &h19 and ByteAt(slot_start + 6) = &hA9 and ByteAt(slot_start + 8) = &hA2 _
+   and ByteAt(slot_start + 11) = &h20 and MenuCommand.BytesAre(slot_start + 14, "EAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEA") then
+   slot_form = 3 'a slot rule that calls a routine of ours
+   slot_call_var = ByteAt(slot_start + 9) + ByteAt(slot_start + 10) * &h100
+   slot_call_routine = ByteAt(slot_start + 12) + ByteAt(slot_start + 13) * &h100
+  end if
+  if slot_form = 1 then
    slot_target_unit = (ByteAt(slot_start + 1) = &hCE)
    select case ByteAt(slot_start + 3)
     case &h7F: slot_who(r) = 1
@@ -574,20 +631,36 @@ sub BattleFormulas.ReadFromROM()
    end select
    slot_mult(r) = ByteAt(slot_start + 12)
    slot_known(r) = (slot_who(r) > 0)
-  elseif ByteAt(slot_start) = &hAD and ByteAt(slot_start + 3) = &h29 and MenuCommand.BytesAre(slot_start + 5, "F018A9") _
-   and MenuCommand.BytesAre(slot_start + 9, "A2" + slot_var + "20D0FF" + "EAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEA") and slot_routine_here then
-   slot_address = ByteAt(slot_start + 1) + ByteAt(slot_start + 2) * &h100
-   if slot_address >= &h2683 and slot_address <= &h2686 then
-    slot_list(r) = slot_address - &h2682
+  elseif slot_form >= 2 then
+   if slot_call_var = SlotVarAddr(r) and slot_call_routine = &hFFD0 and slot_routine_here then
     slot_known(r) = true
-   elseif slot_address >= &h2703 and slot_address <= &h2706 then
-    slot_list(r) = slot_address - &h2702
-    slot_target_unit = true
+   elseif r = 4 and slot_call_var = &h3904 and slot_call_routine = &hFF80 and slot_routine16_here then
     slot_known(r) = true
+    slot_stat(r) = 2
    end if
-   slot_who(r) = 4
-   slot_mask(r) = ByteAt(slot_start + 4)
-   slot_mult(r) = ByteAt(slot_start + 8)
+   if slot_form = 2 then
+    slot_address = ByteAt(slot_start + 1) + ByteAt(slot_start + 2) * &h100
+    slot_who(r) = 4
+    slot_mask(r) = ByteAt(slot_start + 4)
+    slot_mult(r) = ByteAt(slot_start + 8)
+    if slot_address >= &h2683 and slot_address <= &h2686 then
+     slot_list(r) = slot_address - &h2682
+    elseif slot_address >= &h2703 and slot_address <= &h2706 then
+     slot_list(r) = slot_address - &h2702
+     slot_target_unit = true
+    else
+     slot_known(r) = false
+    end if
+   else
+    slot_target_unit = (ByteAt(slot_start + 1) = &hCE)
+    select case ByteAt(slot_start + 3)
+     case &h7F: slot_who(r) = 1
+     case &hFF: slot_who(r) = 2
+     case &h80: slot_who(r) = 3
+     case else: slot_known(r) = false
+    end select
+    slot_mult(r) = ByteAt(slot_start + 7)
+   end if
   end if
   slot_unit(r) = slot_target_unit
  next
@@ -808,19 +881,20 @@ sub BattleFormulas.WriteToROM()
  end if
 
  'the bonus of the first slot
- dim slot_status_used as Boolean
+ dim slot_use8 as Boolean
+ dim slot_use16 as Boolean
  dim slot_text as String
  dim slot_unit_is_target as Boolean
+ dim slot_address as UInteger
  for r as Integer = 1 to 4
   if slot_known(r) then
    slot_unit_is_target = slot_unit(r)
    if slot_who(r) = 4 then
-    slot_status_used = true
-    if slot_unit_is_target then
-     slot_text = SlotStatusText(r, &h2703 + slot_list(r) - 1, slot_mask(r), slot_mult(r))
-    else
-     slot_text = SlotStatusText(r, &h2683 + slot_list(r) - 1, slot_mask(r), slot_mult(r))
-    end if
+    if slot_unit_is_target then slot_address = &h2703 + slot_list(r) - 1 else slot_address = &h2683 + slot_list(r) - 1
+   end if
+   if slot_who(r) = 4 or slot_stat(r) = 2 then
+    slot_text = SlotCallText(r, slot_stat(r), slot_who(r), slot_unit_is_target, slot_address, slot_mask(r), slot_mult(r))
+    if slot_stat(r) = 2 then slot_use16 = true else slot_use8 = true
    else
     slot_text = SlotOriginalText(r, slot_who(r), slot_mult(r), slot_unit_is_target)
    end if
@@ -829,7 +903,7 @@ sub BattleFormulas.WriteToROM()
    next
   end if
  next
- if slot_status_used then
+ if slot_use8 then
   if slot_free then
    for i as Integer = 0 to len(SlotRoutineText()) \ 2 - 1
     WriteByte(&h201D0 + i, val("&h" + mid(SlotRoutineText(), i * 2 + 1, 2)))
@@ -838,6 +912,17 @@ sub BattleFormulas.WriteToROM()
  elseif MenuCommand.BytesAre(&h201D0, SlotRoutineText()) then
   for i as Integer = 0 to &h2F
    WriteByte(&h201D0 + i, &hFF)
+  next
+ end if
+ if slot_use16 then
+  if slot_free16 then
+   for i as Integer = 0 to len(SlotRoutine16Text()) \ 2 - 1
+    WriteByte(&h20180 + i, val("&h" + mid(SlotRoutine16Text(), i * 2 + 1, 2)))
+   next
+  end if
+ elseif MenuCommand.BytesAre(&h20180, SlotRoutine16Text()) then
+  for i as Integer = 0 to &h4F
+   WriteByte(&h20180 + i, &hFF)
   next
  end if
 

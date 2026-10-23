@@ -233,7 +233,7 @@ sub FsLayout()
   "|the attacker's spell hit rate is multiplied by |@FM3| / 4", _
   "Magic def rate|when the |@FU4| is |@FW4", _
   "|statuses to look for: |@FS4", _
-  "|the target's magic def rate is multiplied by |@FM4| / 4"}
+  "|the target's |@FT4| is multiplied by |@FM4| / 4"}
  dim page7(1 to 7) as String = { _
   "Attacker, back row|its hit rate is |@RA1", _
   "|ignored with the no back row penalty flag: |@RX1", _
@@ -249,7 +249,7 @@ sub FsLayout()
    fs_x0 = 24
    FsFill(page7(), 7)
   case 6
-   fs_x0 = 24
+   fs_x0 = 18
    FsFill(page6(), 12)
   case 5
    fs_x0 = 22
@@ -388,6 +388,7 @@ function FsFieldText(code as String) as String
   case "RX1", "RX2": if not formulas.back_known then return "?" else return iif(formulas.back_flag(val(mid(code, 3))), "yes", "no")
   case "RJ1", "RJ2": if not formulas.back_known then return "?" else return iif(formulas.back_jump(val(mid(code, 3))), "yes", "no")
   case "RD": if not formulas.back_known then return "?" else return MenuCommand.CodeItem("x0.5|x1|x2", formulas.back_def)
+  case "FT4": if not formulas.slot_known(4) then return "?" else return MenuCommand.CodeItem("magic def rate|magic def base", formulas.slot_stat(4))
   case "FU1", "FU2", "FU3", "FU4": if not formulas.slot_known(val(mid(code, 3))) then return "?" else return iif(formulas.slot_unit(val(mid(code, 3))), "target", "attacker")
   case "CT": if not formulas.doom_known then return "?" else return str(formulas.doom_ticks)
   case "CS": if not formulas.doom_known then return "?" else return MenuCommand.CodeItem("Dead|Stone|Toad|Mini|Pig|Mute|Blind|Poison", formulas.doom_status)
@@ -704,6 +705,15 @@ sub FsEditField(code as String)
     fml_number.UserSelect()
     formulas.slot_mult(n) = fml_number.number
    end if
+  case "FT4"
+   if formulas.slot_known(4) then
+    pick = FmlPick(px, py, "magic def rate, original|magic def base", formulas.slot_stat(4))
+    if pick = 2 and not formulas.slot_free16 then
+     InfoBox("There is no free space in the ROM for this.||Press any key")
+    elseif pick > 0 then
+     formulas.slot_stat(4) = pick
+    end if
+   end if
   case "FU1", "FU2", "FU3", "FU4"
    n = val(mid(code, 3))
    if formulas.slot_known(n) then
@@ -884,6 +894,7 @@ sub FsHint()
     case "FW1", "FW2", "FW3", "FW4": message = "Enter picks who gets it: slot 0 of both sides, of the party, all, or a status."
     case "FS1", "FS2", "FS3", "FS4": message = "Enter picks the status list and the statuses that switch this rule on."
     case "FM1", "FM2", "FM3", "FM4": message = "Enter types the number the rate is multiplied by, divided by 4: 5 is 25% more."
+    case "FT4": message = "Enter picks the number that is multiplied: the magic defense rate or the base."
     case "FU1", "FU2", "FU3", "FU4": message = "Enter picks whose slot or status decides: the attacker or the target."
     case "PD": message = "Enter picks the number that the max HP is divided by, 8 in the original."
     case "SD": message = "Enter types the HP that HP leak takes every tick, 2 in the original."
@@ -951,7 +962,7 @@ function FmlGroupData(entry as Integer, f as BattleFormulas ptr) as String
    s += str(f->plus_on) + "," + str(f->yang_stat) + "," + str(f->yang_mult) + "," + str(f->yang_plus)
   case 10
    for i as Integer = 1 to 4
-    s += str(f->slot_who(i)) + "/" + str(f->slot_mult(i)) + "/" + str(f->slot_list(i)) + "/" + str(f->slot_mask(i)) + ","
+    s += str(f->slot_who(i)) + "/" + str(f->slot_mult(i)) + "/" + str(f->slot_list(i)) + "/" + str(f->slot_mask(i)) + "/" + str(f->slot_stat(i)) + ","
    next
    for i as Integer = 1 to 4
     s += "," + str(f->slot_unit(i))
@@ -1006,7 +1017,7 @@ sub FmlGroupCopy(entry as Integer, df as BattleFormulas ptr, sf as BattleFormula
   case 10
    for i as Integer = 1 to 4
     df->slot_who(i) = sf->slot_who(i): df->slot_mult(i) = sf->slot_mult(i)
-    df->slot_list(i) = sf->slot_list(i): df->slot_mask(i) = sf->slot_mask(i)
+    df->slot_list(i) = sf->slot_list(i): df->slot_mask(i) = sf->slot_mask(i): df->slot_stat(i) = sf->slot_stat(i)
    next
    for i as Integer = 1 to 4
     df->slot_unit(i) = sf->slot_unit(i)
@@ -1262,10 +1273,10 @@ sub FsNotes6()
  WriteText(FF4Text("multiplied by 5 and divided by 4. Any number from 0 to 10 can be used:"), 2, 25, 15)
  WriteText(FF4Text("4 is no bonus, 8 is double and 3 is 25% less. Instead of the slot, a rule"), 2, 26, 15)
  WriteText(FF4Text("can be for the units with a status of one list, such as Charging, and"), 2, 27, 15)
- WriteText(FF4Text("none of the statuses chosen switches it off. Each rule changes the same"), 2, 28, 15)
- WriteText(FF4Text("rate, but it can look at the attacker or at the target. The magic defense"), 2, 29, 15)
- WriteText(FF4Text("rate checks the attacker in the original game, probably a mistake."), 2, 30, 15)
- WriteText(FF4Text("Ctrl-R reverts this page, Ctrl-Z undoes, Space shows both."), 2, 31, 15)
+ WriteText(FF4Text("none of the statuses chosen switches it off. Each rule changes one rate,"), 2, 28, 15)
+ WriteText(FF4Text("but it can look at the attacker or the target. The last rule can change"), 2, 29, 15)
+ WriteText(FF4Text("the magic defense rate or the magic defense base. It checks the attacker"), 2, 30, 15)
+ WriteText(FF4Text("in the original game, probably a mistake. Ctrl-R reverts, Ctrl-Z undoes."), 2, 31, 15)
 
 end sub
 

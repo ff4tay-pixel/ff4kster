@@ -24,6 +24,8 @@ type BattleFormulas
  slot_known(4) as Boolean 'the bonus of the unit in the first slot, see SlotUnitOffset: whether the code is the original
  slot_who(4) as UByte 'who gets it: 1 the first slot of both sides (original), 2 the first slot of the party, 3 the whole party, 4 units with a status
  slot_mult(4) as UByte 'the rate is multiplied by this and divided by 4: 5 in the original, 25% more
+ slot_stat(4) as UByte 'rule 4 only: 1 the magic defense rate (original), 2 the magic defense (the base of the defense, 16 bits)
+ slot_free16 as Boolean 'the free space for the routine of the 16 bit rate (bank 3, 20180) is free or has it
  slot_free as Boolean 'the free space for the shared routine of the status rules (bank 3, 201D0) is free or has it
  slot_list(4) as UByte 'the status list (1 to 4) that a rule with who = 4 looks at
  slot_mask(4) as UByte 'its statuses
