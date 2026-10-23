@@ -4,6 +4,7 @@ constructor ShadowDataMenu(starting_x as UByte = 0, starting_y as UByte = 0)
  y = starting_y
  
  main_menu = BlueMenu(x, y)
+ SetHints(main_menu, "Enter picks where this actor loads its data from.|Enter picks where this actor saves its data. Discard throws it away.|Enter picks the character whose level up data this actor uses.")
  load_menu = BlueMenu(x + 10, y)
  load_menu.max_rows = 1
  save_menu = BlueMenu(x + 10, y + 1)

@@ -4,6 +4,7 @@ constructor CommandMenu(starting_x as UByte = 0, starting_y as UByte = 0)
  y = starting_y
  
  main_menu = BlueMenu(x, y)
+ main_menu.hint = "Enter picks the command for this place of the battle menu."
  command_menu = BlueMenu(x, y)
  command_menu.max_rows = 1
  command_menu.AddOption(FF4Text("-----"))

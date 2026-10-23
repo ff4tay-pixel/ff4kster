@@ -4,6 +4,7 @@ constructor ToolInformationMenu(starting_x as UByte = 0, starting_y as UByte = 0
  y = starting_y
  
  main_menu = BlueMenu(x, y)
+ SetHints(main_menu, "Enter changes the name of this tool.|Enter changes the price.|Enter picks the description text of this tool.")
 
 end constructor
 

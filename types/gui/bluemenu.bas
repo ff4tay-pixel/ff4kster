@@ -22,6 +22,9 @@ type BlueMenu
  type_ahead as Boolean = false 'typing letters jumps to the entry that starts with (or contains) them
  typed_text as String
  typed_time as Double
+ hint as String 'shown on the bottom row while this menu has the cursor: what Enter does on any of its lines
+ hints as List 'optional, one text per line; a line that has one shows it instead of hint
+ hint_shown as Boolean
 
  declare constructor(starting_x as UInteger = 0, starting_y as UInteger = 0)
  

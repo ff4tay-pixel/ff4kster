@@ -10,6 +10,7 @@ sub EditSoloBattles()
  next
  
  edit_solobattle.x = select_solobattle.options.Width() + 2
+ SetHints(edit_solobattle, "Enter picks the formation of this solo battle.|Enter picks the actor that fights alone.|Enter picks the non-solo actor, one setting shared by all solo battles.")
  
  formation_menu.x = edit_solobattle.x + 11
  formation_menu.y = edit_solobattle.y

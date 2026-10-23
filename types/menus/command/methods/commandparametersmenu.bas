@@ -28,6 +28,25 @@ constructor CommandParametersMenu(starting_x as UByte = 0, starting_y as UByte =
  code_menu = BlueMenu(x, y)
  code_choice_menu = BlueMenu(x + 26, y)
  code_choice_menu.max_rows = 8
+ fight_menu.hint = "Enter changes this setting. Esc goes back."
+ recall_menu.hint = "Enter changes this setting. Esc goes back."
+ sing_menu.hint = "Enter changes this setting. Esc goes back."
+ hide_menu.hint = "Enter changes this setting. Esc goes back."
+ split_menu.hint = "Enter changes this setting. Esc goes back."
+ pray_menu.hint = "Enter changes this setting. Esc goes back."
+ charge_menu.hint = "Enter changes this setting. Esc goes back."
+ bear_menu.hint = "Enter changes this setting. Esc goes back."
+ twin_menu.hint = "Enter changes this setting. Esc goes back."
+ boast_menu.hint = "Enter changes this setting. Esc goes back."
+ cry_menu.hint = "Enter changes this setting. Esc goes back."
+ cover_menu.hint = "Enter changes this setting. Esc goes back."
+ steal_menu.hint = "Enter changes this setting. Esc goes back."
+ regen_menu.hint = "Enter changes this setting. Esc goes back."
+ clone_menu.hint = "Enter changes this setting. Esc goes back."
+ fail_menu.hint = "Enter changes this setting. Esc goes back."
+ aim_menu.hint = "Enter changes this setting. Esc goes back."
+ code_menu.hint = "Enter changes this setting. Esc goes back."
+ SetHints(fight_menu, "Enter picks the damage multiplier when the target has this element property.|Enter picks the damage multiplier when the target has this element property.|Enter picks the damage multiplier when the target has this element property.|Enter picks the damage multiplier when the target has this element property.|Enter picks the damage multiplier for this race property.|Enter picks the damage multiplier for this race property.|Enter picks the attacker stat used for the chance to add a status.|Enter picks the target stat that is taken off that chance.|Enter switches half steps x1.5, x2.5 and x3.5 on or off for all damage.|Enter picks the temporary statuses the attacker loses when the attack hits.")
 
  source_menu = BlueMenu(x + 15, y)
  source_menu.max_rows = 12

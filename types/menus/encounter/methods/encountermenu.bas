@@ -5,6 +5,7 @@ constructor EncounterMenu(starting_x as UByte = 0, starting_y as UByte = 0)
  
  main_menu = BlueMenu(x, y)
  encounter_menu = BlueMenu(x, y + 3)
+ encounter_menu.hint = "Enter picks the formation for this slot. Esc goes back to the areas."
  
  battle_percentages(1) = 43
  battle_percentages(2) = 43

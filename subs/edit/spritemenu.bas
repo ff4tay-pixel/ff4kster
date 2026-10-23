@@ -185,3 +185,48 @@ function WorldActions(map_panel as Boolean) as UInteger
  return sm_key(choice)
 
 end function
+
+
+function ObjectActions(title as String, noun as String, has_item as Boolean) as UInteger
+
+ 'Space in the Triggers and NPCs editors: a menu of what can be done with the one under the cursor (noun is
+ ' "trigger" or "placement"). Returns the key the chosen entry stands for (the editor handles it as if it had been
+ ' pressed), 0 if cancelled.
+
+ SmReset()
+ if has_item then SmAdd("Edit this " + noun, "Enter", ENTER_KEY)
+ SmAdd("Add a " + noun, "Insert", INSERT_KEY)
+ if has_item then SmAdd("Delete this " + noun, "Delete", DELETE_KEY)
+ SmAdd("Pick a " + noun + " on the minimap", "Tab", TAB_KEY)
+ SmAdd("Back to the maps", "Esc", ESC_KEY)
+
+ dim choice as Integer = SmRun(title)
+ if choice = 0 then return 0
+
+ return sm_key(choice)
+
+end function
+
+
+function ScriptActions(on_end as Boolean) as UInteger
+
+ 'Space in the autobattle script: a menu of what can be done on the line the cursor is on (on_end: the last line,
+ ' which adds a command). Returns the key the chosen entry stands for, 0 if cancelled.
+
+ SmReset()
+ if on_end then
+  SmAdd("Add a command", "Enter", ENTER_KEY)
+ else
+  SmAdd("Change this command", "Enter", ENTER_KEY)
+  SmAdd("Insert a command before it", "Insert", INSERT_KEY)
+  SmAdd("Delete this command", "Delete", DELETE_KEY)
+ end if
+ SmAdd("Undo", "Ctrl-Z", 26)
+ SmAdd("Back to the scripts", "Esc", ESC_KEY)
+
+ dim choice as Integer = SmRun("Script")
+ if choice = 0 then return 0
+
+ return sm_key(choice)
+
+end function

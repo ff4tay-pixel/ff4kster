@@ -27,6 +27,11 @@ sub EditMapProperties()
  edit_menu.AddOption(FF4Text("Edit background"))
  edit_menu.y = info_menu.y
  edit_menu.x = screen_width - edit_menu.options.Width() - 2
+ SetHints(edit_menu, "Enter edits name, grid index, music, flags and encounter rate.|Enter edits battle background, tileset, border tile and palettes.|Enter edits the scrolling background of this map.")
+ select_map.hint = "Enter opens the settings of this map: information, graphics, background."
+ info_menu.hint = "Enter changes this setting of the map. Esc goes back."
+ display_menu.hint = "Enter changes this graphics setting. Esc goes back."
+ background_menu.hint = "Enter changes this background setting. Esc goes back."
  
  name_menu.max_rows = 1
  name_menu.x = info_menu.x + 16

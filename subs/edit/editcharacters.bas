@@ -14,6 +14,8 @@ sub EditCharacters()
  edit_character.AddOption(FF4Text("Edit level up data"))
  edit_character.AddOption(FF4Text("Edit after 70 data"))
  edit_character.x = screen_width - edit_character.options.Width() - 2
+ SetHints(edit_character, "Enter edits the data this character starts the game with.|Enter opens the level up editor. Its keys are listed at the bottom.|Enter opens the after 70 data editor.")
+ select_character.hint = "Enter opens a menu: starting data, level up data, after 70 data."
  
  starting_menu = CharacterStartingMenu(select_character.options.Width() + 2)
  starting_menu.SetTo(1)

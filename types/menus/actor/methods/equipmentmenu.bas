@@ -4,6 +4,7 @@ constructor EquipmentMenu(starting_x as UByte = 0, starting_y as UByte = 0)
  y = starting_y
  
  main_menu = BlueMenu(x, y)
+ main_menu.hint = "Enter changes what this actor starts with in this place."
  hand_menu = BlueMenu(x, y)
  head_menu = BlueMenu(x, y + 2)
  body_menu = BlueMenu(x, y + 3)

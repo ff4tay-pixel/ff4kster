@@ -234,7 +234,7 @@ sub EventCallMenu.UserSelect()
     case DELETE_KEY
      data_menu.Hide()
      condition_menu.Hide()
-     if e->parameters.Length() > 0 then
+     if e->parameters.Length() > 0 andalso ConfirmBox("Delete this parameter?") then
       if e->parameters.Length() > 1 then condition_menu.y -= 1
       e->parameters.Remove(data_menu.selected)
       'put (x * 8, y * 8), blank, pset
@@ -287,7 +287,9 @@ sub EventCallMenu.UserSelect()
      
     case DELETE_KEY
      condition_menu.Hide()
-     if condition_menu.selected <= c->true_conditions.Length() then
+     if c->true_conditions.Length() + c->false_conditions.Length() = 0 orelse not ConfirmBox("Delete this condition?") then
+      'nothing to delete, or kept
+     elseif condition_menu.selected <= c->true_conditions.Length() then
       c->true_conditions.Remove(condition_menu.selected)
      else
       c->false_conditions.Remove(condition_menu.selected - c->true_conditions.Length())

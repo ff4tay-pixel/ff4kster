@@ -1469,8 +1469,10 @@ TRIGGERS
 
 Each map has a list of triggers associated with it. In the editor, first
 select a map, then you can edit the triggers associated with it. You can edit
-a particular trigger with ENTER, or you can use INSERT and DELETE to add or
-remove triggers, respectively.
+a particular trigger with ENTER. The last line of the list is "-- Add a trigger --":
+ENTER on it adds a trigger and opens it. SPACE opens a menu with Edit, Add,
+Delete (it asks first) and Pick on the minimap, and INSERT and DELETE do the
+same as keys. If the game has no room for another trigger the editor says so.
 
 There are three types of triggers:
 
@@ -1521,8 +1523,11 @@ NPCs are other characters or miscellaneous interactable objects associated
 with a particular map.
 
 As with the trigger editor, first select a map, then you can edit the NPC
-placements for that map. You can add or remove placements with INSERT or
-DELETE, and you can edit them with ENTER.
+placements for that map. ENTER edits a placement; the last line of the list is
+"-- Add a placement --", and ENTER on it adds one and opens it. SPACE opens a
+menu with Edit, Add, Delete (it asks first) and Pick on the minimap, and INSERT
+and DELETE do the same as keys. If the map already has 12 placements, or the
+game has no room left for another, the editor says so.
 
 The NPC editor checks whether there is room to spare before allowing you to
 add a new NPC placement, so it cannot bleed into other data when you save.
@@ -1948,7 +1953,9 @@ as a script to execute.
 
 When editing the script, use Enter to change a script entry, Insert to
 add one at the current cursor position, or Delete to remove the currently
-selected entry.
+selected entry. The last line of the script is "-- Add --": Enter on it adds
+a command at the end. Space opens a menu with all of these and Undo, and
+Ctrl-Z undoes the last change to the script (Insert, Delete or a change).
 
 Some autobattles have two scripts: one each for two different actors.
 Which ones have two and which have one seem to be hard-coded and thus
@@ -2083,6 +2090,8 @@ VERSION HISTORY
     - Lists: the Space menu only offers "Show where it is used" for the lists that track it; the key help no longer says Medicines and Tools can swap entries
     - Battle Sprites, Portraits, Field Sprites: Ctrl-R reverts (as in Monster Sprites and the lists); all four sprite editors step the brush color with [ or Minus and ] or Plus and list their actions in the same order, with Previous / Next for the item (Portraits and Field Sprites keep Go to)
     - Maps and World Maps: M opens a menu of every action with its key, like the sprite editors' Enter menu
+    - Hints on the bottom row now say what Enter does in Tools, Shops, Jobs, Commands, Actors, Characters, Formations, Encounters, Autobattles, Solobattles, Map Info, Tilesets and Features (each menu and, where the lines differ, each line)
+    - Triggers, NPCs and autobattle scripts: an "Add" line at the end of the list, a Space menu with add, delete and the rest, a hint on the bottom row, and a message when the game has no room; autobattle scripts have Ctrl-Z; deleting a condition or parameter in an event call asks first
     - Maps: Ctrl-R reverts a map to the loaded ROM (in the list and in the map editor), and the undo of a map is kept after leaving it
     - World Maps: Ctrl-R reverts a world to the loaded ROM, and the undo of each world is kept after leaving it
     - Main menu: under Party the data editors (Characters, Commands, Actors) come before the picture editors (Battle Sprites, Portraits, Field Sprites); the key help for Features names what it edits

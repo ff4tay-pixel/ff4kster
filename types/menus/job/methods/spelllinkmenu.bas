@@ -4,6 +4,7 @@ constructor SpellLinkMenu(starting_x as UByte = 0, starting_y as UByte = 0)
  y = starting_y
  spell_menu = BlueMenu(x + 9, y + 3)
  spell_menu.columns = 2
+ spell_menu.hint = "Enter picks the spell set. Left column: in battle. Right column: in the menu."
 
 end constructor
 

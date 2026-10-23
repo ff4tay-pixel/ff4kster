@@ -18,12 +18,14 @@ sub EditJobs()
  edit_job.AddOption(FF4Text("Edit spell set links"))
  edit_job.AddOption(FF4Text("Edit spell set names"))
  edit_job.x = screen_width - edit_job.options.Width() - 2
+ SetHints(edit_job, "Enter changes the name of this job.|Enter edits the spell sets this job uses.|Enter changes the names of the spell sets, the same for every job.")
  
  spell_name_menu.x = spell_link_menu.x
  spell_name_menu.y = spell_link_menu.y + 3
  spell_name_menu.AddOption(white_spellset_name + FF4Text(": "))
  spell_name_menu.AddOption(black_spellset_name + FF4Text(": "))
  spell_name_menu.AddOption(call_spellset_name + FF4Text(": "))
+ spell_name_menu.hint = "Enter changes the name of this spell set. It is the same for every job."
  
  edit_set_name.x = spell_name_menu.x
  edit_set_name.text_width = 5

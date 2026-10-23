@@ -3,6 +3,7 @@ constructor CharacterStartingMenu(starting_x as UByte = 0, starting_y as UByte =
  x = starting_x
  y = starting_y
  starting_menu = BlueMenu(starting_x, starting_y)
+ SetHints(starting_menu, "Enter picks the actor this character starts as.|Enter changes the handedness: neither, left, right or both.|Enter picks the job.|Enter types the starting level.|Enter types the maximum HP.|Enter types the maximum MP.|Enter types this stat.|Enter types this stat.|Enter types this stat.|Enter types this stat.|Enter types this stat.|Enter types the experience points.|Enter types the experience needed for the next level.|Enter types the critical hit rate.|Enter types the critical hit bonus.")
 
 end constructor
 

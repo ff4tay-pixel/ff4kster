@@ -3,6 +3,7 @@ constructor FormationInfoMenu(starting_x as UByte = 0, starting_y as UByte = 0)
  x = starting_x
  y = starting_y
  main_menu = BlueMenu(x, y)
+ SetHints(main_menu, "Enter changes the monster, how many and whether it is in an egg.|Enter changes the monster, how many and whether it is in an egg.|Enter changes the monster, how many and whether it is in an egg.|Enter types the arrangement: where the monsters stand.|Enter picks the battle music.|Enter switches this on or off.|Enter switches this on or off.|Enter switches this on or off.|Enter switches this on or off.|Enter switches this on or off.|Enter switches this on or off.|Enter switches this on or off.|Enter switches this on or off.|Enter types this number. Its purpose is not known.|Enter types this number. Its purpose is not known.|Enter switches this on or off. Its purpose is not known.|Enter switches this on or off. Its purpose is not known.|Enter switches this on or off. Its purpose is not known.|Enter switches this on or off.")
 
 end constructor
 

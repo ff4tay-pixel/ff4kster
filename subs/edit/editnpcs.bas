@@ -2,6 +2,46 @@ declare sub UpdateMinimap(map_index as UInteger, pg as PlacementGroup, selected_
 declare sub DrawMinimapCursor(cx as Integer, cy as Integer)
 declare function FindPlacementAt(cx as Integer, cy as Integer, pg as PlacementGroup) as Integer
 
+sub RefillPlacementList(placement_list as BlueMenu, m as Integer)
+
+ 'The list of a map's NPC placements, with the line that adds one at the end
+
+ placement_list.ClearAll()
+ for i as Integer = 1 to placement_groups(m).placements.Length()
+  placement_list.AddOption(FF4Text("Placement " + Pad(str(i), 2, true)))
+ next
+ placement_list.AddOption(FF4Text(Pad("-- Add a placement --", 21)))
+
+end sub
+
+
+function PlacementAdd(m as Integer) as Boolean
+
+ 'Adds an empty placement at the end of the map's list. Says so if there is no room: a map has at most 12, and
+ ' all maps share a fixed amount of room.
+
+ dim space_after_insert as Integer = PlacementSpace() + 4
+ dim p as Placement ptr
+
+ if placement_groups(m).placements.Length() = 0 then space_after_insert += 1
+
+ if placement_groups(m).placements.Length() >= 12 then
+  InfoBox("This map already has 12 placements, the most the game allows.||Delete one first.||Press any key")
+  return false
+ end if
+ if space_after_insert >= max_placement_room then
+  InfoBox("No room for another placement.||All maps share a fixed amount of room for them|and the original ROM uses it all. Delete one first.||Press any key")
+  return false
+ end if
+
+ p = callocate(SizeOf(Placement))
+ placement_groups(m).placements.Append(p)
+
+ return true
+
+end function
+
+
 sub EditNPCs()
 
  dim select_map as BlueMenu
@@ -17,6 +57,7 @@ sub EditNPCs()
  dim done as Boolean
  dim a as UInteger
  dim temp as Integer
+ dim opened as Boolean
  dim underground as Integer
  dim minimap_img as Any ptr
  dim minimap_canvas as Any ptr
@@ -61,12 +102,9 @@ minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
  do
    
    do
-    select_placement.ClearAll()
-    for i as Integer = 1 to placement_groups(select_map.selected).placements.Length()
-     select_placement.AddOption(FF4Text("Placement " + Pad(str(i), 2, true)))
-    next
-    if select_placement.options.Length() = 0 then select_placement.AddOption(FF4Text(Pad("-- EMPTY --", 12)))
+    RefillPlacementList(select_placement, select_map.selected)
     put (select_placement.x * 8, select_placement.y * 8), blank, pset
+    ShowHint("Pick a map. Enter opens its NPC placements, Esc goes back.")
     select_placement.Display()
     UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
     put (52 * 8, 42 * 8), minimap_img, trans
@@ -118,13 +156,21 @@ minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
      if minimap_mode then
       DrawMinimapCursor(minimap_cursor_x, minimap_cursor_y)
      end if
+     if minimap_mode then
+      ShowHint("Arrows move the cursor on the minimap. Enter picks the placement there. Tab or Esc leave it.")
+     elseif select_placement.selected > placement_groups(select_map.selected).placements.Length() then
+      ShowHint("Enter adds a placement to this map and opens it. Space opens a menu.")
+     else
+      ShowHint("Enter edits this placement. Space opens a menu: add, delete.")
+     end if
      a = getkey
+     if a = SPACE_KEY then a = ObjectActions("NPC placement", "placement", select_placement.selected <= placement_groups(select_map.selected).placements.Length())
      select case a
       case TAB_KEY
        minimap_mode = not minimap_mode
        if minimap_mode then
         ' Find nearest NPC to center cursor on
-        if placement_groups(select_map.selected).placements.Length() > 0 then
+        if select_placement.selected <= placement_groups(select_map.selected).placements.Length() then
          p = placement_groups(select_map.selected).placements.PointerAt(select_placement.selected)
          minimap_cursor_x = p->x * 4
          minimap_cursor_y = p->y * 4
@@ -184,23 +230,18 @@ minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
         done = select_placement.ProcessKey(a)
        end if
       case DELETE_KEY
-       if placement_groups(select_map.selected).placements.Length() > 0 andalso ConfirmBox("Delete this NPC / placement?") then
+       if select_placement.selected <= placement_groups(select_map.selected).placements.Length() andalso ConfirmBox("Delete this NPC / placement?") then
         placement_groups(select_map.selected).placements.Remove(select_placement.selected)
-        select_placement.Remove(select_placement.options.Length())
-        if placement_groups(select_map.selected).placements.Length() = 0 then select_placement.AddOption(FF4Text(Pad("-- EMPTY --", 12)))
+        RefillPlacementList(select_placement, select_map.selected)
+        if select_placement.selected > select_placement.options.Length() then select_placement.ChangeSelected(select_placement.options.Length())
         put (select_placement.x * 8, select_placement.y * 8), blank, pset
         UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
         put (52 * 8, 42 * 8), minimap_img, trans
        end if
       case INSERT_KEY
-       dim space_after_insert as Integer
-       space_after_insert = PlacementSpace() + 4
-       if placement_groups(select_map.selected).placements.Length() = 0 then space_after_insert += 1
-       if placement_groups(select_map.selected).placements.Length() < 12 and space_after_insert < max_placement_room then
-        p = callocate(SizeOf(Placement))
-        placement_groups(select_map.selected).placements.Append(p)
-        select_placement.AddOption(FF4Text("Placement " + Pad(str(placement_groups(select_map.selected).placements.Length()), 2, true)))
-        if placement_groups(select_map.selected).placements.Length() = 1 then select_placement.Remove(1)
+       if PlacementAdd(select_map.selected) then
+        RefillPlacementList(select_placement, select_map.selected)
+        select_placement.ChangeSelected(placement_groups(select_map.selected).placements.Length())
         UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
         put (52 * 8, 42 * 8), minimap_img, trans
        end if
@@ -211,7 +252,18 @@ minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
      end select
     loop until done
     
-    if not select_placement.cancelled and select_placement.selected <= placement_groups(select_map.selected).placements.Length() then
+    opened = false
+    if not select_placement.cancelled and select_placement.selected > placement_groups(select_map.selected).placements.Length() then
+     'the Add a placement line: add one and open it
+     opened = true
+     if PlacementAdd(select_map.selected) then
+      RefillPlacementList(select_placement, select_map.selected)
+      select_placement.ChangeSelected(placement_groups(select_map.selected).placements.Length())
+      p = placement_groups(select_map.selected).placements.PointerAt(select_placement.selected)
+      EditPlacementDialog(select_map.selected, p)
+     end if
+    end if
+    if not select_placement.cancelled and not opened and select_placement.selected <= placement_groups(select_map.selected).placements.Length() then
      
      EditPlacementDialog(select_map.selected, p)
      
@@ -225,6 +277,7 @@ minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
 
  ImageDestroy(minimap_img)
  ImageDestroy(minimap_canvas)
+ ShowHint("")
 
 end sub
 

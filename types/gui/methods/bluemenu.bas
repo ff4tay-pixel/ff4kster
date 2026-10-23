@@ -440,6 +440,16 @@ end sub
 
 sub BlueMenu.ShowCursor()
 
+ dim text as String = hint
+
+ if selected <= hints.Length() then
+  if hints.ItemAt(selected) <> "" then text = hints.ItemAt(selected)
+ end if
+ if text <> "" then
+  ShowHint(text)
+  hint_shown = true
+ end if
+
  DrawLetter(20, CursorX(), CursorY())
  if highlighted > 0 then
   if CursorY(true) > y and CursorY(true) <= y + WindowHeight() then
@@ -471,5 +481,10 @@ sub BlueMenu.UserSelect()
  RestoreSnapshot()
  ImageDestroy(snapshot)
  snapshot = 0
+ if hint_shown then
+  'the menu below shows its own hint again the next time it draws its cursor
+  ShowHint("")
+  hint_shown = false
+ end if
  
 end sub

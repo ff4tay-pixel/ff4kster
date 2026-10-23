@@ -11,6 +11,7 @@ sub EditShops()
  next
  
  edit_wares.x = select_shop.options.Width() + 2
+ edit_wares.hint = "Enter picks the item for this slot. Esc goes back to the shop list."
  
  cls
  

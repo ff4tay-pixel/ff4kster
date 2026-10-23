@@ -113,6 +113,38 @@ function ConfirmBox(message as String) as Boolean
 end function
 
 
+sub SetHints(target as BlueMenu, texts as String)
+
+ 'Gives the lines of a menu their hints (shown on the bottom row while the menu has the cursor): the texts in
+ ' order, separated by |, an empty one leaves that line with the menu's own hint.
+
+ dim rest as String = texts
+ dim p as Integer
+
+ target.hints.Destroy()
+ do
+  p = instr(rest, "|")
+  if p = 0 then
+   target.hints.Append(rest)
+  else
+   target.hints.Append(left(rest, p - 1))
+   rest = mid(rest, p + 1)
+  end if
+ loop until p = 0
+
+end sub
+
+
+sub ShowHint(message as String)
+
+ 'The bottom line (row 57) says what Enter does on the line the cursor is on. An empty message clears it.
+
+ line (0, 57 * 8)-(639, 58 * 8 - 1), RGB(0, 0, 0), bf
+ if message <> "" then WriteText(FF4Text(left(message, 78)), 1, 57, 14)
+
+end sub
+
+
 function ConfirmExport(what as String) as Boolean
 
  'Every BMP export asks first: it writes into the exports folder and replaces files of the same name.

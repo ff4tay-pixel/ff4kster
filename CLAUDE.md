@@ -71,6 +71,11 @@ screen after a transition, not only the screen you built.
   list stays on the left, every box of the entry is on screen, Enter on the list moves the cursor into the boxes
   (`FormFields`). An editor registers its boxes (`FmAddMenu`, one line boxes with `FmAddLine`) and supplies show,
   act, hint and extra-key routines; the components (`WeaponInformationMenu` ...) expose `EditField(row)` for one row.
+- **Hints on row 57**: `ShowHint(text)` (`infobox.bas`) writes the bottom line; a `BlueMenu` shows its own while it has
+  the cursor: set `menu.hint` (one text for every line) and `SetHints(menu, "text 1|text 2|...")` for lines that differ
+  (`ListInput` gives the list kinds without a hint of their own one, `KindHint`). Write them without the characters the
+  font cannot draw. `ObjectActions` / `ScriptActions` / `MapActions` (`spritemenu.bas`) are the Space menus of the
+  Triggers, NPCs, autobattle script and map editors: they return the key an entry stands for.
 - **Messages** (`subs/general/messagedata.bas` and `subs/edit/editmessages.bas`): `MsgGet` / `MsgSet` / `MsgCount`
   read any of the seven banks (bank 2 is per map), `MsgPlain` / `MsgPreview` give the text as letters, `MsgUsed` and
   `MsgRoom` the same areas Save ROM checks, `MsgUsers` where a message is used and `MsgRenumber` renumbers the NPCs

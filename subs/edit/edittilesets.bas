@@ -15,6 +15,8 @@ sub EditTilesets()
  next
  
  edit_tile = BlueMenu(0, 21)
+ edit_tile.hint = "Enter switches this property of the tile on or off. Esc goes back."
+ select_tileset.hint = "Enter edits the tiles of this tileset. Tab changes the palette shown."
  'edit_tile.AddOption(FF4Text("Dummy"))
 
  pal = BlueNumberInput(17, 18)
@@ -64,6 +66,7 @@ sub EditTilesets()
    done = false
    do
     current_tile = (select_tile.cursor_y) * 16 + select_tile.cursor_x + 1
+    ShowHint("Arrows pick a tile. Enter opens its properties. Esc goes back to the tilesets.")
     edit_tile.ChangeOption(1, FF4Text("Layer 1:      " + YesNo(tilesets(select_tileset.selected).tiles(current_tile).layer_1)), 15)
     edit_tile.ChangeOption(2, FF4Text("Layer 2:      " + YesNo(tilesets(select_tileset.selected).tiles(current_tile).layer_2)), 15)
     edit_tile.ChangeOption(3, FF4Text("Bridge Layer: " + YesNo(tilesets(select_tileset.selected).tiles(current_tile).bridge_layer)), 15)

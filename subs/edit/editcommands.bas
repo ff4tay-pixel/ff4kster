@@ -33,6 +33,7 @@ sub EditCommands()
  
  'Set up command info and parameters menus
  edit_info = BlueMenu(select_command.options.Width() + 2, 5)
+ SetHints(edit_info, "Enter changes the name of this command, five letters.|Enter picks who this command targets.|Enter types the delay index: how long the command takes.|Enter picks the persistent statuses that disable this command.|Enter picks the temporary statuses that disable this command.|Enter picks the stance while waiting.|Enter picks the stance while acting.|Enter picks the second stance of the jump.|Enter picks the third stance of the jump.")
  edit_parameters = CommandParametersMenu(select_command.options.Width() + 2, 14)
  
  'Set up ranges menu
@@ -47,6 +48,7 @@ sub EditCommands()
  edit_ranges.AddOption(menucommands(restricted_command3 + 1).name)
  edit_ranges.AddOption(item_names.ItemAt(command3_start + 1) + FF4Text(" to"))
  edit_ranges.AddOption(item_names.ItemAt(command3_end - 1))
+ edit_ranges.hint = "Enter changes the command or the item that limits it. Esc goes back."
 
  stance_menu = BlueMenu(name_input.x, edit_parameters.y + 6)
  stance_menu.max_rows = 1
@@ -101,6 +103,11 @@ sub EditCommands()
    edit_command.AddOption(FF4Text("Overview of all commands"))
    edit_command.AddOption(FF4Text("Internal command names"))
    edit_command.x = 78 - edit_command.options.Width()
+   if MenuCommand.HasParameters(select_command.selected) then
+    SetHints(edit_command, "Enter edits the item ranges that three commands are limited to.|Enter edits name, target, delay, disabling statuses and stances.|Enter edits the details that go with this command.|Enter shows every command on one screen.|Enter edits the names of the commands the game adds itself.")
+   else
+    SetHints(edit_command, "Enter edits the item ranges that three commands are limited to.|Enter edits name, target, delay, disabling statuses and stances.|Enter shows every command on one screen.|Enter edits the names of the commands the game adds itself.")
+   end if
    edit_command.top_row = 1
    edit_command.ChangeSelected(1)
 

@@ -11,6 +11,9 @@ sub EditAutoBattles()
  dim item_menu as BlueMenu
  dim command_menu as BlueMenu
  dim temp as String
+ dim script_before as String 'the script as it was before a key changed it
+ dim script_undo(1 to 30) as String 'what Ctrl-Z in the script goes back to
+ dim script_undo_count as Integer
  
  for i as Integer = 1 to total_autobattles
   select_autobattle.AddOption(FF4Text("Autobattle " + str(i)))
@@ -82,13 +85,14 @@ sub EditAutoBattles()
     for j as Integer = 1 to len(autobattles(select_autobattle.selected).script(i)) \ 2
      script_menu(i).AddOption(autobattles(select_autobattle.selected).TranslateEntry(j, i))
     next
-    script_menu(i).AddOption(FF4Text(Pad("-- END --", 14)))
+    script_menu(i).AddOption(FF4Text(Pad("-- Add --", 14)))
    next
    script_menu(1).Display()
    if select_autobattle.selected >= 7 then script_menu(2).Display()
    formation_index.Display()
    edit_script->Display()
   loop until ListInput(select_autobattle, "autobattles")
+  ShowHint("")
   
   if not select_autobattle.cancelled then
   
@@ -116,14 +120,31 @@ sub EditAutoBattles()
       item_menu.x = spell_menu.x
       command_menu.x = spell_menu.x
       edit_script->cancelled = false
+      script_undo_count = 0
 
       do
 
        edit_script->Display()
        edit_script->ShowCursor()
+       if edit_script->selected = edit_script->options.Length() then
+        ShowHint("Enter adds a command at the end of this script. Space opens a menu.")
+       else
+        ShowHint("Enter changes this command. Space opens a menu: insert, delete, undo.")
+       end if
        k = getkey
+       if k = SPACE_KEY then k = ScriptActions(edit_script->selected = edit_script->options.Length())
+       script_before = autobattles(select_autobattle.selected).script(select_script.selected)
 
        select case k
+
+        case 26 'Ctrl-Z
+         if script_undo_count > 0 then
+          autobattles(select_autobattle.selected).script(select_script.selected) = script_undo(script_undo_count)
+          script_undo_count -= 1
+          script_before = autobattles(select_autobattle.selected).script(select_script.selected)
+         else
+          InfoBox("Nothing to undo in this script.||Press any key")
+         end if
 
         case DELETE_KEY
          if edit_script->selected < edit_script->options.Length() then
@@ -139,6 +160,14 @@ sub EditAutoBattles()
          autobattles(select_autobattle.selected).script(select_script.selected) = temp
 
         case ENTER_KEY
+
+         if edit_script->selected = edit_script->options.Length() then
+          'the Add line: a new command goes in front of the end, then its type is chosen below
+          temp = left(autobattles(select_autobattle.selected).script(select_script.selected), (edit_script->selected - 1) * 2)
+          temp += chr(&hC0) + chr(0)
+          temp += mid(autobattles(select_autobattle.selected).script(select_script.selected), (edit_script->selected - 1) * 2 + 1)
+          autobattles(select_autobattle.selected).script(select_script.selected) = temp
+         end if
 
          edit_entry.y = edit_script->y + edit_script->selected - 1
 
@@ -206,17 +235,30 @@ sub EditAutoBattles()
 
        end select
 
+       if autobattles(select_autobattle.selected).script(select_script.selected) <> script_before then
+        if script_undo_count = 30 then
+         for i as Integer = 1 to 29
+          script_undo(i) = script_undo(i + 1)
+         next
+         script_undo_count = 29
+        end if
+        script_undo_count += 1
+        script_undo(script_undo_count) = script_before
+       end if
+
+       if edit_script->selected > edit_script->options.Length() then edit_script->ChangeSelected(edit_script->options.Length())
        edit_script->Hide()
        edit_script->ClearAll()
        for i as Integer = 1 to len(autobattles(select_autobattle.selected).script(select_script.selected)) \ 2
         edit_script->AddOption(autobattles(select_autobattle.selected).TranslateEntry(i, select_script.selected))
        next
-       edit_script->AddOption(FF4Text(Pad("-- END --", 14)))
+       edit_script->AddOption(FF4Text(Pad("-- Add --", 14)))
        formation_index.Display()
        script_menu(1).Display()
        if select_autobattle.selected >= 7 then script_menu(2).Display()
 
       loop until edit_script->cancelled
+      ShowHint("")
 
      end if
 
@@ -227,5 +269,6 @@ sub EditAutoBattles()
   end if
  
  loop until select_autobattle.cancelled
+ ShowHint("")
 
 end sub

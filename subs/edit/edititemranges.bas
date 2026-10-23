@@ -7,6 +7,7 @@ sub EditItemRanges()
  range_menu.x = 15
  range_menu.y = 3
  range_menu.columns = 2
+ range_menu.hint = "Enter picks where this range starts or ends. Esc goes back."
  
  item_menu.max_rows = 1
  for i as Integer = 1 to total_items

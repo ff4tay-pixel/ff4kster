@@ -25,6 +25,7 @@ sub EditActors()
  edit_actor.AddOption(FF4Text("Edit Special Set"))
  edit_actor.AddOption(FF4Text("Edit Job Change"))
  edit_actor.x = 78 - edit_actor.options.Width()
+ SetHints(edit_actor, "Enter edits the five commands in the battle menu of this actor.|Enter edits the equipment this actor starts with.|Enter edits where this actor loads and saves its data.|Enter picks the name this actor uses and lets you rename it.|Enter renames the special spell set and picks its actor.|Enter picks the actor and the job of the job change.")
  
  command_menu = CommandMenu(select_actor.options.Width() + 2)
  equipment_menu = EquipmentMenu(select_actor.options.Width() + 9)

@@ -20,6 +20,58 @@ sub RecomputeTreasureIndexes()
 
 end sub
 
+sub RefillTriggerList(trigger_list as BlueMenu, m as Integer)
+
+ 'The list of a map's triggers, with the line that adds one at the end
+
+ trigger_list.ClearAll()
+ for i as Integer = 1 to maps(m).triggers.Length()
+  trigger_list.AddOption(FF4Text("Trigger " + Pad(str(i), 2)))
+ next
+ trigger_list.AddOption(FF4Text("-- Add a trigger --"))
+
+end sub
+
+
+function TriggerAddAt(m as Integer, position as Integer) as Boolean
+
+ 'Adds an empty trigger before position (at the end if position is past the last one). Says so if the game has
+ ' no room for it: it has a fixed number of triggers for all maps, and one for the three worlds.
+
+ dim t as Trigger ptr
+ dim world as Boolean = (m >= 252 and m <= 254)
+
+ if world then
+  if maps(252).triggers.Length() + maps(253).triggers.Length() + maps(254).triggers.Length() >= max_overworld_triggers then
+   InfoBox("No room for another trigger.||The game has room for " + str(max_overworld_triggers) + " world triggers in all|and the original ROM uses them all. Delete one first.||Press any key")
+   return false
+  end if
+ elseif total_triggers >= max_triggers then
+  InfoBox("No room for another trigger.||The game has room for " + str(max_triggers) + " triggers on the maps in all|and the original ROM uses them all. Delete one first.||Press any key")
+  return false
+ end if
+
+ t = callocate(SizeOf(Trigger))
+ if position > maps(m).triggers.Length() then
+  maps(m).triggers.Append(t)
+ else
+  maps(m).triggers.Insert(position, t)
+ end if
+ if not world then total_triggers += 1
+
+ return true
+
+end function
+
+
+sub TriggerRemoveAt(m as Integer, position as Integer)
+
+ maps(m).triggers.Remove(position)
+ if m < 252 or m > 254 then total_triggers -= 1
+
+end sub
+
+
 sub EditTriggers()
 
  dim select_map as BlueMenu
@@ -34,7 +86,8 @@ sub EditTriggers()
  dim minimap_mode as Boolean = false
  dim minimap_cursor_x as Integer = 0
  dim minimap_cursor_y as Integer = 0
- 
+ dim position as Integer
+
  blank = ImageCreate(640, 480, RGB(0, 0, 0))
  
  minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
@@ -53,13 +106,10 @@ sub EditTriggers()
 do
    
    do
-    select_trigger.ClearAll()
-    for i as Integer = 1 to maps(select_map.selected).triggers.Length()
-     select_trigger.AddOption(FF4Text("Trigger " + Pad(str(i), 2)))
-    next
-    if select_trigger.options.Length() = 0 then select_trigger.AddOption(FF4Text("-- None --"))
+    RefillTriggerList(select_trigger, select_map.selected)
     select_trigger.ChangeSelected(1)
     put (0, 10 * 8), blank, pset
+    ShowHint("Pick a map. Enter opens its triggers, Esc goes back.")
     select_trigger.Display()
     UpdateTriggerMinimap(select_map.selected, maps(select_map.selected).triggers, select_trigger.selected, minimap_img, minimap_canvas)
     put (52 * 8, 42 * 8), minimap_img, trans
@@ -80,7 +130,7 @@ do
      do
      
       put (12 * 8, 10 * 8), blank, pset
-      if maps(select_map.selected).triggers.Length() > 0 then
+      if select_trigger.selected <= maps(select_map.selected).triggers.Length() then
        t = maps(select_map.selected).triggers.PointerAt(select_trigger.selected)
        edit_trigger.t = t
        edit_trigger.m = select_map.selected
@@ -98,15 +148,23 @@ do
       if minimap_mode then
        DrawTriggerMinimapCursor(minimap_cursor_x, minimap_cursor_y)
       end if
+      if minimap_mode then
+       ShowHint("Arrows move the cursor on the minimap. Enter picks the trigger there. Tab or Esc leave it.")
+      elseif select_trigger.selected > maps(select_map.selected).triggers.Length() then
+       ShowHint("Enter adds a trigger to this map and opens it. Space opens a menu.")
+      else
+       ShowHint("Enter edits this trigger. Space opens a menu: add, delete. Shift-Enter twice swaps two.")
+      end if
       a = getkey
-     
+      if a = SPACE_KEY then a = ObjectActions("Trigger", "trigger", select_trigger.selected <= maps(select_map.selected).triggers.Length())
+
       select case a
-     
+
        case TAB_KEY
         minimap_mode = not minimap_mode
         if minimap_mode then
          ' Find nearest trigger to center cursor on
-         if maps(select_map.selected).triggers.Length() > 0 then
+         if select_trigger.selected <= maps(select_map.selected).triggers.Length() then
           t = maps(select_map.selected).triggers.PointerAt(select_trigger.selected)
           minimap_cursor_x = t->x * 4
           minimap_cursor_y = t->y * 4
@@ -166,63 +224,25 @@ do
          done = select_trigger.ProcessKey(a)
         end if
        case DELETE_KEY
-        if select_map.selected < 252 or select_map.selected > 254 then
-         if maps(select_map.selected).triggers.Length() > 0 andalso ConfirmBox("Delete this trigger?") then
-          maps(select_map.selected).triggers.Remove(select_trigger.selected)
-          total_triggers -= 1
-          select_trigger.ClearAll()
-          for i as Integer = 1 to maps(select_map.selected).triggers.Length()
-           select_trigger.AddOption(FF4Text("Trigger " + Pad(str(i), 2)))
-          next
-          if select_trigger.options.Length() = 0 then select_trigger.AddOption(FF4Text("-- None --"))
-          if select_trigger.selected > select_trigger.options.Length() then select_trigger.ChangeSelected(select_trigger.options.Length())
-          select_trigger.Display()
-          UpdateTriggerMinimap(select_map.selected, maps(select_map.selected).triggers, select_trigger.selected, minimap_img, minimap_canvas)
-          put (52 * 8, 42 * 8), minimap_img, trans
-         end if
-        else
-         if maps(select_map.selected).triggers.Length() > 0 andalso ConfirmBox("Delete this trigger?") then
-          maps(select_map.selected).triggers.Remove(select_trigger.selected)
-          select_trigger.ClearAll()
-          for i as Integer = 1 to maps(select_map.selected).triggers.Length()
-           select_trigger.AddOption(FF4Text("Trigger " + Pad(str(i), 2)))
-          next
-          if select_trigger.options.Length() = 0 then select_trigger.AddOption(FF4Text("-- None --"))
-          if select_trigger.selected > select_trigger.options.Length() then select_trigger.ChangeSelected(select_trigger.options.Length())
-          select_trigger.Display()
-          UpdateTriggerMinimap(select_map.selected, maps(select_map.selected).triggers, select_trigger.selected, minimap_img, minimap_canvas)
-          put (52 * 8, 42 * 8), minimap_img, trans
-         end if
+        if select_trigger.selected <= maps(select_map.selected).triggers.Length() andalso ConfirmBox("Delete this trigger?") then
+         TriggerRemoveAt(select_map.selected, select_trigger.selected)
+         RefillTriggerList(select_trigger, select_map.selected)
+         if select_trigger.selected > select_trigger.options.Length() then select_trigger.ChangeSelected(select_trigger.options.Length())
+         select_trigger.Display()
+         UpdateTriggerMinimap(select_map.selected, maps(select_map.selected).triggers, select_trigger.selected, minimap_img, minimap_canvas)
+         put (52 * 8, 42 * 8), minimap_img, trans
         end if
-        
+
        case INSERT_KEY
-        if select_map.selected < 252 or select_map.selected > 254 then
-         if total_triggers < max_triggers then
-          t = callocate(SizeOf(Trigger))
-          maps(select_map.selected).triggers.Insert(select_trigger.selected, t)
-          total_triggers += 1
-          select_trigger.ClearAll()
-          for i as Integer = 1 to maps(select_map.selected).triggers.Length()
-           select_trigger.AddOption(FF4Text("Trigger " + Pad(str(i), 2)))
-          next
-          select_trigger.Display()
-          UpdateTriggerMinimap(select_map.selected, maps(select_map.selected).triggers, select_trigger.selected, minimap_img, minimap_canvas)
-          put (52 * 8, 42 * 8), minimap_img, trans
-         end if
-        else
-         if maps(252).triggers.Length() + maps(253).triggers.Length() + maps(254).triggers.Length() < max_overworld_triggers then
-          t = callocate(SizeOf(Trigger))
-          maps(select_map.selected).triggers.Insert(select_trigger.selected, t)
-          select_trigger.ClearAll()
-          for i as Integer = 1 to maps(select_map.selected).triggers.Length()
-           select_trigger.AddOption(FF4Text("Trigger " + Pad(str(i), 2)))
-          next
-          select_trigger.Display()
-          UpdateTriggerMinimap(select_map.selected, maps(select_map.selected).triggers, select_trigger.selected, minimap_img, minimap_canvas)
-          put (52 * 8, 42 * 8), minimap_img, trans
-         end if
+        position = select_trigger.selected
+        if TriggerAddAt(select_map.selected, position) then
+         RefillTriggerList(select_trigger, select_map.selected)
+         select_trigger.ChangeSelected(position)
+         select_trigger.Display()
+         UpdateTriggerMinimap(select_map.selected, maps(select_map.selected).triggers, select_trigger.selected, minimap_img, minimap_canvas)
+         put (52 * 8, 42 * 8), minimap_img, trans
         end if
-        
+
        case else
         if not minimap_mode then
          done = select_trigger.ProcessKey(a)
@@ -234,11 +254,25 @@ do
      
      if not select_trigger.cancelled then
       if select_trigger.highlighted = 0 then
-       if maps(select_map.selected).triggers.Length() > 0 then 
+       if select_trigger.selected > maps(select_map.selected).triggers.Length() then
+        'the Add a trigger line: add one and open it
+        position = select_trigger.selected
+        if TriggerAddAt(select_map.selected, position) then
+         RefillTriggerList(select_trigger, select_map.selected)
+         select_trigger.ChangeSelected(position)
+         t = maps(select_map.selected).triggers.PointerAt(position)
+         edit_trigger.t = t
+         edit_trigger.m = select_map.selected
+         edit_trigger.underworld = (select_map.selected > &h100 or select_map.selected = 253 or select_map.selected = 254)
+         edit_trigger.UserSelect()
+        end if
+       else
         edit_trigger.UserSelect()
        end if
       else
-       maps(select_map.selected).triggers.Exchange(select_trigger.selected, select_trigger.highlighted)
+       if select_trigger.selected <= maps(select_map.selected).triggers.Length() and select_trigger.highlighted <= maps(select_map.selected).triggers.Length() then
+        maps(select_map.selected).triggers.Exchange(select_trigger.selected, select_trigger.highlighted)
+       end if
        select_trigger.highlighted = 0
       end if
      end if
@@ -251,6 +285,7 @@ do
 
  ImageDestroy(minimap_img)
  ImageDestroy(minimap_canvas)
+ ShowHint("")
 
  RecomputeTreasureIndexes()
 
