@@ -673,10 +673,10 @@ function MonsterSpriteActions(mode as Integer, byref brush as Integer) as UInteg
   SmAdd("Revert this picture", "Ctrl-R", 18)
   SmAdd("Edit the palette colors", "P", asc("p"))
   SmAdd("Sort the palette", "O", asc("o"))
-  SmAdd("Export this monster as BMP", "E", asc("e"))
-  SmAdd("Import this monster from BMP", "I", asc("i"))
   SmAdd("Previous monster", "PgUp", PAGEUP_KEY)
   SmAdd("Next monster", "PgDn", PAGEDOWN_KEY)
+  SmAdd("Export this monster as BMP", "E", asc("e"))
+  SmAdd("Import this monster from BMP", "I", asc("i"))
   SmAdd("Back to the list", "Esc", ESC_KEY)
   choice = SmRun("Monster sprite")
  else

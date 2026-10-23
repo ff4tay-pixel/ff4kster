@@ -747,13 +747,15 @@ function FieldActions(mode as Integer, byref sheet as Integer, byref pal as Inte
   SmAdd("Copy the frame", "Ctrl-C", 3)
   SmAdd("Paste the frame", "Ctrl-V", 22)
   SmAdd("Undo", "Ctrl-Z", 26)
+  SmAdd("Revert this sheet", "Ctrl-R", 18)
   SmAdd("Edit the palette colors", "P", asc("p"))
   SmAdd("Choose the palette", "Comma Period", 0, 2)
   SmAdd("Use the palette of the maps", "", 0, 4)
-  SmAdd("Choose another sheet", "PgUp PgDn", 0, 3)
+  SmAdd("Previous sheet", "PgUp", PAGEUP_KEY)
+  SmAdd("Next sheet", "PgDn", PAGEDOWN_KEY)
+  SmAdd("Go to a sheet", "", 0, 3)
   SmAdd("Export this sheet as BMP", "E", asc("e"))
   SmAdd("Import this sheet from BMP", "I", asc("i"))
-  SmAdd("Revert this sheet", "R", asc("r"))
   SmAdd("Back to the list", "Esc", ESC_KEY)
   choice = SmRun("Sheet " + str(sheet))
  else
@@ -908,9 +910,9 @@ sub EditFieldSheet(sheet_start as Integer)
       fe_undo_count = 0
       fe_pal_undo_count = 0
      end if
-    case asc("-")
+    case asc("["), asc("-")
      brush = (brush + 7) mod 8
-    case asc("]")
+    case asc("]"), asc("="), asc("+")
      brush = (brush + 1) mod 8
     case asc("x"), asc("X") 'Flip the frame horizontally
      FieldFlipFrame(sheet, FieldFrameAt(sheet, pixel_x, pixel_y), true)
@@ -940,7 +942,7 @@ sub EditFieldSheet(sheet_start as Integer)
     case PAGEDOWN_KEY
      sheet = (sheet + 1) mod total_field_sheets
      pal = FieldViewPalette(sheet)
-    case asc("r"), asc("R")
+    case 18 'Ctrl-R
      if ConfirmBox("Revert this sheet to the loaded ROM?") then
       FieldSaveUndo(sheet)
       DecodeFieldSheet(original_rom, sheet)

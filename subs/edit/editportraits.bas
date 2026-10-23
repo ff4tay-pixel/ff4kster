@@ -341,12 +341,14 @@ function PortraitActions(mode as Integer, byref portrait as Integer, byref pal a
   SmAdd("Copy the picture", "Ctrl-C", 3)
   SmAdd("Paste the picture", "Ctrl-V", 22)
   SmAdd("Undo", "Ctrl-Z", 26)
+  SmAdd("Revert this portrait", "Ctrl-R", 18)
   SmAdd("Edit the palette colors", "P", asc("p"))
   SmAdd("Choose the palette", "Comma Period", 0, 2)
-  SmAdd("Choose another portrait", "PgUp PgDn", 0, 3)
+  SmAdd("Previous portrait", "PgUp", PAGEUP_KEY)
+  SmAdd("Next portrait", "PgDn", PAGEDOWN_KEY)
+  SmAdd("Go to a portrait", "", 0, 3)
   SmAdd("Export this portrait as BMP", "E", asc("e"))
   SmAdd("Import this portrait from BMP", "I", asc("i"))
-  SmAdd("Revert this portrait", "R", asc("r"))
   SmAdd("Back to the list", "Esc", ESC_KEY)
   choice = SmRun("Portrait")
  else
@@ -481,7 +483,7 @@ sub EditPortrait(portrait_start as Integer)
      end if
     case asc("["), asc("-")
      brush = (brush + 7) mod 8
-    case asc("]")
+    case asc("]"), asc("="), asc("+")
      brush = (brush + 1) mod 8
     case asc("x"), asc("X") 'Flip horizontally
      PortraitSaveUndo(portrait)
@@ -531,7 +533,7 @@ sub EditPortrait(portrait_start as Integer)
     case PAGEDOWN_KEY
      portrait = (portrait + 1) mod total_portraits
      pal = PortraitDefaultPalette(portrait)
-    case asc("r"), asc("R")
+    case 18 'Ctrl-R
      if ConfirmBox("Revert this portrait to the loaded ROM?") then
       PortraitSaveUndo(portrait)
       DecodePortrait(original_rom, portrait)

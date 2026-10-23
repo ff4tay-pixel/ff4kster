@@ -566,7 +566,7 @@ actions.
     ENTER:          The menu of every action
     0 - 9:          Paint with that color (and make it the brush)
     SPACE:          Paint with the brush
-    Minus / Plus:   Previous / next brush color
+    [ or Minus / ] or Plus:  Previous / next brush color
     F:              Fill
     X / Y:          Flip horizontally / vertically (plain monsters only)
     Ctrl-Z:         Undo       Ctrl-R: Revert the picture to the loaded ROM
@@ -625,12 +625,12 @@ actions.
     0 - 7:          Paint with that color (and make it the brush)
     ENTER:          The menu of every action
     SPACE:          Paint with the brush
-    [ and ]:        Previous / next brush color
+    [ or Minus / ] or Plus:  Previous / next brush color
     F:              Fill the area of the cursor's color with the brush
     X / Y:          Flip horizontally / vertically
     Ctrl-C / V:     Copy / paste the whole picture
     Ctrl-Z:         Undo
-    R:              Revert this portrait to the loaded ROM
+    Ctrl-R:         Revert this portrait to the loaded ROM
     , and .:        Look at the picture with another palette
     P:              Edit the palette colors (Left Right pick a color, Q A red,
                     W S green, E D blue, Ctrl-Z undo, Ctrl-R revert, Esc back)
@@ -682,7 +682,7 @@ Enter on a sheet opens the editor: the picture of the whole sheet, with its fram
 four to a row, is painted pixel by pixel. Arrows move, 0 to 7 paint with that color,
 Space paints with the brush color, F fills, X and Y flip the frame under the cursor
 (a left facing frame from a right facing one), Ctrl-C and Ctrl-V copy and paste a frame
-(to another sheet too), Ctrl-Z undoes, R reverts the sheet, PgUp and PgDn change
+(to another sheet too), Ctrl-Z undoes, Ctrl-R reverts the sheet, PgUp and PgDn change
 sheet, P edits the palette colors (Q A, W S, E D change red, green and blue of the
 color picked with Left and Right) and Comma and Period change the palette. Enter
 opens a menu with every action and its key. E and I export and import the sheet.
@@ -746,7 +746,7 @@ On the tile sheet:
                    same (undo history is cleared).
     CTRL+C / V:    Copy and paste a whole tile.
     CTRL+Z:        Undo.
-    R:             Revert the whole sheet to the loaded ROM.
+    CTRL+R:        Revert the whole sheet to the loaded ROM.
 
 Editing a tile:
 
@@ -754,7 +754,7 @@ Editing a tile:
     0-9, A-F:      Paint with that palette color.
     SPACE:         Paint with the current brush.
     ENTER:         The menu of every action.
-    [ and ]:       Change the brush color.
+    [ or -, ] or =: Previous / next brush color.
     X / Y:         Flip the tile horizontally / vertically.
     CTRL+C / V / Z: Copy, paste, undo.
 
@@ -2070,6 +2070,7 @@ VERSION HISTORY
     - Commands: Fight has the list of temporary statuses that its attack cures in the attacker (Charm in the original)
     - Battle Sprites, Monster Sprites, Portraits, Field Sprites: every BMP export asks for confirmation first, like the imports
     - Lists: the Space menu only offers "Show where it is used" for the lists that track it; the key help no longer says Medicines and Tools can swap entries
+    - Battle Sprites, Portraits, Field Sprites: Ctrl-R reverts (as in Monster Sprites and the lists); all four sprite editors step the brush color with [ or Minus and ] or Plus and list their actions in the same order, with Previous / Next for the item (Portraits and Field Sprites keep Go to)
     - Characters: the starting data has the critical hit rate and bonus
     - Commands: Steal has its lowest and highest chance, the chance of being caught and what a caught thief loses
     - Battle Formulas: spell effect 29, the unused copy of Count, can raise or lower a stat of its target like Armor

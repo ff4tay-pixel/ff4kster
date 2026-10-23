@@ -361,15 +361,15 @@ function BattleActions(mode as Integer, sheet as Integer, byref tile_id as Integ
  SmReset()
  if mode = 0 then
   SmAdd("Edit this tile", "Enter", ENTER_KEY)
-  SmAdd("Choose the pose", "PgUp PgDn", 0, 1)
-  SmAdd("Choose the palette", "Comma Period", 0, 2)
-  SmAdd("Edit the palette colors", "P", asc("p"))
   SmAdd("Copy this tile", "Ctrl-C", 3)
   SmAdd("Paste the tile", "Ctrl-V", 22)
   SmAdd("Undo", "Ctrl-Z", 26)
+  SmAdd("Revert this whole sheet", "Ctrl-R", 18)
+  SmAdd("Edit the palette colors", "P", asc("p"))
+  SmAdd("Choose the palette", "Comma Period", 0, 2)
+  SmAdd("Choose the pose", "PgUp PgDn", 0, 1)
   SmAdd("Export this character as BMP", "E", asc("e"))
   SmAdd("Import this character from BMP", "I", asc("i"))
-  SmAdd("Revert this whole sheet", "R", asc("r"))
   SmAdd("Back to the list", "Esc", ESC_KEY)
   choice = SmRun("Tile sheet")
  elseif mode = 1 then
@@ -530,9 +530,9 @@ sub EditBattleSheet(sheet as Integer)
       BattleSpriteSaveUndo(sheet, tile_id)
       battle_char_gfx(sheet, tile_id, pixel_y, pixel_x) = brush
      end if
-    case asc("[")
+    case asc("["), asc("-")
      brush = (brush + 15) mod 16
-    case asc("]")
+    case asc("]"), asc("="), asc("+")
      brush = (brush + 1) mod 16
     case asc("x"), asc("X") 'Flip horizontally
      BattleSpriteSaveUndo(sheet, tile_id)
@@ -628,7 +628,7 @@ sub EditBattleSheet(sheet as Integer)
      pal = (pal + 15) mod 16
     case asc(".")
      pal = (pal + 1) mod 16
-    case asc("r"), asc("R")
+    case 18 'Ctrl-R
      if ConfirmBox("Revert this whole sheet to the loaded ROM?") then
       for i as Integer = 0 to 63
        DecodeBattleCharGfx(original_rom, sheet, i)
