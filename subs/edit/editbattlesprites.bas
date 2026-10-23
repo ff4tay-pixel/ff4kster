@@ -472,6 +472,8 @@ sub EditBattleSheet(sheet as Integer)
   keycode = asc(right(key, 1))
   if len(key) > 1 then keycode = keycode * &h100 + 255
 
+ if KeyHelpPressed(keycode) then keycode = 0
+
   'The menu of every action: Space on the tile sheet, Enter in the other two screens. The entries that stand
   ' for a key are handled as that key.
   if (mode = 0 and keycode = SPACE_KEY) or (mode <> 0 and keycode = ENTER_KEY) then

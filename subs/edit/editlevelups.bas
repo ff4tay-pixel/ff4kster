@@ -49,12 +49,18 @@ dim shared lu_script_pos as Integer
 
 function LuReadKey() as UInteger
 
+ dim k as UInteger
+
  if lu_script_pos < lu_script_count then
   lu_script_pos += 1
   return lu_script(lu_script_pos - 1)
  end if
- 
- return getkey
+
+ do
+  k = getkey
+ loop while KeyHelpPressed(k)
+
+ return k
 
 end function
 

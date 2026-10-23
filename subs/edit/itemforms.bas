@@ -71,6 +71,7 @@ function FmReadKey() as UInteger
  'A key, with the idle hook running (spell animations) while waiting
 
  dim key as String
+ dim result as UInteger
 
  if fm_script_pos < fm_script_count then
   fm_script_pos += 1
@@ -78,16 +79,18 @@ function FmReadKey() as UInteger
  end if
 
  do
-  key = inkey
-  if key = "" then
-   if cast(Any ptr, idle_hook) <> 0 then idle_hook()
-   sleep 10
-  end if
- loop while key = ""
+  do
+   key = inkey
+   if key = "" then
+    if cast(Any ptr, idle_hook) <> 0 then idle_hook()
+    sleep 10
+   end if
+  loop while key = ""
 
- if len(key) > 1 then return asc(right(key, 1)) * &h100 + 255
+  if len(key) > 1 then result = asc(right(key, 1)) * &h100 + 255 else result = asc(key)
+ loop while KeyHelpPressed(result)
 
- return asc(key)
+ return result
 
 end function
 

@@ -123,6 +123,21 @@ end function
 
 
 declare sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
+declare sub ShowKeyHelp()
+
+
+function KeyHelpPressed(key_code as Integer) as Boolean
+
+ 'For the loops that read keys themselves (the BlueMenu ones already handle F1): shows the key help when the key
+ ' is F1 and says so, so the loop can ignore the key.
+
+ if key_code <> F1_KEY then return false
+
+ ShowKeyHelp()
+
+ return true
+
+end function
 
 
 sub ShowKeyHelp()

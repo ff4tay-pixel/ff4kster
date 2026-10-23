@@ -42,9 +42,9 @@ sub MapEditorMenu.Display()
   WriteText(FF4Text(Pad("PASTE: arrows move, Enter place, Esc cancel", 51)), 1, 54, 14)
  else
   if editing then
-   WriteText(FF4Text(Pad("Tab panel Enter place Space fill R replace O overlay", 51)), 1, 54, 15)
+   WriteText(FF4Text(Pad("M menu of all actions  Enter place  Space fill", 51)), 1, 54, 15)
   else
-   WriteText(FF4Text(Pad("J jump  F find  I grid info  Enter edit  Bksp erase", 51)), 1, 54, 15)
+   WriteText(FF4Text(Pad("J jump  F find  I grid info  Enter edit", 51)), 1, 54, 15)
   end if
  end if
  'The trigger under the cursor, and the keys that edit it
@@ -55,6 +55,8 @@ sub MapEditorMenu.Display()
   else
    WriteText(FF4Text(Pad(left(trigger_text, 51), 51)), 1, 55, 14)
   end if
+ elseif not editing then
+  WriteText(FF4Text(Pad("Bksp erase map  Ctrl-R revert map  Esc back", 51)), 1, 55, 15)
  else
   WriteText(FF4Text(Pad("", 51)), 1, 55, 15)
  end if
@@ -216,8 +218,17 @@ sub MapEditorMenu.SetTo(index as UInteger)
  map_menu.options.Destroy()
  map_index = maps(index).grid_index + underground + 1
  map_number = index
- undo_count = 0
- redo_count = 0
+ if map_index <> history_index then
+  'each map grid keeps its own undo and redo, also after leaving the map
+  StashHistory()
+  history_index = map_index
+  if map_histories(map_index) <> 0 then
+   hist = *map_histories(map_index)
+  else
+   hist.undo_count = 0
+   hist.redo_count = 0
+  end if
+ end if
  EndPaste()
  
  'if index < 252 or index > 256 then
@@ -265,7 +276,7 @@ end sub
 sub MapEditorMenu.SaveUndo()
 
  PushUndo()
- redo_count = 0
+ hist.redo_count = 0
 
 end sub
 
@@ -275,37 +286,37 @@ sub MapEditorMenu.PushUndo()
  for history as Integer = max_map_undo - 1 to 1 step -1
   for i as Integer = 0 to 31
    for j as Integer = 0 to 31
-    undo_tiles(i, j, history) = undo_tiles(i, j, history - 1)
+    hist.undo_tiles(i, j, history) = hist.undo_tiles(i, j, history - 1)
    next
   next
  next
  for i as Integer = 0 to 31
   for j as Integer = 0 to 31
-   undo_tiles(i, j, 0) = val("&h" + map_menu.options.ItemAt(i + 1, j + 1))
+   hist.undo_tiles(i, j, 0) = val("&h" + map_menu.options.ItemAt(i + 1, j + 1))
   next
  next
- if undo_count < max_map_undo then undo_count += 1
+ if hist.undo_count < max_map_undo then hist.undo_count += 1
 
 end sub
 
 
 sub MapEditorMenu.Redo()
 
- if redo_count > 0 then
+ if hist.redo_count > 0 then
   PushUndo()
   for i as Integer = 0 to 31
    for j as Integer = 0 to 31
-    map_menu.options.Assign(i + 1, j + 1, hex(redo_tiles(i, j, 0), 2))
+    map_menu.options.Assign(i + 1, j + 1, hex(hist.redo_tiles(i, j, 0), 2))
    next
   next
   for history as Integer = 0 to max_map_undo - 2
    for i as Integer = 0 to 31
     for j as Integer = 0 to 31
-     redo_tiles(i, j, history) = redo_tiles(i, j, history + 1)
+     hist.redo_tiles(i, j, history) = hist.redo_tiles(i, j, history + 1)
     next
    next
   next
-  redo_count -= 1
+  hist.redo_count -= 1
  end if
 
 end sub
@@ -313,34 +324,34 @@ end sub
 
 sub MapEditorMenu.Undo()
 
- if undo_count > 0 then
+ if hist.undo_count > 0 then
   'Remember the current state so it can be redone
   for history as Integer = max_map_undo - 1 to 1 step -1
    for i as Integer = 0 to 31
     for j as Integer = 0 to 31
-     redo_tiles(i, j, history) = redo_tiles(i, j, history - 1)
+     hist.redo_tiles(i, j, history) = hist.redo_tiles(i, j, history - 1)
     next
    next
   next
   for i as Integer = 0 to 31
    for j as Integer = 0 to 31
-    redo_tiles(i, j, 0) = val("&h" + map_menu.options.ItemAt(i + 1, j + 1))
+    hist.redo_tiles(i, j, 0) = val("&h" + map_menu.options.ItemAt(i + 1, j + 1))
    next
   next
-  if redo_count < max_map_undo then redo_count += 1
+  if hist.redo_count < max_map_undo then hist.redo_count += 1
   for i as Integer = 0 to 31
    for j as Integer = 0 to 31
-    map_menu.options.Assign(i + 1, j + 1, hex(undo_tiles(i, j, 0), 2))
+    map_menu.options.Assign(i + 1, j + 1, hex(hist.undo_tiles(i, j, 0), 2))
    next
   next
   for history as Integer = 0 to max_map_undo - 2
    for i as Integer = 0 to 31
     for j as Integer = 0 to 31
-     undo_tiles(i, j, history) = undo_tiles(i, j, history + 1)
+     hist.undo_tiles(i, j, history) = hist.undo_tiles(i, j, history + 1)
     next
    next
   next
-  undo_count -= 1
+  hist.undo_count -= 1
  end if
 
 end sub
@@ -459,6 +470,7 @@ sub MapEditorMenu.UserSelect()
     map_menu.Animate()
     palette_menu.Animate()
    loop while key = "" and mouse_code = 0
+   if KeyHelpPressed(keycode) then keycode = 0
   if paste_mode then
    select case keycode
     case ENTER_KEY
@@ -470,6 +482,9 @@ sub MapEditorMenu.UserSelect()
      map_menu.ProcessKey(keycode)
    end select
   else
+  if keycode = asc("m") or keycode = asc("M") then keycode = MapActions(active_menu = @map_menu, map_number < 252 or map_number > 254)
+  if keycode = INSERT_KEY and (multikey(SC_LSHIFT) or multikey(SC_RSHIFT)) then keycode = map_key_add_npc
+  if keycode = DELETE_KEY and (multikey(SC_LSHIFT) or multikey(SC_RSHIFT)) then keycode = map_key_remove_npc
   select case keycode
     case asc("r"), asc("R")
      if active_menu = @map_menu then ReplaceTile()
@@ -488,20 +503,22 @@ sub MapEditorMenu.UserSelect()
      end if
     case INSERT_KEY
      if active_menu = @map_menu and (map_number < 252 or map_number > 254) then
-      if multikey(SC_LSHIFT) or multikey(SC_RSHIFT) then
-       if PlacementKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 2) then overlay_visible = true
-      else
-       if TriggerKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 2) then overlay_visible = true
-      end if
+      if TriggerKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 2) then overlay_visible = true
+      RefreshOverlay()
+     end if
+    case map_key_add_npc
+     if active_menu = @map_menu and (map_number < 252 or map_number > 254) then
+      if PlacementKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 2) then overlay_visible = true
       RefreshOverlay()
      end if
     case DELETE_KEY
      if active_menu = @map_menu and (map_number < 252 or map_number > 254) then
-      if multikey(SC_LSHIFT) or multikey(SC_RSHIFT) then
-       PlacementKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 3)
-      else
-       TriggerKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 3)
-      end if
+      TriggerKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 3)
+      RefreshOverlay()
+     end if
+    case map_key_remove_npc
+     if active_menu = @map_menu and (map_number < 252 or map_number > 254) then
+      PlacementKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 3)
       RefreshOverlay()
      end if
     case 25
@@ -544,6 +561,8 @@ sub MapEditorMenu.UserSelect()
      if active_menu = @map_menu then BeginPaste()
     case 26
      if active_menu = @map_menu then Undo()
+    case 18
+     if active_menu = @map_menu then RevertToLoaded()
     case DOWN_KEY
      if active_menu = @map_menu then
       if multikey(SC_LSHIFT) or multikey(SC_RSHIFT) then
@@ -613,7 +632,49 @@ sub MapEditorMenu.UserSelect()
   
   active_menu->active = false
   editing = false
+  StashHistory()
   
  end if
+
+end sub
+
+
+sub MapEditorMenu.StashHistory()
+
+ 'Keeps the undo and redo of the current map grid for the next time it is opened
+
+ if history_index = 0 then exit sub
+
+ if map_histories(history_index) = 0 then map_histories(history_index) = new MapHistory
+ *map_histories(history_index) = hist
+
+end sub
+
+
+sub MapEditorMenu.RevertToLoaded()
+
+ 'Ctrl-R: puts the tiles of the map back as they were when the ROM was loaded (undo brings the edits back)
+
+ dim changed as Boolean
+
+ for i as Integer = 0 to 31
+  for j as Integer = 0 to 31
+   if val("&h" + map_menu.options.ItemAt(i + 1, j + 1)) <> orig_map_tiles(map_index, i, j) then changed = true
+  next
+ next
+
+ if not changed then
+  InfoBox("This map has no changes.||Press any key")
+  exit sub
+ end if
+
+ if not ConfirmBox("Revert this map to the loaded ROM?") then exit sub
+
+ SaveUndo()
+ for i as Integer = 0 to 31
+  for j as Integer = 0 to 31
+   map_menu.options.Assign(i + 1, j + 1, hex(orig_map_tiles(map_index, i, j), 2))
+  next
+ next
 
 end sub

@@ -124,6 +124,8 @@ dim shared solobattles(total_solobattles) as SoloBattle
 dim shared spritesheets(total_spritesheets) as SpriteSheet
 dim shared tilesets(total_tilesets) as Tileset
 dim shared mapgrids(total_maps) as MapGrid
+dim shared orig_map_tiles(total_maps, 32, 32) as UByte 'the tiles of every map grid as the ROM had them, for Ctrl-R in the map editor
+dim shared map_histories(total_maps) as MapHistory ptr 'undo and redo kept per map grid (made when first needed)
 
 'Objects with variable quantities
 dim shared spellsets as List

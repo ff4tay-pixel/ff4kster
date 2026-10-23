@@ -16,6 +16,8 @@ sub EditMaps()
  dim shared_names as String
  dim found_map as Integer
  dim candidate as Integer
+ dim grid as Integer
+ dim changed as Boolean
   
  select_map.swap_enabled = true
  select_map.keyboard_visible = false
@@ -96,6 +98,34 @@ sub EditMaps()
        end if
        WriteText(FF4Text("Press any key to close"), 9, 23, 15)
        getkey
+     case 18 'Ctrl-R: back to the map as the ROM had it
+      grid = maps(select_map.selected).grid_index + underground + 1
+      if not mapgrids(grid).no_data then
+       changed = false
+       for i as Integer = 0 to 31
+        for j as Integer = 0 to 31
+         if mapgrids(grid).tiles(i, j) <> orig_map_tiles(grid, i, j) then changed = true
+        next
+       next
+       if not changed then
+        InfoBox("This map has no changes.||Press any key")
+       elseif ConfirmBox("Revert this map to the loaded ROM? Maps sharing its grid change too.") then
+        for i as Integer = 0 to 31
+         for j as Integer = 0 to 31
+          mapgrids(grid).tiles(i, j) = orig_map_tiles(grid, i, j)
+         next
+        next
+        'the undo of the edits that were just thrown away no longer fits
+        if map_histories(grid) <> 0 then
+         map_histories(grid)->undo_count = 0
+         map_histories(grid)->redo_count = 0
+        end if
+        if edit_map.history_index = grid then
+         edit_map.hist.undo_count = 0
+         edit_map.hist.redo_count = 0
+        end if
+       end if
+      end if
      case BACKSPACE_KEY
       if not mapgrids(maps(select_map.selected).grid_index + underground + 1).no_data then
        BlueBox(18, 47, 29, 1)

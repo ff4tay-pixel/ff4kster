@@ -88,6 +88,7 @@ sub EditTilesets()
      if len(key) > 1 then keycode = keycode * &h100 + 255
      select_tile.Animate()
     loop while key = ""
+    if KeyHelpPressed(keycode) then keycode = 0
     if keycode = ENTER_KEY then
      do
       edit_tile.UserSelect()

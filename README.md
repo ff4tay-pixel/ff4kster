@@ -154,7 +154,7 @@ CONTROLS
     Ctrl-F:      Find an entry by name
     Ctrl-N:      Jump to the next entry that matches the search
     Ctrl-G:      Go to an entry by its number
-    F1:          Show key help for the current menu
+    F1:          Show key help for the editor you are in (menus and editing screens)
 
   In editors that list things (messages, triggers, NPC placements, event
   calls, scripts and so on), Insert adds an entry and Delete removes the
@@ -183,7 +183,7 @@ CONTROLS
   tile (drag to keep painting, one undo step per stroke), a right click picks
   the tile under the pointer, clicking the tile palette chooses a tile, and in
   paste mode a click places the copied area.
-  F1 shows key help in any menu: the keys that work everywhere plus the keys of
+  F1 shows key help on every screen: the keys that work everywhere plus the keys of
   the editor you are in (the same text the main menu shows beside its entries). The main menu also lists the keys that matter
   for whichever editor is highlighted, and the map editor, the battle sprite
   editor and the level up editor print their own keys on screen.
@@ -253,8 +253,8 @@ whatever means your operating system provides for doing so.
 The main menu groups the editors under yellow headings (Items and magic,
 Party, Story and text, World, Battles, Overview); the cursor skips the
 headings. The editors are in this order: Features, Spells, Spell Sets,
-Weapons, Armors, Medicines, Tools, Shops, Jobs, Battle Sprites, Portraits, Field Sprites, Characters,
-Commands, Actors, Messages, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
+Weapons, Armors, Medicines, Tools, Shops, Jobs, Characters, Commands, Actors,
+Battle Sprites, Portraits, Field Sprites, Messages, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
 Monsters, Formations, Encounters, Autobattles, Solobattles and Battle Formulas, followed by
 Search Everywhere, Space Usage and Changed Entries. "Edit World Maps" (under World) first lists
 the three worlds, like the list of maps, with a picture of the selected one and how
@@ -272,7 +272,8 @@ flood fills, R replaces every tile like the one under the cursor in the whole wo
 Backspace picks the tile under the cursor into the palette, Shift with the arrows
 selects a block, Ctrl-C copies the block, Ctrl-V shows it as a preview that the arrows
 move, Enter places and Esc cancels, and Ctrl-Z / Ctrl-Y undo and redo. Esc goes back to
-the list of worlds. O cycles the overlay: the world's triggers are drawn as yellow frames (the
+the list of worlds. M opens a menu of every action with its key (choosing one does
+it as if the key had been pressed). O cycles the overlay: the world's triggers are drawn as yellow frames (the
 status box says where the one under the cursor goes), and the encounter zones as dashed lines
 with each zone's encounter number (Enc, as in the Encounters editor; the game picks the
 random battle by 32 by 32 tile zone: 8 by 8 on the overworld, 4 by 4 underground, 2 by 2 on
@@ -1599,9 +1600,14 @@ mode, where the following controls apply:
     J: Jump directly to a map index from 1 to 384.
     F: Search map names and jump to the next matching map.
     I: Show the indices of other maps sharing the selected grid.
+    CTRL+R: Revert the selected map to how it was when the ROM was loaded (it
+            asks first; maps that share the grid change too).
 
     TAB: Switch between the map editor and the tile selector.
     ARROWS: Move the cursor.
+    M: Open a menu of every action of the map editor with its key beside it;
+       choosing one does it as if you had pressed the key. It is the way to
+       find the keys below, and the only list of them on screen.
   
 The following controls only apply to the map editor itself, not the tile
 selector:
@@ -1622,7 +1628,10 @@ selector:
     CTRL+V: Paste the copied rectangle. A translucent preview of it follows
             the cursor; move it with the arrows, press ENTER to place it or
             ESC to cancel.
-    CTRL+Z: Undo, up to ten paint, fill or paste operations.
+    CTRL+Z: Undo, up to ten paint, fill or paste operations. Each map keeps
+            its own undo, also after you leave the map and open it again.
+    CTRL+R: Revert the whole map to how it was when the ROM was loaded. It
+            asks first and Ctrl-Z brings the edits back.
     CTRL+Y: Redo.
     R:      Replace every tile that matches the one under the cursor with the
             tile selected in the tile selector. With a rectangle selected it
@@ -2071,6 +2080,10 @@ VERSION HISTORY
     - Battle Sprites, Monster Sprites, Portraits, Field Sprites: every BMP export asks for confirmation first, like the imports
     - Lists: the Space menu only offers "Show where it is used" for the lists that track it; the key help no longer says Medicines and Tools can swap entries
     - Battle Sprites, Portraits, Field Sprites: Ctrl-R reverts (as in Monster Sprites and the lists); all four sprite editors step the brush color with [ or Minus and ] or Plus and list their actions in the same order, with Previous / Next for the item (Portraits and Field Sprites keep Go to)
+    - Maps and World Maps: M opens a menu of every action with its key, like the sprite editors' Enter menu
+    - Maps: Ctrl-R reverts a map to the loaded ROM (in the list and in the map editor), and the undo of a map is kept after leaving it
+    - Main menu: under Party the data editors (Characters, Commands, Actors) come before the picture editors (Battle Sprites, Portraits, Field Sprites); the key help for Features names what it edits
+    - F1 also works on the editing screens (sprite and portrait editors, maps, world maps, tile properties, battle formulas, level ups, the AI editor and the item forms), not only in menus
     - Characters: the starting data has the critical hit rate and bonus
     - Commands: Steal has its lowest and highest chance, the chance of being caught and what a caught thief loses
     - Battle Formulas: spell effect 29, the unused copy of Count, can raise or lower a stat of its target like Armor

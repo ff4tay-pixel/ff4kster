@@ -1543,6 +1543,8 @@ sub EditStatFormulas(page as Integer = 1)
   loop until key <> "" or code <> 0 and (left_click or right_click or wheel <> 0)
 
   select case code
+   case F1_KEY
+    ShowKeyHelp()
    case ESC_KEY
     done = true
    case ENTER_KEY

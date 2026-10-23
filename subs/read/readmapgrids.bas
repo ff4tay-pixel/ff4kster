@@ -58,6 +58,14 @@ sub ReadMapGrids()
   end if
   'print " Map #"; str(i); " read"
  next
+
+ for i as Integer = 1 to total_maps
+  for x as Integer = 0 to 32
+   for y as Integer = 0 to 32
+    orig_map_tiles(i, x, y) = mapgrids(i).tiles(x, y)
+   next
+  next
+ next
  
 
 end sub

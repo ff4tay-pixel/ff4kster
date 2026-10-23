@@ -1,3 +1,15 @@
+type MapHistory
+
+ 'What Ctrl-Z and Ctrl-Y go back to in the map editor, one per map grid so that it survives leaving the map
+
+ undo_tiles(31, 31, max_map_undo - 1) as UByte
+ undo_count as UByte
+ redo_tiles(31, 31, max_map_undo - 1) as UByte
+ redo_count as UByte
+
+end type
+
+
 type MapEditorMenu
 
  x as UByte
@@ -6,10 +18,8 @@ type MapEditorMenu
  map_menu as GridMenu
  spaceused as UInteger
  map_index as UInteger
- undo_tiles(31, 31, max_map_undo - 1) as UByte
- undo_count as UByte
- redo_tiles(31, 31, max_map_undo - 1) as UByte
- redo_count as UByte
+ hist as MapHistory 'undo and redo of the map being edited; kept in map_histories when another map is opened
+ history_index as UInteger 'the map grid that hist belongs to (0 = none yet)
  overlay_visible as Boolean = true
  paste_mode as Boolean
  map_number as UInteger
@@ -35,6 +45,8 @@ type MapEditorMenu
  declare sub RefreshOverlay()
  declare sub ReplaceTile()
  declare sub SetTo(map_index as UInteger)
+ declare sub StashHistory()
+ declare sub RevertToLoaded()
  declare sub PushUndo()
  declare sub SaveUndo()
  declare sub Undo()

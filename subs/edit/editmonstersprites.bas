@@ -829,6 +829,8 @@ sub EditMonsterSprite(index_start as Integer)
     keycode = 0
    end if
 
+  if KeyHelpPressed(keycode) then keycode = 0
+
    'Enter opens the menu of every action; the entries that stand for a key are handled as that key
    if keycode = ENTER_KEY and loaded then keycode = MonsterSpriteActions(mode, brush)
 

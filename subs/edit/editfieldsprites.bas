@@ -875,6 +875,8 @@ sub EditFieldSheet(sheet_start as Integer)
   keycode = asc(right(key, 1))
   if len(key) > 1 then keycode = keycode * &h100 + 255
 
+ if KeyHelpPressed(keycode) then keycode = 0
+
   'Enter opens the menu of every action; the entries that stand for a key are handled as that key
   if keycode = ENTER_KEY then keycode = FieldActions(mode, sheet, pal, brush, slot)
 

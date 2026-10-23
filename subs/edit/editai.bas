@@ -82,12 +82,18 @@ dim shared ai_script_pos as Integer
 
 function AIReadKey() as UInteger
 
+ dim k as UInteger
+
  if ai_script_pos < ai_script_count then
   ai_script_pos += 1
   return ai_script_keys(ai_script_pos - 1)
  end if
 
- return getkey
+ do
+  k = getkey
+ loop while KeyHelpPressed(k)
+
+ return k
 
 end function
 

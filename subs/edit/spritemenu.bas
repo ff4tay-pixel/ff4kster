@@ -105,3 +105,82 @@ function SmNumber(current as Integer, max_value as Integer) as Integer
  return n.number
 
 end function
+
+
+const map_key_add_npc = 60001 'Shift-Insert in the map editor
+const map_key_remove_npc = 60002 'Shift-Delete in the map editor
+
+
+function MapActions(map_panel as Boolean, objects as Boolean) as UInteger
+
+ 'M in the map editor: a menu of every action with its key. Returns the key the chosen entry stands for (the
+ ' editor handles it as if it had been pressed), 0 if cancelled. map_panel is false while the tile palette has the
+ ' cursor, objects is true on maps that have triggers and NPC placements.
+
+ SmReset()
+ if map_panel then
+  SmAdd("Place the tile", "Enter", ENTER_KEY)
+  SmAdd("Fill with the tile", "Space", SPACE_KEY)
+  SmAdd("Pick the tile under the cursor", "Backspace", BACKSPACE_KEY)
+  SmAdd("Replace all of that tile", "R", asc("r"))
+  SmAdd("Copy the selected area", "Ctrl-C", 3)
+  SmAdd("Paste the copy", "Ctrl-V", 22)
+  SmAdd("Undo", "Ctrl-Z", 26)
+  SmAdd("Redo", "Ctrl-Y", 25)
+  SmAdd("Revert the map to the loaded ROM", "Ctrl-R", 18)
+  if objects then
+   SmAdd("Edit the trigger here", "T", asc("t"))
+   SmAdd("Add a trigger here", "Insert", INSERT_KEY)
+   SmAdd("Remove the trigger here", "Delete", DELETE_KEY)
+   SmAdd("Edit the NPC here", "N", asc("n"))
+   SmAdd("Add an NPC here", "Shift Insert", map_key_add_npc)
+   SmAdd("Remove the NPC here", "Shift Delete", map_key_remove_npc)
+  end if
+  SmAdd("Show or hide NPCs and triggers", "O", asc("o"))
+  SmAdd("Go to the tile palette", "Tab", TAB_KEY)
+ else
+  SmAdd("Show or hide NPCs and triggers", "O", asc("o"))
+  SmAdd("Go to the map", "Tab", TAB_KEY)
+ end if
+ SmAdd("Leave the editor", "Esc", ESC_KEY)
+
+ dim choice as Integer = SmRun("Map")
+ if choice = 0 then return 0
+
+ return sm_key(choice)
+
+end function
+
+
+function WorldActions(map_panel as Boolean) as UInteger
+
+ 'M in the world map editor: the same kind of menu (see MapActions).
+
+ SmReset()
+ if map_panel then
+  SmAdd("Place the tile", "Enter", ENTER_KEY)
+  SmAdd("Fill with the tile", "Space", SPACE_KEY)
+  SmAdd("Pick the tile under the cursor", "Backspace", BACKSPACE_KEY)
+  SmAdd("Replace all of that tile", "R", asc("r"))
+  SmAdd("Copy the selected block", "Ctrl-C", 3)
+  SmAdd("Paste the copy", "Ctrl-V", 22)
+  SmAdd("Undo", "Ctrl-Z", 26)
+  SmAdd("Redo", "Ctrl-Y", 25)
+  SmAdd("Edit the trigger here", "T", asc("t"))
+  SmAdd("Add a trigger here", "Insert", INSERT_KEY)
+  SmAdd("Remove the trigger here", "Delete", DELETE_KEY)
+ end if
+ SmAdd("Change the overlay", "O", asc("o"))
+ if map_panel then
+  SmAdd("Go to the tile palette", "Tab", TAB_KEY)
+ else
+  SmAdd("Go to the map", "Tab", TAB_KEY)
+ end if
+ SmAdd("Leave the editor", "Esc", ESC_KEY)
+
+ dim choice as Integer = SmRun("World map")
+ if choice = 0 then return 0
+
+ return sm_key(choice)
+
+end function

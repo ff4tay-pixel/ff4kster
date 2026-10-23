@@ -966,7 +966,7 @@ sub DrawWorldEditor()
  if wv_paste_mode then
   WriteText(FF4Text(Pad("PASTE: arrows move, Enter place, Esc cancel", 74)), 1, 54, 14)
  else
-  WriteText(FF4Text(Pad("Tab panel  Enter place  Space fill  R replace  O overlay  T trigger", 74)), 1, 54, 15)
+  WriteText(FF4Text(Pad("M menu of all actions  Enter place  Space fill  Tab panel  R replace", 74)), 1, 54, 15)
  end if
  if wv_picker_mode then
   WriteText(FF4Text(Pad("Teleport to " + WorldNameText(w) + ", X " + str(wv_cursor_x) + "  Y " + str(wv_cursor_y), 76)), 1, 53, 15)
@@ -1116,6 +1116,7 @@ sub EditOneWorld(w as Integer)
   if key <> "" then
    key_code = asc(right(key, 1))
    if len(key) > 1 then key_code = key_code * &h100 + 255
+   if KeyHelpPressed(key_code) then key_code = 0
   else
    PollMouse(cell_x, cell_y, left_click, right_click, wheel_steps)
    mx = mouse_pixel_x
@@ -1188,6 +1189,7 @@ sub EditOneWorld(w as Integer)
    shift_held = multikey(SC_LSHIFT) or multikey(SC_RSHIFT)
    ctrl_held = multikey(SC_CONTROL)
    redraw = true
+   if not wv_paste_mode and (key_code = asc("m") or key_code = asc("M")) then key_code = WorldActions(wv_map_active)
    if wv_paste_mode then
     select case key_code
      case ENTER_KEY
@@ -1312,6 +1314,7 @@ function PickWorldSpot(w as Integer, byref spot_x as Integer, byref spot_y as In
    if key <> "" then
     key_code = asc(right(key, 1))
     if len(key) > 1 then key_code = key_code * &h100 + 255
+    if KeyHelpPressed(key_code) then key_code = 0
    else
     PollMouse(cell_x, cell_y, left_click, right_click, wheel_steps)
     mx = mouse_pixel_x
