@@ -1024,7 +1024,8 @@ an effect that works like Armor: it raises or lowers one stat of its target by a
 number (0 to 255, stopping at 255 or 0), for the rest of the battle. The stats
 are the attack multiplier, hit rate, attack power, magic def multiplier, magic
 def rate, magic defense, defense multiplier, defense rate, defense, critical
-rate and critical bonus. Give a spell effect 29 in the Spells editor, where the
+rate, critical bonus and the modified strength, agility, vitality, wisdom and
+will. Give a spell effect 29 in the Spells editor, where the
 effect is then named Change a stat. The routine goes in free space at the end of
 bank 3 (1FEE3 to 1FEFA) and the effect's entry of the jump table points at it;
 switching it off puts both back.

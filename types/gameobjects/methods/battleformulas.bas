@@ -40,7 +40,7 @@ end function
 
 static function BattleFormulas.Effect29StatNames() as String
 
- return "attack multiplier|hit rate|attack power|magic def multiplier|magic def rate|magic defense|defense multiplier|defense rate|defense|critical rate|critical bonus"
+ return "attack multiplier|hit rate|attack power|magic def multiplier|magic def rate|magic defense|defense multiplier|defense rate|defense|critical rate|critical bonus|strength|agility|vitality|wisdom|will"
 
 end function
 
@@ -49,9 +49,10 @@ static function BattleFormulas.Effect29StatAddress(n as Integer) as UInteger
 
  'Places in the properties of a unit (battle/magic.asm reads them at $2700 for the target, the RAM map of the
  ' disassembly has the list): +1B attack multiplier, +1C hit rate, +1D attack power, +22 magic def multiplier,
- ' +23 magic def rate, +24 magic defense, +28 defense multiplier, +29 defense rate, +2A defense, +2D critical rate, +2E critical bonus.
+ ' +23 magic def rate, +24 magic defense, +28 defense multiplier, +29 defense rate, +2A defense, +2D critical rate, +2E critical bonus,
+ ' +14 to +18 the modified strength, agility, vitality, wisdom and will (the stats the formulas use in battle).
 
- dim places(1 to 11) as UInteger = {&h1B, &h1C, &h1D, &h22, &h23, &h24, &h28, &h29, &h2A, &h2D, &h2E}
+ dim places(1 to 16) as UInteger = {&h1B, &h1C, &h1D, &h22, &h23, &h24, &h28, &h29, &h2A, &h2D, &h2E, &h14, &h15, &h16, &h17, &h18}
 
  return &h2700 + places(n)
 
@@ -939,7 +940,7 @@ sub BattleFormulas.ReadFromROM()
  elseif MenuCommand.BytesAre(Effect29Table(), "E3FE") then
   fx_lower = (ByteAt(Effect29Routine() + 4) = 0)
   fx_amount = ByteAt(Effect29Routine() + 15)
-  for n as Integer = 1 to 11
+  for n as Integer = 1 to 16
    if ByteAt(Effect29Routine() + 1) + ByteAt(Effect29Routine() + 2) * &h100 = Effect29StatAddress(n) then
     if MenuCommand.BytesAre(Effect29Routine(), Effect29Hex(fx_amount, fx_lower, Effect29StatAddress(n))) then
      fx_known = true

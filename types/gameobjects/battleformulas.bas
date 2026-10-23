@@ -18,7 +18,7 @@ type BattleFormulas
  shell_add as UByte 'added to the magic defense by magic effect $0e, 3 in the original
  fx_known as Boolean 'effect 29 (the copy of Count the game never uses) can change a stat of its target like Armor: its free space and table entry are free or ours
  fx_on as Boolean 'the routine is installed and spells with effect 29 use it
- fx_stat as UByte 'the stat it changes, 1 to 11 as in Effect29StatNames
+ fx_stat as UByte 'the stat it changes, 1 to 16 as in Effect29StatNames
  fx_lower as Boolean 'it subtracts the number instead of adding it
  fx_amount as UByte 'the number added or subtracted by effect 29
  back_known as Boolean 'the back row rules of Fight, see BackEffectOffset: whether the code is the original
