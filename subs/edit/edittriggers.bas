@@ -149,11 +149,11 @@ do
        DrawTriggerMinimapCursor(minimap_cursor_x, minimap_cursor_y)
       end if
       if minimap_mode then
-       ShowHint("Arrows move the cursor on the minimap. Enter picks the trigger there. Tab or Esc leave it.")
+       ShowHint("Arrows move on the minimap. Enter picks the trigger there. Tab or Esc leave.")
       elseif select_trigger.selected > maps(select_map.selected).triggers.Length() then
        ShowHint("Enter adds a trigger to this map and opens it. Space opens a menu.")
       else
-       ShowHint("Enter edits this trigger. Space opens a menu: add, delete. Shift-Enter twice swaps two.")
+       ShowHint("Enter edits this trigger. Space: add, delete menu. Shift-Enter twice swaps.")
       end if
       a = getkey
       if a = SPACE_KEY then a = ObjectActions("Trigger", "trigger", select_trigger.selected <= maps(select_map.selected).triggers.Length())

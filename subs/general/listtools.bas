@@ -977,13 +977,13 @@ function KindHint(kind as String) as String
  'What Enter does on a line of a list, for the lists that have no hint of their own (the editors of spells,
  ' weapons, armors, medicines, monsters, spell sets and events draw theirs)
 
- dim tail as String = " Space: revert, copy, paste, undo."
+ dim tail as String = " Space: actions menu."
 
  select case kind
   case "tools": return "Enter opens this tool's boxes." + tail
   case "shops": return "Enter edits what this shop sells." + tail
   case "jobs": return "Enter opens the settings of this job." + tail
-  case "commands": return "Enter opens this command: ranges, information, parameters." + tail
+  case "commands": return "Enter opens this command: ranges, info, parameters." + tail
   case "actors": return "Enter opens this actor: commands, equipment, data, name." + tail
   case "formations": return "Enter edits this formation." + tail
   case "encounters": return "Enter edits the random battles of this area." + tail

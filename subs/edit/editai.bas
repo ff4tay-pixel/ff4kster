@@ -799,7 +799,7 @@ function AIHint() as String
   case ai_cl_condition: return "Enter: menu. Insert: add condition. S: change set. Comma Period: move pair."
   case ai_cl_addcond: return "Enter adds a condition. All the conditions of a pair must be true."
   case ai_cl_chooser: return "Enter picks a script for this pair from a list."
-  case ai_cl_action: return "Enter changes this action. Insert adds one. Delete removes it. Comma Period move it."
+  case ai_cl_action: return "Enter changes this action. Insert adds, Delete removes, Comma Period move."
   case ai_cl_addaction: return "Enter adds an action. The actions run in order, top to bottom."
   case ai_cl_addpair: return "Enter adds a pair, conditions, then actions to run. Starts as set 1, script 1."
  end select
@@ -859,7 +859,7 @@ sub AIDraw(message as String)
  LuText(space_text, 0, footer_y + 2, iif(over, 12, 23))
  if over then LuText("Over the limit: Save ROM will refuse to save until there is less AI data.", 0, footer_y + 3, 12)
 
- LuText("Tab or 1 2: panel.  Arrows: move.  Enter: change or add.  Ctrl-Z: undo.  Esc: back.", 0, footer_y + 4, 23)
+ LuText("Tab or 1 2: panel. Arrows: move. Enter: change or add. Ctrl-Z: undo. Esc: back", 0, footer_y + 4, 23)
  LuText("L: other bank.  R: reaction AI.  Ctrl-R: revert.  Ctrl-C Ctrl-V: copy and paste.", 0, footer_y + 5, 23)
  screenunlock
 

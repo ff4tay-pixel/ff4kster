@@ -157,7 +157,7 @@ minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
       DrawMinimapCursor(minimap_cursor_x, minimap_cursor_y)
      end if
      if minimap_mode then
-      ShowHint("Arrows move the cursor on the minimap. Enter picks the placement there. Tab or Esc leave it.")
+      ShowHint("Arrows move on the minimap. Enter picks the placement there. Tab or Esc leave.")
      elseif select_placement.selected > placement_groups(select_map.selected).placements.Length() then
       ShowHint("Enter adds a placement to this map and opens it. Space opens a menu.")
      else

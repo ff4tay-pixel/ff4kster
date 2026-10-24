@@ -406,7 +406,7 @@ function MonHint(m as Integer) as String
    return "Enter or Space switches it on and edits it. Yellow is on."
   case else
    if mon_ai_row = 1 then return "Enter opens the AI editor for the attack AI of this monster."
-   if mon_ai_row = 2 then return "Enter or Space switches the AI bank. Moon monsters use LUNAR. L does it from any box."
+   if mon_ai_row = 2 then return "Enter or Space switches the AI bank. Moon monsters use LUNAR. L: from any box."
    if monsters(m).has_reaction then return "Enter opens the AI editor on the reaction AI of this monster."
    return "No reaction AI. Switch Reaction on in box 5 to give this monster one."
  end select
