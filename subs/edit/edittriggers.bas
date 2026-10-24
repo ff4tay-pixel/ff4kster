@@ -28,7 +28,7 @@ sub RefillTriggerList(trigger_list as BlueMenu, m as Integer)
  for i as Integer = 1 to maps(m).triggers.Length()
   trigger_list.AddOption(FF4Text("Trigger " + Pad(str(i), 2)))
  next
- trigger_list.AddOption(FF4Text("-- Add a trigger --"))
+ trigger_list.AddOption(FF4Text("Add a trigger"))
 
 end sub
 
@@ -100,8 +100,8 @@ sub EditTriggers()
  
  select_trigger = BlueMenu(0, 10)
  select_trigger.swap_enabled = true
- select_trigger.max_rows = screen_height - select_map.max_rows - 2
- edit_trigger = TriggerInfoMenu(12, 10)
+ select_trigger.max_rows = screen_height - 10 - 3 'the bottom row is the hint line
+ edit_trigger = TriggerInfoMenu(16, 10) 'right of the list, which is 15 wide
  
 do
    
@@ -112,14 +112,14 @@ do
     ShowHint("Pick a map. Enter opens its triggers, Esc goes back.")
     select_trigger.Display()
     UpdateTriggerMinimap(select_map.selected, maps(select_map.selected).triggers, select_trigger.selected, minimap_img, minimap_canvas)
-    put (52 * 8, 42 * 8), minimap_img, trans
+    put (52 * 8, 40 * 8), minimap_img, trans
     if minimap_mode then
      DrawTriggerMinimapCursor(minimap_cursor_x, minimap_cursor_y)
     end if
    loop until select_map.UserInput()
    
    if not select_map.cancelled then
-    put (52 * 8, 42 * 8), blank, pset
+    put (52 * 8, 40 * 8), blank, pset
     minimap_cursor_x = 0
     minimap_cursor_y = 0
     minimap_mode = false
@@ -129,7 +129,7 @@ do
      done = false
      do
      
-      put (12 * 8, 10 * 8), blank, pset
+      put (16 * 8, 10 * 8), blank, pset
       if select_trigger.selected <= maps(select_map.selected).triggers.Length() then
        t = maps(select_map.selected).triggers.PointerAt(select_trigger.selected)
        edit_trigger.t = t
@@ -144,7 +144,7 @@ do
       select_trigger.Display()
       select_trigger.ShowCursor()
       UpdateTriggerMinimap(select_map.selected, maps(select_map.selected).triggers, select_trigger.selected, minimap_img, minimap_canvas)
-      put (52 * 8, 42 * 8), minimap_img, trans
+      put (52 * 8, 40 * 8), minimap_img, trans
       if minimap_mode then
        DrawTriggerMinimapCursor(minimap_cursor_x, minimap_cursor_y)
       end if
@@ -172,7 +172,7 @@ do
          DrawTriggerMinimapCursor(minimap_cursor_x, minimap_cursor_y)
         else
          UpdateTriggerMinimap(select_map.selected, maps(select_map.selected).triggers, select_trigger.selected, minimap_img, minimap_canvas)
-         put (52 * 8, 42 * 8), minimap_img, trans
+         put (52 * 8, 40 * 8), minimap_img, trans
         end if
        case LEFT_KEY
         if minimap_mode then
@@ -210,7 +210,7 @@ do
           select_trigger.ChangeSelected(found_trigger)
           minimap_mode = false
           UpdateTriggerMinimap(select_map.selected, maps(select_map.selected).triggers, select_trigger.selected, minimap_img, minimap_canvas)
-          put (52 * 8, 42 * 8), minimap_img, trans
+          put (52 * 8, 40 * 8), minimap_img, trans
          end if
         else
          done = select_trigger.ProcessKey(a)
@@ -219,7 +219,7 @@ do
         if minimap_mode then
          minimap_mode = false
          UpdateTriggerMinimap(select_map.selected, maps(select_map.selected).triggers, select_trigger.selected, minimap_img, minimap_canvas)
-         put (52 * 8, 42 * 8), minimap_img, trans
+         put (52 * 8, 40 * 8), minimap_img, trans
         else
          done = select_trigger.ProcessKey(a)
         end if
@@ -230,7 +230,7 @@ do
          if select_trigger.selected > select_trigger.options.Length() then select_trigger.ChangeSelected(select_trigger.options.Length())
          select_trigger.Display()
          UpdateTriggerMinimap(select_map.selected, maps(select_map.selected).triggers, select_trigger.selected, minimap_img, minimap_canvas)
-         put (52 * 8, 42 * 8), minimap_img, trans
+         put (52 * 8, 40 * 8), minimap_img, trans
         end if
 
        case INSERT_KEY
@@ -240,7 +240,7 @@ do
          select_trigger.ChangeSelected(position)
          select_trigger.Display()
          UpdateTriggerMinimap(select_map.selected, maps(select_map.selected).triggers, select_trigger.selected, minimap_img, minimap_canvas)
-         put (52 * 8, 42 * 8), minimap_img, trans
+         put (52 * 8, 40 * 8), minimap_img, trans
         end if
 
        case else
@@ -407,7 +407,7 @@ sub DrawTriggerMinimapCursor(cx as Integer, cy as Integer)
 
  ' Draw a white crosshair cursor on the minimap at screen position (52*8 + cx, 2*8 + cy)
  dim screen_x as Integer = 52 * 8 + cx
- dim screen_y as Integer = 42 * 8 + cy
+ dim screen_y as Integer = 40 * 8 + cy
  
  ' Draw crosshair
  line (screen_x - 4, screen_y)-(screen_x + 4, screen_y), RGB(255, 255, 255)

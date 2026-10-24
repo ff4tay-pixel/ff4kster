@@ -3,7 +3,7 @@ constructor CharacterLevelUpMenu(starting_x as UByte = 0, starting_y as UByte = 
  x = starting_x
  y = starting_y
  level_menu = BlueMenu(x, y + 3)
- level_menu.max_rows = screen_height - y - 3
+ level_menu.max_rows = screen_height - y - 6 'the box ends above the hint line
 
 end constructor
 

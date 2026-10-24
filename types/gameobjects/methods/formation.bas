@@ -5,7 +5,7 @@ function Formation.Preview() as String
  for i as Integer = 1 to 3
   if monster_type(i) < total_monsters then
    if i > 1 then result += FF4Text(", ")
-   result += FF4Text(str(monster_qty(i)) + " ") + monsters(monster_type(i) + 1).name
+   result += FF4Text(str(monster_qty(i)) + " ") + FF4Trim(monsters(monster_type(i) + 1).name)
   end if
  next
  

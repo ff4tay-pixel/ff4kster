@@ -22,7 +22,7 @@ sub EditCharacters()
  starting_menu.Display()
  levelup_menu = CharacterLevelUpMenu(select_character.options.Width() + 2, starting_menu.starting_menu.options.Length() + 2)
  levelup_menu.SetTo(1)
- after70_menu = After70Menu(levelup_menu.x + levelup_menu.level_menu.options.Width() + 2, levelup_menu.y)
+ after70_menu = After70Menu(levelup_menu.x + levelup_menu.level_menu.options.Width() + 2, 0) 'its eight boxes are 43 rows tall: from the top they end above the hint line
   
  do
   do

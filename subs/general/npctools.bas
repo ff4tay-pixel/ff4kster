@@ -37,7 +37,7 @@ sub RefreshPlacementMenus(map_index as Integer, p as Placement ptr, edit_placeme
 end sub
 
 
-sub EditPlacementDialog(map_index as Integer, p as Placement ptr)
+sub EditPlacementDialog(map_index as Integer, p as Placement ptr, left_x as Integer = 14)
 
  'The menus for one placement (where it stands, how it moves, which NPC it is) and, below them, the NPC
  ' itself (sprite, visibility, speech). Edit NPCs shows them beside its list; the map editor shows them on
@@ -53,7 +53,7 @@ sub EditPlacementDialog(map_index as Integer, p as Placement ptr)
  dim temp as Integer
  dim underground as Integer = PlacementUnderground(map_index)
 
- edit_placement.x = 14
+ edit_placement.x = left_x
  edit_placement.y = 10
  edit_npc.x = edit_placement.x
  edit_npc.y = edit_placement.y + 12

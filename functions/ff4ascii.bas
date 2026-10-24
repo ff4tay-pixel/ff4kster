@@ -72,6 +72,22 @@ function FF4Name(byval s as String) as String
 end function
 
 
+function FF4Trim(byval s as String) as String
+
+ 'The FF4 string without its trailing padding spaces, still in FF4 codes.
+
+ dim space_code as String = FF4Text(" ")
+
+ do while len(s) > 0
+  if right(s, 1) <> space_code then exit do
+  s = left(s, len(s) - 1)
+ loop
+
+ return s
+
+end function
+
+
 function PadFF4Name(ascii_name as String, name_width as Integer) as String
 
  'Converts typed/imported ASCII to an FF4 name of exactly `name_width` characters.

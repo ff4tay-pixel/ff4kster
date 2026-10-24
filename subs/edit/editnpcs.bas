@@ -10,7 +10,7 @@ sub RefillPlacementList(placement_list as BlueMenu, m as Integer)
  for i as Integer = 1 to placement_groups(m).placements.Length()
   placement_list.AddOption(FF4Text("Placement " + Pad(str(i), 2, true)))
  next
- placement_list.AddOption(FF4Text(Pad("-- Add a placement --", 21)))
+ placement_list.AddOption(FF4Text(Pad("Add a placement", 15)))
 
 end sub
 
@@ -71,7 +71,7 @@ sub EditNPCs()
  
  select_placement.y = 10
  
- edit_placement.x = 14
+ edit_placement.x = 18 'right of the placement list, which is 17 wide
  edit_placement.y = select_placement.y
  
  edit_npc.x = edit_placement.x
@@ -107,14 +107,14 @@ minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
     ShowHint("Pick a map. Enter opens its NPC placements, Esc goes back.")
     select_placement.Display()
     UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
-    put (52 * 8, 42 * 8), minimap_img, trans
+    put (52 * 8, 40 * 8), minimap_img, trans
     if minimap_mode then
      DrawMinimapCursor(minimap_cursor_x, minimap_cursor_y)
     end if
    loop until select_map.UserInput()
    
    if not select_map.cancelled then
-    put (52 * 8, 42 * 8), blank, pset
+    put (52 * 8, 40 * 8), blank, pset
 
    select_placement.ChangeSelected(1)
    minimap_cursor_x = 0
@@ -152,7 +152,7 @@ minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
      select_placement.Display()
      select_placement.ShowCursor()
      UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
-     put (52 * 8, 42 * 8), minimap_img, trans
+     put (52 * 8, 40 * 8), minimap_img, trans
      if minimap_mode then
       DrawMinimapCursor(minimap_cursor_x, minimap_cursor_y)
      end if
@@ -178,7 +178,7 @@ minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
         DrawMinimapCursor(minimap_cursor_x, minimap_cursor_y)
        else
         UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
-        put (52 * 8, 42 * 8), minimap_img, trans
+        put (52 * 8, 40 * 8), minimap_img, trans
        end if
       case LEFT_KEY
        if minimap_mode then
@@ -216,7 +216,7 @@ minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
          select_placement.ChangeSelected(found_placement)
          minimap_mode = false
          UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
-         put (52 * 8, 42 * 8), minimap_img, trans
+         put (52 * 8, 40 * 8), minimap_img, trans
         end if
        else
         done = select_placement.ProcessKey(a)
@@ -225,7 +225,7 @@ minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
        if minimap_mode then
         minimap_mode = false
         UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
-        put (52 * 8, 42 * 8), minimap_img, trans
+        put (52 * 8, 40 * 8), minimap_img, trans
        else
         done = select_placement.ProcessKey(a)
        end if
@@ -236,14 +236,14 @@ minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
         if select_placement.selected > select_placement.options.Length() then select_placement.ChangeSelected(select_placement.options.Length())
         put (select_placement.x * 8, select_placement.y * 8), blank, pset
         UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
-        put (52 * 8, 42 * 8), minimap_img, trans
+        put (52 * 8, 40 * 8), minimap_img, trans
        end if
       case INSERT_KEY
        if PlacementAdd(select_map.selected) then
         RefillPlacementList(select_placement, select_map.selected)
         select_placement.ChangeSelected(placement_groups(select_map.selected).placements.Length())
         UpdateMinimap(select_map.selected, placement_groups(select_map.selected), select_placement.selected, minimap_img, minimap_canvas)
-        put (52 * 8, 42 * 8), minimap_img, trans
+        put (52 * 8, 40 * 8), minimap_img, trans
        end if
       case else
        if not minimap_mode then
@@ -260,12 +260,12 @@ minimap_img = ImageCreate(128, 128, RGB(0, 0, 0))
       RefillPlacementList(select_placement, select_map.selected)
       select_placement.ChangeSelected(placement_groups(select_map.selected).placements.Length())
       p = placement_groups(select_map.selected).placements.PointerAt(select_placement.selected)
-      EditPlacementDialog(select_map.selected, p)
+      EditPlacementDialog(select_map.selected, p, edit_placement.x)
      end if
     end if
     if not select_placement.cancelled and not opened and select_placement.selected <= placement_groups(select_map.selected).placements.Length() then
      
-     EditPlacementDialog(select_map.selected, p)
+     EditPlacementDialog(select_map.selected, p, edit_placement.x)
      
     end if
     
@@ -398,7 +398,7 @@ sub DrawMinimapCursor(cx as Integer, cy as Integer)
 
  ' Draw a white crosshair cursor on the minimap at screen position (52*8 + cx, 2*8 + cy)
  dim screen_x as Integer = 52 * 8 + cx
- dim screen_y as Integer = 42 * 8 + cy
+ dim screen_y as Integer = 40 * 8 + cy
  
  ' Draw crosshair
  line (screen_x - 4, screen_y)-(screen_x + 4, screen_y), RGB(255, 255, 255)

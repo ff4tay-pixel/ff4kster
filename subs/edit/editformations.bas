@@ -4,7 +4,7 @@ sub EditFormations()
  dim edit_formation as FormationInfoMenu
  dim temp as String
  
- select_formation.max_rows = screen_height
+ select_formation.max_rows = screen_height - 3 'the bottom row is the hint line
  for i as Integer = 1 to total_formations
   select_formation.AddOption(formation_names.ItemAt(i))
  next

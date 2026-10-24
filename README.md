@@ -1469,7 +1469,7 @@ TRIGGERS
 
 Each map has a list of triggers associated with it. In the editor, first
 select a map, then you can edit the triggers associated with it. You can edit
-a particular trigger with ENTER. The last line of the list is "-- Add a trigger --":
+a particular trigger with ENTER. The last line of the list is "Add a trigger":
 ENTER on it adds a trigger and opens it. SPACE opens a menu with Edit, Add,
 Delete (it asks first) and Pick on the minimap, and INSERT and DELETE do the
 same as keys. If the game has no room for another trigger the editor says so.
@@ -1524,7 +1524,7 @@ with a particular map.
 
 As with the trigger editor, first select a map, then you can edit the NPC
 placements for that map. ENTER edits a placement; the last line of the list is
-"-- Add a placement --", and ENTER on it adds one and opens it. SPACE opens a
+"Add a placement", and ENTER on it adds one and opens it. SPACE opens a
 menu with Edit, Add, Delete (it asks first) and Pick on the minimap, and INSERT
 and DELETE do the same as keys. If the map already has 12 placements, or the
 game has no room left for another, the editor says so.
