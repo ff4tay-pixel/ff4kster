@@ -1742,7 +1742,7 @@ sub FmlShow(entry as Integer)
    FmlNote(3, "The back row: in the original game a unit in the back|row has its hit rate halved when it attacks, a target in|the back row halves the hit rate against it, and doubles|its defense. A unit with the no back row penalty flag,|a bow for example, or a jumping unit is not affected.||Enter opens them as rules with fields you can change.")
 
   case 12
-   FmlNote(3, "The statuses that weaken a unit: a weak attacker|(Frog and Mini do 1 attack power), a hurt target|(they take double damage and have no defense), no|defense multiplier, spells that ignore magic defense,|attackers that inflict no status or use no arrows.||Enter opens them as rules with fields you can change.|Each rule can have any statuses of the list.")
+   FmlNote(3, "The statuses that weaken a unit: a weak attacker|that is Frog or Mini and does 1 attack power, a hurt target|that takes double damage and has no defense, no|defense multiplier, spells that ignore magic defense,|attackers that inflict no status or use no arrows.||Enter opens them as rules with fields you can change.|Each rule can have any statuses of the list.")
 
   case 13
    FmlNote(3, "The other places where a status changes a number:|a blind attacker or target, berserk, jump, curse,|defend and focus, for attacks and for spells.||Enter opens them as rules with fields you can change.|Each rule can have statuses of any of the four lists.")

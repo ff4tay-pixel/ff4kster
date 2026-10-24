@@ -51,7 +51,7 @@ function A70ComboText(combo as StatLevelUp) as String
  next
 
  if count = 0 then return "Nothing is raised"
- if combo.amount = 0 then return "No change (amount is 0)"
+ if combo.amount = 0 then return "No change, amount is 0"
  return result
 
 end function

@@ -652,9 +652,9 @@ function ExportPortrait(p as Integer, pal as Integer) as String
 
  'One portrait, with the palette the editor is showing. Returns a message for the user
 
- if WritePortraitBMP(PortraitPath(PortraitFileName(p, pal)), p, pal) then return "Wrote " + PortraitFileName(p, pal) + "|to exports\portraits"
+ if WritePortraitBMP(PortraitPath(PortraitFileName(p, pal)), p, pal) then return "Wrote " + PortraitFileName(p, pal) + "|to exports/portraits"
 
- return "Export failed|Check that exports\portraits can be written"
+ return "Export failed|Check that exports/portraits can be written"
 
 end function
 
@@ -668,8 +668,8 @@ function ExportPortraits() as String
   if WritePortraitBMP(PortraitPath(PortraitFileName(p, PortraitDefaultPalette(p))), p, PortraitDefaultPalette(p)) then written += 1 else failed += 1
  next
 
- if failed > 0 then return "Export had " + str(failed) + " error(s)|Check that exports\portraits can be written"
- return "Wrote " + str(written) + " portrait images|to exports\portraits"
+ if failed > 0 then return "Export had " + str(failed) + " errors|Check that exports/portraits can be written"
+ return "Wrote " + str(written) + " portrait images|to exports/portraits"
 
 end function
 
@@ -705,7 +705,7 @@ function ImportOnePortrait(p as Integer) as String
 
  select case ImportPortraitImage(p, report)
   case 0
-   return "No portrait_" + Pad(str(p), 2, true, "0") + "_pal_PP.bmp found|in exports\portraits"
+   return "No portrait_" + Pad(str(p), 2, true, "0") + "_pal_PP.bmp found|in exports/portraits"
   case 1
    return "Read the portrait image" + report
  end select
@@ -724,8 +724,8 @@ function ImportPortraits() as String
   if ImportPortraitImage(p, report) = 1 then images_read += 1
  next
 
- if images_read = 0 and len(report) = 0 then return "No portrait_NN_pal_PP.bmp files found|in exports\portraits"
- return "Read " + str(images_read) + " portrait image(s)" + report
+ if images_read = 0 and len(report) = 0 then return "No portrait_NN_pal_PP.bmp files found|in exports/portraits"
+ return "Read " + str(images_read) + " portrait images" + report
 
 end function
 

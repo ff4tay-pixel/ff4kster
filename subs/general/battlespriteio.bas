@@ -204,11 +204,11 @@ function ReadIndexedBMP(path as String, width_px as Integer, height_px as Intege
   return false
  end if
  if BmpU32(raw, 31) <> 0 then
-  problem = "compressed BMP (save it uncompressed)"
+  problem = "compressed BMP, save it uncompressed"
   return false
  end if
  if bpp <> 4 and bpp <> 8 then
-  problem = "needs an indexed image (4 or 8 bits per pixel), not " + str(bpp)
+  problem = "needs an indexed image, 4 or 8 bits per pixel, not " + str(bpp)
   return false
  end if
  if file_width <> width_px or abs(file_height) <> height_px then
@@ -596,7 +596,7 @@ function ReadBattlePosesBMP(path as String, sheet as Integer, pal as Integer, by
       next
       if differs_from_chosen then
        conflict_count += 1
-       if conflict_count <= 4 then conflicts += "|tile " + hex(t, 2) + ": " + BattlePoseName(chosen_pose(t)) + " and " + BattlePoseName(use_pose(t, u)) + " differ; kept " + BattlePoseName(chosen_pose(t))
+       if conflict_count <= 4 then conflicts += "|tile " + hex(t, 2) + ": " + BattlePoseName(chosen_pose(t)) + " and " + BattlePoseName(use_pose(t, u)) + " differ, kept " + BattlePoseName(chosen_pose(t))
       end if
      end if
     end if
@@ -649,9 +649,9 @@ function ExportBattleSheet(s as Integer, pal as Integer) as String
 
  dim file_name as String = "poses_" + Pad(str(s), 2, true, "0") + "_pal_" + Pad(str(pal), 2, true, "0") + ".bmp"
 
- if WriteBattlePosesBMP(BattleSpritePath(file_name), s, pal) then return "Wrote " + file_name + "|to exports\battle_sprites"
+ if WriteBattlePosesBMP(BattleSpritePath(file_name), s, pal) then return "Wrote " + file_name + "|to exports/battle_sprites"
 
- return "Export failed|Check that exports\battle_sprites can be written"
+ return "Export failed|Check that exports/battle_sprites can be written"
 
 end function
 
@@ -668,8 +668,8 @@ function ExportBattleSprites() as String
   if WriteBattlePosesBMP(BattleSpritePath(file_name), s, s) then written += 1 else failed += 1
  next
 
- if failed > 0 then return "Export had " + str(failed) + " error(s)|Check that exports\battle_sprites can be written"
- return "Wrote " + str(written) + " pose images|to exports\battle_sprites"
+ if failed > 0 then return "Export had " + str(failed) + " errors|Check that exports/battle_sprites can be written"
+ return "Wrote " + str(written) + " pose images|to exports/battle_sprites"
 
 end function
 
@@ -710,9 +710,9 @@ function ImportOneBattleSheet(s as Integer) as String
 
  select case ImportBattleSheet(s, report)
   case 0
-   return "No poses_" + Pad(str(s), 2, true, "0") + "_pal_PP.bmp found|in exports\battle_sprites"
+   return "No poses_" + Pad(str(s), 2, true, "0") + "_pal_PP.bmp found|in exports/battle_sprites"
   case 1
-   return "Imported the pose image (sprites and palette)" + report
+   return "Imported the pose image, sprites and palette" + report
  end select
 
  return "Import failed" + report
@@ -734,8 +734,8 @@ function ImportBattleSprites() as String
   end select
  next
 
- if sheets_read = 0 and report = "" then return "Nothing to import|Looked in exports\battle_sprites"
+ if sheets_read = 0 and report = "" then return "Nothing to import|Looked in exports/battle_sprites"
 
- return "Imported " + str(sheets_read) + " pose images (sprites and palettes)" + report
+ return "Imported " + str(sheets_read) + " pose images, sprites and palettes" + report
 
 end function

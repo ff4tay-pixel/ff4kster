@@ -43,7 +43,7 @@ sub ExportImportTables(importing as Boolean)
  next
 
  if importing then
-  InfoBox("Import finished" + report + "||Changes are in memory; use Save ROM to keep them.||Press any key")
+  InfoBox("Import finished" + report + "||Changes are in memory, use Save ROM to keep them.||Press any key")
  else
   InfoBox("Export finished" + report + "||Press any key")
  end if

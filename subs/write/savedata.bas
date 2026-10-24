@@ -265,7 +265,7 @@ sub SaveData(filename as String)
   if open(filename for binary access write as #1) <> 0 then
    warning = true
    if save_problems <> "" then save_problems += "|"
-   save_problems += "Could not write " + filename + "|(read-only, or open in another program?)"
+   save_problems += "Could not write " + filename + "|Read-only, or open in another program?"
   else
    dim temp as String
    temp = ff4rom

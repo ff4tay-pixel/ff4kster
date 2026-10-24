@@ -1054,7 +1054,7 @@ function ListInput(list_menu as BlueMenu, kind as String) as Boolean
    end if
   case 3 'Ctrl+C
    ClipCopy(kind, list_menu.selected)
-   InfoBox("Copied " + FF4Name(EntryName(kind, list_menu.selected)) + ".|Ctrl+V on another entry pastes it|(that entry keeps its own name).||Press any key")
+   InfoBox("Copied " + FF4Name(EntryName(kind, list_menu.selected)) + ".|Ctrl-V on another entry pastes it|and that entry keeps its own name.||Press any key")
   case 26 'Ctrl+Z
    if UndoPop(kind, undone) then
     list_menu.ChangeOption(undone, EntryName(kind, undone))
@@ -1071,7 +1071,7 @@ function ListInput(list_menu as BlueMenu, kind as String) as Boolean
     ClipPaste(kind, list_menu.selected)
     RefreshEntryColor(list_menu, kind, list_menu.selected)
    else
-    InfoBox("Nothing copied yet. Use Ctrl+C first.||Press any key")
+    InfoBox("Nothing copied yet. Use Ctrl-C first.||Press any key")
    end if
   case 21 'Ctrl+U
    ShowUsage(kind, list_menu.selected)

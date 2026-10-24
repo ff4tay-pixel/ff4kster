@@ -166,7 +166,7 @@ function RestoreFromBackup(path as String, has_edits as Boolean) as Boolean
  end if
 
  if not CopyFile(folder + backup_names(choice), path) then
-  InfoBox("The ROM file could not be written (read-only, or open|in another program?).|" + iif(safety <> "", "The ROM as it was is saved in " + safety + ".", "") + "||Press any key", 4, 20)
+  InfoBox("The ROM file could not be written.|It may be read-only or open in another program.|" + iif(safety <> "", "The ROM as it was is saved in " + safety + ".", "") + "||Press any key", 4, 20)
   return false
  end if
 

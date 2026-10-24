@@ -297,7 +297,7 @@ sub BlueMenu.FindNext(new_search as Boolean)
  dim i as Integer
 
  if new_search then
-  menu_search_text = lcase(PromptLine("Find (ESC cancels):", 20))
+  menu_search_text = lcase(PromptLine("Find, Esc cancels:", 20))
  end if
  if menu_search_text = "" or n = 0 then exit sub
 

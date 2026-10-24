@@ -236,7 +236,7 @@ Assuming that nothing goes wrong and the rom loads correctly, you will then
 be presented with a menu of different editors for different types of game
 objects. You can use those to view and/or change the various game components,
 then when you are satisfied with the changes, navigate back to the main menu
-and select "Save ROM". The menu changes this entry to "Save ROM *" (and the
+and select "Save ROM". The menu changes this entry to "Save ROM !" (and the
 window title gets a *) when you leave an editor after really changing
 something; opening an editor and leaving it unchanged does not count. If you
 choose "Quit" while the editor is marked as modified, you can save, quit

@@ -127,11 +127,11 @@ function WpPropertyHint(row as Integer) as String
  ' effect of "No Back Row Penalty" and "Magnetic" was read in the game code.
 
  select case row
-  case 1: return "No Critical: the weapon never scores critical hits (named in the disassembly)."
+  case 1: return "No Critical: the weapon never scores critical hits, named in the disassembly."
   case 3: return "Hammer: named in the disassembly, its effect is not known."
   case 5: return "Lit Arrow: named in the disassembly, its effect is not known."
   case 6: return "No Back Row Penalty: not halved from the back row, like bows and spears."
-  case 7: return "Can Throw: the weapon can be thrown (name from the disassembly)."
+  case 7: return "Can Throw: the weapon can be thrown, name from the disassembly."
   case 8: return "Magnetic: counts as metal, so the Magnet effect attracts the wearer."
  end select
 
@@ -164,7 +164,7 @@ function WpHint(w as Integer, panel as Integer, row as Integer) as string
    select case row
     case 1: return "Enter picks the spell the weapon casts when it is used as an item."
     case 2: return "Enter picks the spell whose picture is shown when it casts."
-    case else: return "Enter types the power (how many hits) of the weapon spell."
+    case else: return "Enter types the power, how many hits of the weapon spell."
    end select
  end select
 

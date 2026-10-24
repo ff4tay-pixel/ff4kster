@@ -304,7 +304,7 @@ do
   if (choice >= menu_first_editor and choice <= menu_last_editor) or choice = menu_world_map or choice = menu_portraits or choice = menu_monster_sprites or choice = menu_formulas or choice = menu_field_sprites then
    modified = HasUnsavedEdits()
   end if
-  editor_menu.ChangeOption(menu_save, FF4Text(iif(modified, "Save ROM *", "Save ROM")))
+  editor_menu.ChangeOption(menu_save, FF4Text(iif(modified, "Save ROM !", "Save ROM")))
 
  end if
 

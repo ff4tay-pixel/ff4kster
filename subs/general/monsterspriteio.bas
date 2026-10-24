@@ -175,7 +175,7 @@ function ExportMonsterImage(index as Integer) as String
  next
 
  if not WriteIndexedBMPColors(MonsterSpritePath(file_name), tiles_wide * 8, tiles_high * 8, colors()) then
-  return "Cannot write exports\monster_sprites|Check that the folder can be written"
+  return "Cannot write exports/monster_sprites|Check that the folder can be written"
  end if
 
  return "Wrote " + str(tiles_wide * 8) + "x" + str(tiles_high * 8) + " pixels, " + str(swatches) + " colors, palette " + str(palette_id) + "|exports\monster_sprites\" + file_name
@@ -252,7 +252,7 @@ function ImportMonsterImage(index as Integer) as String
 
  file_name = dir(MonsterSpritePath(prefix + "*.bmp"))
  if len(file_name) = 0 then file_name = dir(MonsterSpritePath("monster_" + Pad(str(index), 3, true, "0") + ".bmp"))
- if len(file_name) = 0 then return "No image for this monster|Looked for exports\monster_sprites\" + prefix + "*.bmp"
+ if len(file_name) = 0 then return "No image for this monster|Looked for exports/monster_sprites/" + prefix + "*.bmp"
 
  for i as Integer = 0 to swatches - 1
   new_palette(i) = ByteAt(monster_palette_table + palette_id * 16 + i * 2) + ByteAt(monster_palette_table + palette_id * 16 + i * 2 + 1) * &h100
@@ -313,7 +313,7 @@ function ImportMonsterImage(index as Integer) as String
  next
 
  message = "Imported " + file_name + "|" + str(written) + " tiles changed, palette " + str(palette_id) + iif(deep, " and the next one", "") + " stored"
- if conflicts > 0 then message += "|" + str(conflicts) + " cells share a tile but were edited differently; the first one was kept"
+ if conflicts > 0 then message += "|" + str(conflicts) + " cells share a tile but were edited differently, the first one was kept"
  if skipped > 0 then message += "|" + str(skipped) + " cells use tiles outside the ROM and were skipped"
  shared_count = MonsterSharedCount(index, gfx_ptr, palette_id, size)
  if shared_count > 0 then message += "||" + str(shared_count) + " other monsters share this graphics or palette and change too"

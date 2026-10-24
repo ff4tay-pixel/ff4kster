@@ -139,7 +139,7 @@ function AIScriptEntry.TextDescription(include_parameter as Boolean = true) as S
    result = FF4Text("Set condition flag")
    if include_parameter then
     if parameter = 1 then 
-     result += FF4Text(" to current flag +1")
+     result += FF4Text(" to current flag plus 1")
     elseif parameter >= &h80 then
      result += FF4Text(" to " + str(parameter - &h80))
     else

@@ -501,7 +501,7 @@ function FieldUsedText(sheet as Integer) as String
  dim best as Integer
  dim s as String
 
- if sheet < 14 then return "palette " + str(field_party_palette(sheet)) + " (party)"
+ if sheet < 14 then return "palette " + str(field_party_palette(sheet)) + ", party"
 
  FieldCountPalettes(sheet, counts())
  for n as Integer = 1 to 4
@@ -694,7 +694,7 @@ function FieldSwapColors(sheet as Integer, pal as Integer, a as Integer, b as In
  for s as Integer = 0 to total_field_sheets - 1
   if in_sheet(s) then sheet_count += 1
  next
- if not ConfirmBox("Swap colors " + str(a) + " and " + str(b) + " in " + str(pal_count) + " palette(s), renumbering " + str(sheet_count) + " sheet(s)? Clears undo.") then return false
+ if not ConfirmBox("Swap colors " + str(a) + " and " + str(b) + " in " + str(pal_count) + " palettes, renumbering " + str(sheet_count) + " sheets? Clears undo.") then return false
 
  for p as Integer = 0 to total_field_palettes - 1
   if in_pal(p) then
@@ -820,7 +820,7 @@ function FieldActions(mode as Integer, byref sheet as Integer, byref pal as Inte
   case 15 'swap with another color
    for i as Integer = 1 to 7
     names(i) = str(i)
-    if i = slot then names(i) += " (this color)"
+    if i = slot then names(i) += ", this color"
    next
    picked = SmPick("Swap color " + str(slot) + " with", names(), 7, slot)
    if picked > 0 and picked <> slot then
@@ -1062,9 +1062,9 @@ function ExportFieldSheet(sheet as Integer, pal as Integer) as String
 
  'One sheet, with the palette the editor is showing. Returns a message for the user
 
- if WriteFieldBMP(FieldPath(FieldFileName(sheet, pal)), sheet, pal) then return "Wrote " + FieldFileName(sheet, pal) + "|to exports\fieldsprites"
+ if WriteFieldBMP(FieldPath(FieldFileName(sheet, pal)), sheet, pal) then return "Wrote " + FieldFileName(sheet, pal) + "|to exports/fieldsprites"
 
- return "Export failed|Check that exports\fieldsprites can be written"
+ return "Export failed|Check that exports/fieldsprites can be written"
 
 end function
 
@@ -1078,8 +1078,8 @@ function ExportFieldSheets() as String
   if WriteFieldBMP(FieldPath(FieldFileName(s, FieldViewPalette(s))), s, FieldViewPalette(s)) then written += 1 else failed += 1
  next
 
- if failed > 0 then return "Export had " + str(failed) + " error(s)|Check that exports\fieldsprites can be written"
- return "Wrote " + str(written) + " sheet images|to exports\fieldsprites"
+ if failed > 0 then return "Export had " + str(failed) + " errors|Check that exports/fieldsprites can be written"
+ return "Wrote " + str(written) + " sheet images|to exports/fieldsprites"
 
 end function
 
@@ -1115,7 +1115,7 @@ function ImportOneFieldSheet(sheet as Integer) as String
 
  select case ImportFieldImage(sheet, report)
   case 0
-   return "No field_" + Pad(str(sheet), 3, true, "0") + "_pal_PP.bmp found|in exports\fieldsprites"
+   return "No field_" + Pad(str(sheet), 3, true, "0") + "_pal_PP.bmp found|in exports/fieldsprites"
   case 1
    return "Read the sheet image" + report
  end select
@@ -1134,8 +1134,8 @@ function ImportFieldSheets() as String
   if ImportFieldImage(s, report) = 1 then images_read += 1
  next
 
- if images_read = 0 and len(report) = 0 then return "No field_NNN_pal_PP.bmp files found|in exports\fieldsprites"
- return "Read " + str(images_read) + " sheet image(s)" + report
+ if images_read = 0 and len(report) = 0 then return "No field_NNN_pal_PP.bmp files found|in exports/fieldsprites"
+ return "Read " + str(images_read) + " sheet images" + report
 
 end function
 
@@ -1190,7 +1190,7 @@ sub EditFieldSprites()
      LuText(" EXPORT ", 31, 3, 14)
      LuText("Enter asks for all sheets or just one.", 32, 5, 15)
      LuText("Writes one BMP per sheet, field_NNN_pal_PP.bmp, in", 32, 6, 15)
-     LuText("exports\fieldsprites. The picture is the sheet, four", 32, 7, 15)
+     LuText("exports/fieldsprites. The picture is the sheet, four", 32, 7, 15)
      LuText("frames to a row. The color table of the BMP is the", 32, 8, 15)
      LuText("palette, colors 0 to 7.", 32, 9, 15)
     else

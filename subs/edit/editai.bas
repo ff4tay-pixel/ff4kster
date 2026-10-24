@@ -801,7 +801,7 @@ function AIHint() as String
   case ai_cl_chooser: return "Enter picks a script for this pair from a list."
   case ai_cl_action: return "Enter changes this action. Insert adds one. Delete removes it. Comma Period move it."
   case ai_cl_addaction: return "Enter adds an action. The actions run in order, top to bottom."
-  case ai_cl_addpair: return "Enter adds a pair (conditions, then actions to run). Starts as set 1, script 1."
+  case ai_cl_addpair: return "Enter adds a pair, conditions, then actions to run. Starts as set 1, script 1."
  end select
 
  return ""
@@ -1318,7 +1318,7 @@ sub AIKeyConditions(k as UInteger)
     v = iif(j <= n, j + 1, n + 1)
     if AIInsertCondition(p, v, ai_clip_a) then ai_ci = v
    else
-    ai_message = "Copy a condition first (Ctrl-C on a condition)."
+    ai_message = "Copy a condition first, Ctrl-C on a condition."
    end if
 
  end select
@@ -1401,7 +1401,7 @@ sub AIKeyActions(k as UInteger)
     v = iif(idx = 0, 1, iif(idx <= n, idx + 1, n + 1))
     if AIInsertAction(p, v, ai_clip_a, ai_clip_b) then ai_cur(3) = v
    elseif n >= 0 then
-    ai_message = "Copy an action first (Ctrl-C on an action)."
+    ai_message = "Copy an action first, Ctrl-C on an action."
    end if
 
  end select
@@ -1515,7 +1515,7 @@ sub EditMonsterAI(byref attack_index as Integer, byref reaction_index as Integer
      ai_on_reaction = not ai_on_reaction
      AIChangeAI(AIAssigned())
     else
-     ai_message = "This monster has no reaction AI (turn it on in the monster's extras)."
+     ai_message = "This monster has no reaction AI, turn it on in the monster's extras."
     end if
 
    case 26 'Ctrl-Z

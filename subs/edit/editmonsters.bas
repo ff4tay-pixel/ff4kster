@@ -138,7 +138,7 @@ sub MonDrawAIBox(x as Integer, y as Integer, inner_h as Integer, title as String
  BlueBox(x, y, 31, inner_h)
  LuText(title, x, y, 14)
  LuText("AI " + str(index), x + 1, y + 1, 15)
- LuText("Bank: " + iif(lunar_flag, "LUNAR (moon monster)", "Regular"), x + 1, y + 2, iif(lunar_flag, 12, 23))
+ LuText("Bank: " + iif(lunar_flag, "LUNAR, moon monster", "Regular"), x + 1, y + 2, iif(lunar_flag, 12, 23))
 
  ai_index = index
  ai_lunar = lunar_flag
