@@ -859,7 +859,7 @@ sub AIDraw(message as String)
  LuText(space_text, 0, footer_y + 2, iif(over, 12, 23))
  if over then LuText("Over the limit: Save ROM will refuse to save until there is less AI data.", 0, footer_y + 3, 12)
 
- LuText("Tab or 1 2: panel. Arrows: move. Enter: change or add. Ctrl-Z: undo. Esc: back", 0, footer_y + 4, 23)
+ LuText("Tab or 1 2: panel. Arrows: move. Enter: change or add. Space: menu. Esc: back", 0, footer_y + 4, 23)
  LuText("L: other bank.  R: reaction AI.  Ctrl-R: revert.  Ctrl-C Ctrl-V: copy and paste.", 0, footer_y + 5, 23)
  screenunlock
 
@@ -1409,6 +1409,75 @@ sub AIKeyActions(k as UInteger)
 end sub
 
 
+function AIActions() as UInteger
+
+ 'Space: a menu of what can be done on the line the cursor is on, with the key of each. Returns the key the
+ ' chosen entry stands for (the loop handles it as if it had been pressed), 0 if cancelled.
+
+ dim kind as Integer
+ dim choice as Integer
+
+ SmReset()
+
+ if ai_focus = 1 then
+  if ai_cur(1) = 0 then
+   SmAdd("List every AI to look at", "Enter", ENTER_KEY)
+  elseif ai_index <> AIAssigned() then
+   SmAdd("Use this AI for the monster", "Enter", ENTER_KEY)
+  end if
+ else
+  kind = ai_cl_kind(AICondIndex())
+  select case kind
+   case ai_cl_condition
+    SmAdd("Menu of this condition", "Enter", ENTER_KEY)
+    SmAdd("Change condition set", "S", asc("s"))
+    SmAdd("Add a condition", "Insert", INSERT_KEY)
+    SmAdd("Delete this condition", "Delete", DELETE_KEY)
+    SmAdd("Delete the whole pair", "D", asc("d"))
+    SmAdd("Move pair up", "Comma", asc(","))
+    SmAdd("Move pair down", "Period", asc("."))
+    SmAdd("Copy the condition", "Ctrl-C", 3)
+    SmAdd("Paste a condition", "Ctrl-V", 22)
+   case ai_cl_addcond
+    SmAdd("Add a condition", "Enter", ENTER_KEY)
+    SmAdd("Paste a condition", "Ctrl-V", 22)
+   case ai_cl_chooser
+    SmAdd("Pick another script", "Enter", ENTER_KEY)
+   case ai_cl_action
+    SmAdd("Change this action", "Enter", ENTER_KEY)
+    SmAdd("Add an action", "Insert", INSERT_KEY)
+    SmAdd("Delete this action", "Delete", DELETE_KEY)
+    SmAdd("Move action up", "Comma", asc(","))
+    SmAdd("Move action down", "Period", asc("."))
+    SmAdd("Copy the action", "Ctrl-C", 3)
+    SmAdd("Paste an action", "Ctrl-V", 22)
+   case ai_cl_addaction
+    SmAdd("Add an action", "Enter", ENTER_KEY)
+    SmAdd("Paste an action", "Ctrl-V", 22)
+   case ai_cl_addpair
+    SmAdd("Add a pair", "Enter", ENTER_KEY)
+    if ai_clip_kind = 1 then SmAdd("Paste a pair", "Ctrl-V", 22)
+  end select
+ end if
+
+ if ai_index <> AIAssigned() then SmAdd("Make the monster use AI " + str(ai_index), "A", asc("a"))
+ if ai_index > 1 then SmAdd("Look at the previous AI", "P", asc("p"))
+ if ai_index < total_ai_groups then SmAdd("Look at the next AI", "N", asc("n"))
+ SmAdd("Look at an AI by number", "G", asc("g"))
+ SmAdd("Switch regular and lunar bank", "L", asc("l"))
+ if ai_reaction > 0 then SmAdd(iif(ai_on_reaction, "Switch to the attack AI", "Switch to the reaction AI"), "R", asc("r"))
+ SmAdd("Undo", "Ctrl-Z", 26)
+ SmAdd("Revert this AI to the loaded ROM", "Ctrl-R", 18)
+ SmAdd("Back to the monster", "Esc", ESC_KEY)
+
+ choice = SmRun("AI")
+ if choice = 0 then return 0
+
+ return sm_key(choice)
+
+end function
+
+
 sub EditMonsterAI(byref attack_index as Integer, byref reaction_index as Integer, byref lunar_flag as Boolean, monster_number as Integer, start_on_reaction as Boolean = false)
 
  dim k as UInteger
@@ -1457,6 +1526,7 @@ sub EditMonsterAI(byref attack_index as Integer, byref reaction_index as Integer
   AIDraw(ai_message)
   ai_message = ""
   k = AIReadKey()
+  if k = SPACE_KEY then k = AIActions()
   ai_undo_group += 1
 
   select case k

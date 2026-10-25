@@ -1837,6 +1837,9 @@ selects it.
     N / P, G:        Look at the next / previous AI, or at an AI by number.
     A:               Make the monster use the AI that is shown (the same as
                      Enter on the "Use AI" line of panel 1).
+    SPACE:           Menu of every action on the line the cursor is on (and
+                     of the AI itself: other AI, bank, undo, revert), with the
+                     key of each beside it. The keys below are shortcuts.
     ENTER:           Change the line. On a condition a small menu offers
                      "Change condition set" (the set number
                      is shown as "set N" on the pair's first line, and every
