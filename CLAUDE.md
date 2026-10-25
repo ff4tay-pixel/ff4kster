@@ -9,7 +9,7 @@ the pitfalls that already cost time.
 A FreeBASIC ROM editor for **Final Fantasy IV (FF2US v1.1)**, with a text-mode UI (80x58 cells, `screen 18, 32`)
 that draws its font, windows and most graphics from the ROM being edited. Everything is edited in
 memory and written only by "Save ROM". `README.md` documents every editor, key and config file for users;
-keep it in sync when behavior changes (its version-history entry for 1.0 is the one to extend until the next release; 0.9 is released and stays as it was).
+keep it in sync when behavior changes (its version-history entry for 1.1 is the one to extend until the next release; 1.0 and 0.9 are released and stay as they were).
 
 Editors on the main menu: Features, Spells (with animation preview), Spell Sets (both lists on one screen), Weapons (with sprite
 preview), Armors, Medicines, Tools, Shops, Jobs, **Battle Sprites** (tile/palette editor, BMP export/import), **Portraits** (menu faces, 32x32 3bpp, entry 32), **Field Sprites** (walking sprites of the party and NPCs, 107 sheets, entry 37, `subs/edit/editfieldsprites.bas`),
@@ -227,7 +227,7 @@ decoding and crash problems without a keyboard. Other tricks used:
 
 ## Releases
 
-- 0.9 is released; the version being built is **1.0** (README title and the 1.0 entry of the version history).
+- 1.0 is released (its last commit is 17beff6); the version being built is **1.1** (README title and the 1.1 entry of the version history).
   Changes go into the current entry, never into an entry that was released.
 - The release zip is `FF4kster-vX/` containing `README.md`, `ff4kster-console.exe` and `config/` (all `.dat`
   files), written with Python's `zipfile` so the paths use forward slashes (PowerShell's `Compress-Archive` writes

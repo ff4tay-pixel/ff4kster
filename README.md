@@ -1,4 +1,4 @@
-# FF4kster v1.0
+# FF4kster v1.1
 
 IMPORTANT NOTES
 ---------------
@@ -2073,41 +2073,46 @@ Zyrthofar
 
 VERSION HISTORY
 ---------------
+* 1.1
+    - Added Field Sprites editor: the 107 walking sprite sheets of the party and the NPCs (pixels, frame flip and copy, 36 palettes with colors that can be rearranged, a palette pick per sheet kept in config/fieldpalettes.dat, BMP export and import); the palette number in the file names of Portraits imports is read correctly
+    - Added Battle Formulas editor: spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book
+    - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the Armor and Shell numbers, what Dispel and Black Hole remove, the bonus of the first slot or of units with a status, the back row, the statuses that weaken a unit and the other status adjustments, and the timers (turn wait, Count, poison, HP leak, sleep)
+    - Battle Formulas: the start of the battle (who is surprised or strikes first, back attacks, waiting)
+    - Battle Formulas: spell effect 29, the unused copy of Count, can raise or lower a stat of its target like Armor, including the modified strength, agility, vitality, wisdom and will
+    - Commands: overview of all commands with what changed, and the names of the four internal commands
+    - Commands: the unused command 22 can "Behave like" another command (runs its routine and animation)
+    - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
+    - Commands: Fight has the list of temporary statuses that its attack cures in the attacker (Charm in the original)
+    - Commands: Dark Wave and Kick have code settings (HP cost, damage to undead, Kick multiplier, shared base damage) and Peep has one (bosses)
+    - Commands: Aim can use any stat of the target and the user, Boast and Cry can be reversed (raise or lower)
+    - Commands: Regen has the ticks between its heals, Cry can work on the allies instead of the enemies
+    - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
+    - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)
+    - Commands: Recall can skip its MP check and its MP cost
+    - Commands: Steal has its lowest and highest chance, the chance of being caught and what a caught thief loses
+    - Characters: the starting data has the critical hit rate and bonus
+    - Extended ROMs (2 MiB hacks and the like) open and save without changing a byte you did not edit: the size check accepts any whole-bank size, a ROM that is not 1 MiB gets a warning, and the Commands editor leaves unedited commands alone, protects the custom routine of command 22 and writes the commands again after an undo
+    - Enemy AI editor: Space opens a menu of the actions on the cursor line, the menus for an action, spell, technique or command find an entry by typing its name, and less is on the screen (usage counts only when a set or script is shared, one row title, two lines of key help)
+    - Triggers, NPCs and autobattle scripts: an "Add" line at the end of the list, a Space menu with add, delete and the rest, a hint on the bottom row, and a message when the game has no room; autobattle scripts have Ctrl-Z; deleting a condition or parameter of an event command asks first
+    - Maps: Ctrl-R reverts a map to the loaded ROM (in the list and in the map editor), and the undo of a map is kept after leaving it
+    - World Maps: Ctrl-R reverts a world to the loaded ROM, and the undo of each world is kept after leaving it
+    - Maps and World Maps: M opens a menu of every action with its key, like the sprite editors' Enter menu
+    - Battle Sprites, Portraits, Field Sprites: Ctrl-R reverts (as in Monster Sprites and the lists); all four sprite editors step the brush color with [ or Minus and ] or Plus and list their actions in the same order, with Previous / Next for the item (Portraits and Field Sprites keep Go to)
+    - Battle Sprites, Monster Sprites, Portraits, Field Sprites: every BMP export asks for confirmation first, like the imports
+    - Lists: the Space menu only offers "Show where it is used" for the lists that track it; the key help no longer says Medicines and Tools can swap entries
+    - Hints on the bottom row now say what Enter does in Tools, Shops, Jobs, Commands, Actors, Characters, Formations, Encounters, Autobattles, Solobattles, Map Info, Tilesets and Features (each menu and, where the lines differ, each line)
+    - F1 also works on the editing screens (sprite and portrait editors, maps, world maps, tile properties, battle formulas, level ups, the AI editor and the item forms), not only in menus
+    - Main menu: under Party the data editors (Characters, Commands, Actors) come before the picture editors (Battle Sprites, Portraits, Field Sprites); the key help for Features names what it edits
+    - Messages editor: the text window opens at the left edge so the message preview does not cover it
+    - The ROM font cannot draw some characters: messages, help, hints and config labels no longer use them (they showed as ?), the Save ROM marker is now ! instead of *, and hints longer than 78 characters were shortened so the bottom row no longer cuts them
+    - Fixed windows drawn over each other in Triggers, NPCs, Formations and Characters
 * 1.0
-    - Added Field Sprites editor: the 107 walking sprite sheets of the party and the NPCs (pixels, 36 palettes, BMP export and import)
-    - Extended ROMs (2 MiB hacks and the like) open and save without changing a byte you did not edit; the Commands editor leaves unedited commands alone.
     - Enemy AI editor: one list of pairs in the style of the monster editor's AI box (WHEN, AND and
       THEN lines, a blank line between pairs, the set and condition numbers and how many places use them),
       Enter on a condition opens a menu (change the condition set, edit the condition, insert a pair, move the
       pair), pairs can be added and moved, a new pair starts as set 1 and script 1, and the sharing of sets
       and scripts is said on screen (private copies were removed)
     - Commands: the unknown bytes in the If lists are named from the disassembly (or shown as unused bytes)
-    - Commands: Dark Wave and Kick have code settings (HP cost, damage to undead, Kick multiplier, shared base damage) and Peep has one (bosses)
-    - Commands: Aim can use any stat of the target and the user, Boast and Cry can be reversed (raise or lower)
-    - Commands: Regen has the ticks between its heals, Cry can work on the allies instead of the enemies
-    - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
-    - Commands: Recall can skip its MP check and its MP cost
-    - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
-    - Commands: Fight has the list of temporary statuses that its attack cures in the attacker (Charm in the original)
-    - Battle Sprites, Monster Sprites, Portraits, Field Sprites: every BMP export asks for confirmation first, like the imports
-    - Lists: the Space menu only offers "Show where it is used" for the lists that track it; the key help no longer says Medicines and Tools can swap entries
-    - Battle Sprites, Portraits, Field Sprites: Ctrl-R reverts (as in Monster Sprites and the lists); all four sprite editors step the brush color with [ or Minus and ] or Plus and list their actions in the same order, with Previous / Next for the item (Portraits and Field Sprites keep Go to)
-    - Maps and World Maps: M opens a menu of every action with its key, like the sprite editors' Enter menu
-    - Hints on the bottom row now say what Enter does in Tools, Shops, Jobs, Commands, Actors, Characters, Formations, Encounters, Autobattles, Solobattles, Map Info, Tilesets and Features (each menu and, where the lines differ, each line)
-    - Triggers, NPCs and autobattle scripts: an "Add" line at the end of the list, a Space menu with add, delete and the rest, a hint on the bottom row, and a message when the game has no room; autobattle scripts have Ctrl-Z; deleting a condition or parameter in an event call asks first
-    - Maps: Ctrl-R reverts a map to the loaded ROM (in the list and in the map editor), and the undo of a map is kept after leaving it
-    - World Maps: Ctrl-R reverts a world to the loaded ROM, and the undo of each world is kept after leaving it
-    - Main menu: under Party the data editors (Characters, Commands, Actors) come before the picture editors (Battle Sprites, Portraits, Field Sprites); the key help for Features names what it edits
-    - F1 also works on the editing screens (sprite and portrait editors, maps, world maps, tile properties, battle formulas, level ups, the AI editor and the item forms), not only in menus
-    - Characters: the starting data has the critical hit rate and bonus
-    - Commands: Steal has its lowest and highest chance, the chance of being caught and what a caught thief loses
-    - Battle Formulas: spell effect 29, the unused copy of Count, can raise or lower a stat of its target like Armor
-    - Battle Formulas: the start of the battle (who is surprised or strikes first, back attacks, waiting)
-    - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the Armor and Shell numbers, what Dispel and Black Hole remove, the bonus of the first slot or of units with a status, the back row, the statuses that weaken a unit and the other status adjustments, and the timers (turn wait, Count, poison, HP leak, sleep)
-    - Battle Formulas editor: spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book
-    - Commands: overview of all commands with what changed, and the names of the four internal commands
-    - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)
-    - Commands: the unused command 22 can "Behave like" another command (runs its routine and animation)
     - Messages editor: the list shows the start of each message, changed ones are yellow, the space of the
       bank is always shown, a menu (Space) has find text, add, insert, delete, move, copy, revert, undo and
       where used, inserting, deleting and moving bank 2 messages renumbers the NPCs and events that use
