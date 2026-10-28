@@ -986,7 +986,7 @@ sub EditMonsterSprites()
  dim hint_text as String
 
  ReadMonsterPictures()
- select_monster.max_rows = screen_height - 3
+ select_monster.max_rows = screen_height - 5
  for i as Integer = 1 to total_monsters
   select_monster.AddOption(monsters(i).name)
   hint_text += "Enter edits the picture and palette of this monster.|"
@@ -1003,7 +1003,7 @@ sub EditMonsterSprites()
    WriteText(FF4Text("Enter edits the sprite. End: the last two lines add and list stored pictures"), 0, 0, 15)
    select_monster.y = 2
    select_monster.Display()
-   if select_monster.selected <= total_monsters then MonsterThumbnail(select_monster.selected, 20, 2, 20, 20)
+   if select_monster.selected <= total_monsters then MonsterThumbnail(select_monster.selected, 30, 2, 20, 20)
    screenunlock
   loop until select_monster.UserInput()
 
