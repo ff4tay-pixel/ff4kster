@@ -6,7 +6,7 @@
 
 const levelup_areas = 3
 const levelup_start = &h7B728
-const levelup_room = (&h7C800 - &h7B728) + (&h7D400 - &h7D140) + (&h7B000 - &h7AD92)
+const levelup_room = (&h7C800 - &h7B728) + (&h7D400 - &h7D140) + (&h7B000 - &h7ADA0)
 
 dim shared levelup_place(total_characters) as Integer
 
@@ -53,7 +53,7 @@ function LevelupLayout() as Boolean
   area_end(1) = &h7C800
   area_next(2) = &h7D140
   area_end(2) = &h7D400
-  area_next(3) = &h7AD92
+  area_next(3) = &h7ADA0
   area_end(3) = &h7B000
   for i as Integer = 1 to total_characters
    order(i) = i

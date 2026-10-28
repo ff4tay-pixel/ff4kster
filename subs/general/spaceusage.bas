@@ -61,6 +61,7 @@ function SpaceUsageText() as String
  lines += SpaceLine("AI scripts", AIBytes(3), AIRoom(3)) + "|"
  lines += SpaceLine("Lunar AI scripts", AIBytes(4), AIRoom(4)) + "|"
  lines += SpaceLine("Level up data", LevelupBytes(), levelup_room) + "|"
+ lines += SpaceLine("Monster pictures", MpCapacity() - MpFreeBytes(), MpCapacity()) + "|"
  lines += SpaceLine("Status names", ListBytes(dialogues_status, total_dialogues_status), &h7B6FF - &h7B640) + "|"
  lines += SpaceLine("Map labels", ListBytes(map_labels, total_map_labels), &hA9E7F - &hA9820) + "|"
  lines += SpaceLine("Map data", MapDataBytes(), map_data_end - map_data_start) + "|"

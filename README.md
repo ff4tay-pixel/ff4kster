@@ -610,6 +610,44 @@ if the palette was sorted or left alone. Zeromus's last form and the Dummy have 
 the palette and the one after it): their images have 16 colors and importing
 also rewrites the following palette.
 
+STORED MONSTER PICTURES
+-----------------------
+
+A new picture can be added to the ROM without replacing any monster's own. In Edit Monster
+Sprites the last two lines of the monster list (press End) are "Add a picture from a BMP"
+and "Stored pictures". Put an indexed BMP (4 or 8 bits per pixel, colors 0 to 7, color 0 is
+transparent, the same format as the export) in exports/monster_sprites. Its width and height
+must be one of the sizes the game has (16x16, 32x32, 48x64 ...; the message lists them all).
+
+Adding a picture asks for the BMP, the palette (any of the 234; the first one no monster uses
+is suggested; a palette that monsters use asks before its colors are replaced, and answering
+No keeps its colors), a name of up to 20 letters, and which monster uses it ("Not now" only
+stores it). The tiles go into free room of the ROM: five runs of unused bytes (5704 bytes in
+all) among the monster graphics, and the picture gets a graphics pointer there. A 16x16
+picture takes 96 bytes, a 64x64 one 1536. Space Usage shows the room left ("Monster pictures").
+
+The room is small. A picture needs one unbroken run, and the longest run is 2632 bytes, so
+the biggest picture is about 109 tiles (24 bytes each): 80x72 (2160 bytes), 88x56 (1848),
+56x112 (2352) or 64x64 (1536) fit, 64x112 (2688), 72x104 and anything bigger such as 128x144
+(6912 bytes) do not. All runs together hold 5704 bytes: for example 59 pictures of 16x16,
+6 of 48x48 (864 bytes each) or 3 of 64x64. The ROM has no more free room that the monster
+graphics pointer can reach, and a bigger ROM file does not change that. A larger picture has
+to replace a monster's own (Import in Edit Monster Sprites).
+
+Stored pictures lists them with a preview, their size, pointer and how many monsters use
+each. Enter opens a menu: Use it for a monster (changes that monster's pointer, size and
+palette, nothing else), Rename, Export as BMP, and Delete (refused while a monster uses it;
+it frees the room again by writing FF over the tiles). The Graphics box of Edit Monsters has
+the same list under Pointer: Template, Manual or Stored picture, with the preview following
+the highlighted picture and Esc putting the old values back.
+
+The editor remembers the pictures in config/monsterpictures.dat (pointer, size, palette
+and name per line), because the ROM itself does not say which tiles were added. Keep the file
+with the ROM: without it the tiles are still there and a monster can use them by typing
+the pointer. A line whose tiles are not in the ROM being edited is ignored but kept.
+Only ordinary monsters can be added, not bosses (which need a tile map).
+
+
 PORTRAITS
 ---------
 
@@ -2035,6 +2073,9 @@ Three files are different:
                             Each line is a pointer, a slash and a size code
                             ("32768/0") followed by a label that starts at
                             column 11.
+  monsterpictures.dat       The stored monster pictures: pointer, size, palette and
+                            name per line. Written by the editor, see STORED
+                            MONSTER PICTURES.
   lunar.dat                 Monsters that are always treated as lunar, so the
                             monster editor uses their lunar AI scripts. Each
                             line is a monster number and a label; lines that
@@ -2078,6 +2119,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.1
+    - Stored monster pictures: add a picture from a BMP to free room of the ROM without replacing a monster's own, keep it in a list (config/monsterpictures.dat) and give it to any monster later, in Edit Monster Sprites or with Pointer, Stored picture in the Graphics box of Edit Monsters; Space Usage shows the room
     - Level up data: Save ROM places each character's rows in the original area or in unused bytes of the same bank, so every character can start at level 1, and refuses when they do not fit; Space Usage lists the room
     - Added Field Sprites editor: the 107 walking sprite sheets of the party and the NPCs (pixels, frame flip and copy, 36 palettes with colors that can be rearranged, a palette pick per sheet kept in config/fieldpalettes.dat, BMP export and import); the palette number in the file names of Portraits imports is read correctly
     - Added Battle Formulas editor: spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book

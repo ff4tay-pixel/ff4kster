@@ -983,25 +983,39 @@ end sub
 sub EditMonsterSprites()
 
  dim select_monster as BlueMenu
+ dim hint_text as String
 
+ ReadMonsterPictures()
  select_monster.max_rows = screen_height - 3
  for i as Integer = 1 to total_monsters
   select_monster.AddOption(monsters(i).name)
+  hint_text += "Enter edits the picture and palette of this monster.|"
  next
+ select_monster.AddOption(FF4Text("Add a picture from a BMP"))
+ select_monster.AddOption(FF4Text("Stored pictures"))
+ SetHints(select_monster, hint_text + "Enter reads a BMP into free room of the ROM as a new picture, without replacing one.|Enter lists the pictures added from BMP files, to give them to monsters.")
 
  do
 
   do
    screenlock
    line (0, 0)-(639, 463), RGB(0, 0, 0), bf
-   WriteText(FF4Text("Pick a monster, Enter to edit its sprite and palette"), 0, 0, 15)
+   WriteText(FF4Text("Enter edits the sprite. End: the last two lines add and list stored pictures"), 0, 0, 15)
    select_monster.y = 2
    select_monster.Display()
-   MonsterThumbnail(select_monster.selected, 20, 2, 20, 20)
+   if select_monster.selected <= total_monsters then MonsterThumbnail(select_monster.selected, 20, 2, 20, 20)
    screenunlock
   loop until select_monster.UserInput()
 
-  if not select_monster.cancelled then EditMonsterSprite(select_monster.selected)
+  if not select_monster.cancelled then
+   if select_monster.selected = total_monsters + 1 then
+    MpImportNew()
+   elseif select_monster.selected = total_monsters + 2 then
+    StoredPictures()
+   else
+    EditMonsterSprite(select_monster.selected)
+   end if
+  end if
 
  loop until select_monster.cancelled
 

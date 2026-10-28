@@ -80,12 +80,17 @@ sub MonsterGfxMenu.EditField(row as Integer)
  dim old_size as UByte
  dim shown_entry as Integer
  dim number_snapshot as Any ptr
+ dim stored_menu as BlueMenu
+ dim stored_ids(1 to mp_max) as Integer
+ dim n_stored as Integer
+ dim old_pal as UByte
  
  enter_byte = BlueNumberInput(main_menu.x + 9)
  
  template_menu = BlueMenu(x + 16, y)
  template_menu.AddOption(FF4Text("Template"))
  template_menu.AddOption(FF4Text("Manual"))
+ template_menu.AddOption(FF4Text("Stored picture"))
 
  MonsterSpritePanelShow(gfx_ptr, size, pal, sprite_snapshot)
 
@@ -125,6 +130,42 @@ sub MonsterGfxMenu.EditField(row as Integer)
         size = old_size
        end if
       
+      case 3
+       'Pictures added from BMP files (Edit Monster Sprites); the preview follows the highlighted one and Enter
+       ' takes its pointer, size and palette
+       ReadMonsterPictures()
+       n_stored = MpListed(stored_ids())
+       if n_stored = 0 then
+        InfoBox("No stored pictures yet|Add one in Edit Monster Sprites: Add a picture from a BMP||Press any key", 4, 20)
+       else
+        old_ptr = gfx_ptr
+        old_size = size
+        old_pal = pal
+        stored_menu = BlueMenu(x + 9, y)
+        stored_menu.max_rows = 1
+        for i as Integer = 1 to n_stored
+         stored_menu.AddOption(FF4Text(mp_name(stored_ids(i))))
+        next
+        shown_entry = 0
+        stored_menu.cancelled = false
+        stored_menu.TakeSnapshot()
+        do
+         if stored_menu.selected <> shown_entry then
+          shown_entry = stored_menu.selected
+          gfx_ptr = mp_ptr(stored_ids(shown_entry))
+          size = mp_size(stored_ids(shown_entry))
+          pal = mp_pal(stored_ids(shown_entry))
+         end if
+         MonsterSpritePanelShow(gfx_ptr, size, pal, sprite_snapshot)
+        loop until stored_menu.UserInput()
+        stored_menu.Hide()
+        if stored_menu.cancelled then
+         gfx_ptr = old_ptr
+         size = old_size
+         pal = old_pal
+        end if
+       end if
+
       case 2
        'The preview follows the number as it is typed
        enter_byte.y = main_menu.y
