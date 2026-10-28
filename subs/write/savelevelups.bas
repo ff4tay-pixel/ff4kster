@@ -4,6 +4,11 @@ sub SaveLevelups()
  dim temp as UByte
  dim level_ptr(total_characters) as UInteger
  
+ if LevelupBytes() > levelup_room then
+  WarningMessage(FF4Text("Level up data takes " + str(LevelupBytes()) + " bytes, only " + str(levelup_room) + " fit. Raise some starting levels"))
+  exit sub
+ end if
+ 
  start = &h7B728
 
  for i as Integer = 1 to total_characters
