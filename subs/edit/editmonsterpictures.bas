@@ -134,6 +134,7 @@ function MpImportNew() as Boolean
  dim default_palette as Integer
  dim users as Integer
  dim write_colors as Boolean = true
+ dim sorted_colors as Boolean
  dim picture_name as String
  dim picture as Integer
  dim monster_index as Integer
@@ -197,12 +198,17 @@ function MpImportNew() as Boolean
 
  picture_name = MpAskName(left(files(file_index), len(files(file_index)) - 4))
 
+ if write_colors then sorted_colors = MpSortColors(colors(), width_px, height_px)
  MpWriteTiles(offset, width_px \ 8, height_px \ 8)
  if write_colors then MpWritePalette(palette_id, colors())
  picture = MpAdd(picture_name, offset, size_id, palette_id)
 
  message = "Stored " + mp_name(picture) + ": " + str(width_px) + "x" + str(height_px) + " pixels, " + str(bytes) + " bytes|Pointer " + str(mp_ptr(picture)) + ", size " + str(size_id) + ", palette " + str(palette_id)
- if not write_colors then message += "|The colors of palette " + str(palette_id) + " were kept"
+ if not write_colors then
+  message += "|The colors of palette " + str(palette_id) + " were kept"
+ elseif sorted_colors then
+  message += "|The palette was sorted: 1 black, 2 white, the rest from light to dark"
+ end if
 
  monster_index = MpPickMonster("Use it for which monster?")
  if monster_index > 0 then

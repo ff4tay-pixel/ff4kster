@@ -303,6 +303,61 @@ sub MpWriteTiles(start as Integer, tiles_wide as Integer, tiles_high as Integer)
 end sub
 
 
+function MpSortColors(colors() as UInteger, width_px as Integer, height_px as Integer) as Boolean
+
+ 'The usual order for a monster palette (as MsSortPalette): color 0 transparent, 1 the darkest, 2 the lightest and the
+ ' rest from light to dark. Renumbers the pixels in bmp_px to match, so the picture looks the same.
+ ' Returns true if the order changed.
+
+ dim brightness(7) as Integer
+ dim wanted(7) as Integer
+ dim remap(7) as Integer
+ dim used(7) as Boolean
+ dim sorted(7) as UInteger
+ dim found as Integer
+ dim changed as Boolean
+
+ for i as Integer = 1 to 7
+  brightness(i) = 30 * (colors(i) mod 32) + 59 * ((colors(i) \ 32) mod 32) + 11 * ((colors(i) \ 1024) mod 32)
+ next
+ for place as Integer = 1 to 7
+  found = 0
+  for i as Integer = 1 to 7
+   if not used(i) then
+    if found = 0 then
+     found = i
+    elseif place = 1 and brightness(i) < brightness(found) then
+     found = i
+    elseif place >= 2 and brightness(i) > brightness(found) then
+     found = i
+    end if
+   end if
+  next
+  wanted(place) = found
+  used(found) = true
+  remap(found) = place
+  if found <> place then changed = true
+ next
+ if not changed then return false
+
+ sorted(0) = colors(0)
+ for place as Integer = 1 to 7
+  sorted(place) = colors(wanted(place))
+ next
+ for i as Integer = 0 to 7
+  colors(i) = sorted(i)
+ next
+ for y as Integer = 0 to height_px - 1
+  for x as Integer = 0 to width_px - 1
+   if bmp_px(y, x) > 0 then bmp_px(y, x) = remap(bmp_px(y, x))
+  next
+ next
+
+ return true
+
+end function
+
+
 function MpCleanName(plain as String) as String
 
  'At most mp_name_length letters the font can draw (anything else becomes _)

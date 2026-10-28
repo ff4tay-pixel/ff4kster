@@ -621,7 +621,8 @@ must be one of the sizes the game has (16x16, 32x32, 48x64 ...; the message list
 
 Adding a picture asks for the BMP, the palette (any of the 234; the first one no monster uses
 is suggested; a palette that monsters use asks before its colors are replaced, and answering
-No keeps its colors), a name of up to 20 letters, and which monster uses it ("Not now" only
+No keeps its colors; the colors are sorted the usual way first, 1 black, 2 white and the rest
+from light to dark, and the picture's pixels are renumbered to match), a name of up to 20 letters, and which monster uses it ("Not now" only
 stores it). The tiles go into free room of the ROM: five runs of unused bytes (5704 bytes in
 all) among the monster graphics, and the picture gets a graphics pointer there. A 16x16
 picture takes 96 bytes, a 64x64 one 1536. Space Usage shows the room left ("Monster pictures").
