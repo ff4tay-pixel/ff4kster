@@ -826,9 +826,10 @@ a set of stats which will increase, the amount by which they will each
 increase, a Max HP bonus, a Max MP bonus, and an increase in the amount of
 experience the character needs to advance to the next level (henceforth
 referred to as TNL).
-A lower starting level means more rows: the ROM has room for 4312 bytes of level up
-data (5 bytes per level of each character plus 8), and Save ROM refuses with a warning
-when the characters need more. Space Usage shows the bytes used.
+A lower starting level means more rows (5 bytes per level of each character plus 8). Save ROM
+stores the blocks in the original area and in two more runs of unused bytes in the same ROM bank, so
+all of the characters can start at level 1; it refuses with a warning when they still do not fit.
+Space Usage shows the bytes used.
 
 "Edit level up data" opens a full screen table with one row per level, from the
 character's starting level to 69. Instead of stepping through the values in a
@@ -2077,7 +2078,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.1
-    - Save ROM checks the room for level up data (low starting levels need more); Space Usage lists it
+    - Level up data: Save ROM places each character's rows in the original area or in unused bytes of the same bank, so every character can start at level 1, and refuses when they do not fit; Space Usage lists the room
     - Added Field Sprites editor: the 107 walking sprite sheets of the party and the NPCs (pixels, frame flip and copy, 36 palettes with colors that can be rearranged, a palette pick per sheet kept in config/fieldpalettes.dat, BMP export and import); the palette number in the file names of Portraits imports is read correctly
     - Added Battle Formulas editor: spell damage (power scale, hits from the stat, stats used, summon and item hits) and the Summon Book
     - Battle Formulas: character stat formulas (attack multiplier, attack power, defense multiplier, defense, magic defense multiplier and %), the Armor and Shell numbers, what Dispel and Black Hole remove, the bonus of the first slot or of units with a status, the back row, the statuses that weaken a unit and the other status adjustments, and the timers (turn wait, Count, poison, HP leak, sleep)

@@ -4,14 +4,14 @@ sub SaveLevelups()
  dim temp as UByte
  dim level_ptr(total_characters) as UInteger
  
- if LevelupBytes() > levelup_room then
+ if not LevelupLayout() then
   WarningMessage(FF4Text("Level up data takes " + str(LevelupBytes()) + " bytes, only " + str(levelup_room) + " fit. Raise some starting levels"))
   exit sub
  end if
- 
- start = &h7B728
 
  for i as Integer = 1 to total_characters
+  if LevelupBlockBytes(i) = 0 then continue for
+  start = levelup_place(i)
   level_ptr(i) = start - &h70200 - (characters(i).level - 1) * 5
   for j as Integer = characters(i).level to 69
    temp = characters(i).levelup(j).stat_bonus.amount
