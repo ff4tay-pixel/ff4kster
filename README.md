@@ -648,6 +648,19 @@ with the ROM: without it the tiles are still there and a monster can use them by
 the pointer. A line whose tiles are not in the ROM being edited is ignored but kept.
 Only ordinary monsters can be added, not bosses (which need a tile map).
 
+SUMMON PICTURES
+---------------
+
+The last line of the Edit Monster Sprites list (press End), "Summon pictures", shows the 17
+pictures the game draws for the summons: Imp, Bomb, Cockatrice, Mage, Chocobo, Shiva, Lamu, Jinn,
+Titan, Mist, Sylph, Odin, Leviatan, Asura (three entries that share one picture) and Bahamut. It is
+read only. Each line gives the graphics pointer, written like a monster's (it can be typed under
+Pointer: Manual in the Graphics box of Edit Monsters), the monster palette number, the number
+of tiles and a preview. Chocobo, Shiva, Lamu, Jinn and Sylph are not used by any enemy. The game stores a summon's
+tiles without the blank cells of its picture and a tile map says where each goes, so for most
+summons no monster size shows them correctly. The picture beside the list is drawn through that tile
+map, with the summon's palette. Esc goes back.
+
 
 PORTRAITS
 ---------
@@ -2120,6 +2133,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.1
+    - Summon pictures: a read only list in Edit Monster Sprites of the 17 summon pictures with a preview, their graphics pointer, palette and tile count
     - Stored monster pictures: add a picture from a BMP to free room of the ROM without replacing a monster's own, keep it in a list (config/monsterpictures.dat) and give it to any monster later, in Edit Monster Sprites or with Pointer, Stored picture in the Graphics box of Edit Monsters; Space Usage shows the room
     - Level up data: Save ROM places each character's rows in the original area or in unused bytes of the same bank, so every character can start at level 1, and refuses when they do not fit; Space Usage lists the room
     - Added Field Sprites editor: the 107 walking sprite sheets of the party and the NPCs (pixels, frame flip and copy, 36 palettes with colors that can be rearranged, a palette pick per sheet kept in config/fieldpalettes.dat, BMP export and import); the palette number in the file names of Portraits imports is read correctly

@@ -309,10 +309,10 @@ const monster_panel_y = 2
 const monster_panel_w = 30
 const monster_panel_h = 20
 
-sub MonsterSpritePanelShow(gfx_ptr as UInteger, size as UByte, pal as UByte, byref snapshot as Any ptr)
+sub MonsterSpritePanelDraw(sprite as Any ptr, info as String, byref snapshot as Any ptr)
 
- dim sprite as Any ptr
- dim raw_sheet as Boolean
+ 'Draws the panel with a finished picture (destroyed here; 0 for none, then info is the message) and a line of text
+
  dim sprite_w as Integer
  dim sprite_h as Integer
  dim zoom as Integer
@@ -320,7 +320,6 @@ sub MonsterSpritePanelShow(gfx_ptr as UInteger, size as UByte, pal as UByte, byr
  dim area_y as Integer
  dim area_w as Integer = monster_panel_w * 8
  dim area_h as Integer = (monster_panel_h - 1) * 8
- dim info as String
  dim pixel_color as UInteger
  
  if snapshot = 0 then
@@ -330,14 +329,11 @@ sub MonsterSpritePanelShow(gfx_ptr as UInteger, size as UByte, pal as UByte, byr
  
  BlueBox(monster_panel_x, monster_panel_y, monster_panel_w, monster_panel_h)
  
- sprite = MonsterSpriteImage(gfx_ptr, size, pal, raw_sheet)
- 
  line ((monster_panel_x + 1) * 8, (monster_panel_y + 1) * 8)-((monster_panel_x + monster_panel_w + 1) * 8 - 1, (monster_panel_y + monster_panel_h + 1) * 8 - 1), RGB(16, 16, 32), bf
  
  if sprite = 0 then
-  WriteText(FF4Text("No preview for this monster"), monster_panel_x + 1, monster_panel_y + 1, 12)
+  WriteText(FF4Text(info), monster_panel_x + 1, monster_panel_y + 1, 12)
  else
-  if size >= &h80 then info = "Ptr " + str(gfx_ptr) + " Pal " + str(special_sizes((size and &h3F) + 1).palette_index) else info = "Ptr " + str(gfx_ptr) + " Pal " + str(pal)
   WriteText(FF4Text(left(info, monster_panel_w)), monster_panel_x + 1, monster_panel_y + 1, 15)
   imageinfo sprite, sprite_w, sprite_h
   zoom = 6
@@ -359,6 +355,25 @@ sub MonsterSpritePanelShow(gfx_ptr as UInteger, size as UByte, pal as UByte, byr
  ' keeps pointing at the destroyed sprite image as its drawing target, and the next menu that builds
  ' an image corrupts it (the template menu drew as a thin strip).
  pset (monster_panel_x * 8, monster_panel_y * 8), point(monster_panel_x * 8, monster_panel_y * 8)
+
+end sub
+
+
+sub MonsterSpritePanelShow(gfx_ptr as UInteger, size as UByte, pal as UByte, byref snapshot as Any ptr)
+
+ dim sprite as Any ptr
+ dim raw_sheet as Boolean
+ dim info as String
+ 
+ sprite = MonsterSpriteImage(gfx_ptr, size, pal, raw_sheet)
+ if sprite = 0 then
+  info = "No preview for this monster"
+ elseif size >= &h80 then
+  info = "Ptr " + str(gfx_ptr) + " Pal " + str(special_sizes((size and &h3F) + 1).palette_index)
+ else
+  info = "Ptr " + str(gfx_ptr) + " Pal " + str(pal)
+ end if
+ MonsterSpritePanelDraw(sprite, info, snapshot)
 
 end sub
 
