@@ -1045,46 +1045,76 @@ sub EditMonsterSprite(index_start as Integer)
 end sub
 
 
-sub EditMonsterSprites()
+sub MonsterSpriteList()
 
  dim select_monster as BlueMenu
  dim hint_text as String
 
- ReadMonsterPictures()
  select_monster.max_rows = screen_height - 5
  for i as Integer = 1 to total_monsters
   select_monster.AddOption(monsters(i).name)
   hint_text += "Enter edits the picture and palette of this monster.|"
  next
- select_monster.AddOption(FF4Text("Add a picture from a BMP"))
- select_monster.AddOption(FF4Text("Stored pictures"))
- select_monster.AddOption(FF4Text("Summon pictures"))
- SetHints(select_monster, hint_text + "Enter reads a BMP into free room of the ROM as a new picture, without replacing one.|Enter lists the pictures added from BMP files, to give them to monsters.|Enter lists the 17 summon pictures: edit, export and import them.")
+ SetHints(select_monster, left(hint_text, len(hint_text) - 1))
 
  do
 
   do
    screenlock
    line (0, 0)-(639, 463), RGB(0, 0, 0), bf
-   WriteText(FF4Text("Enter edits the sprite. End: the last lines add, list stored pictures and summons"), 0, 0, 15)
+   WriteText(FF4Text("Monster sprites: Enter edits the picture and palette of the monster"), 0, 0, 15)
    select_monster.y = 2
    select_monster.Display()
-   if select_monster.selected <= total_monsters then MonsterThumbnail(select_monster.selected, 30, 2, 20, 20)
+   MonsterThumbnail(select_monster.selected, 30, 2, 20, 20)
    screenunlock
   loop until select_monster.UserInput()
 
-  if not select_monster.cancelled then
-   if select_monster.selected = total_monsters + 1 then
-    MpImportNew()
-   elseif select_monster.selected = total_monsters + 2 then
-    StoredPictures()
-   elseif select_monster.selected = total_monsters + 3 then
-    SummonPictures()
-   else
-    EditMonsterSprite(select_monster.selected)
-   end if
-  end if
+  if not select_monster.cancelled then EditMonsterSprite(select_monster.selected)
 
  loop until select_monster.cancelled
+
+end sub
+
+
+sub EditMonsterSprites()
+
+ 'The first screen: the three kinds of pictures, each with its own list
+
+ dim hub as BlueMenu
+
+ ReadMonsterPictures()
+ hub.title = "Monster pictures"
+ hub.min_width = 20
+ hub.x = 1
+ hub.y = 3
+ hub.AddOption(FF4Text("Monster sprites"))
+ hub.AddOption(FF4Text("Summon sprites"))
+ hub.AddOption(FF4Text("Stored pictures"))
+ SetHints(hub, "Enter lists the monsters: edit a picture and palette, export or import a BMP.|Enter lists the 17 summon pictures: edit, export and import them.|Enter lists the pictures added from BMP files, adds new ones and gives them to monsters.")
+
+ do
+
+  do
+   screenlock
+   line (0, 0)-(639, 463), RGB(0, 0, 0), bf
+   WriteText(FF4Text("Edit Monster Sprites: pick the pictures to work on. Esc goes back."), 0, 0, 15)
+   hub.Display()
+   WriteText(FF4Text("Monster sprites: the pictures of the " + str(total_monsters) + " monsters and bosses."), 0, 9, 14)
+   WriteText(FF4Text("Summon sprites: the pictures the game draws for the summons, the calls."), 0, 10, 14)
+   WriteText(FF4Text("Stored pictures: pictures added from a BMP into free ROM room."), 0, 11, 14)
+   screenunlock
+  loop until hub.UserInput()
+
+  if not hub.cancelled then
+   select case hub.selected
+    case 1: MonsterSpriteList()
+    case 2: SummonPictures()
+    case 3: StoredPictures()
+   end select
+  end if
+
+ loop until hub.cancelled
+
+ line (0, 0)-(639, 463), RGB(0, 0, 0), bf
 
 end sub

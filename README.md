@@ -613,9 +613,9 @@ also rewrites the following palette.
 STORED MONSTER PICTURES
 -----------------------
 
-A new picture can be added to the ROM without replacing any monster's own. In Edit Monster
-Sprites the last two lines of the monster list (press End) are "Add a picture from a BMP"
-and "Stored pictures". Put an indexed BMP (4 or 8 bits per pixel, colors 0 to 7, color 0 is
+A new picture can be added to the ROM without replacing any monster's own. Edit Monster
+Sprites opens with three lines: Monster sprites, Summon sprites and Stored pictures. Stored
+pictures lists the added pictures, and its last line is "Add a picture from a BMP". Put an indexed BMP (4 or 8 bits per pixel, colors 0 to 7, color 0 is
 transparent, the same format as the export) in exports/monster_sprites. Its width and height
 must be one of the sizes the game has (16x16, 32x32, 48x64 ...; the message lists them all).
 
@@ -651,7 +651,7 @@ Only ordinary monsters can be added, not bosses (which need a tile map).
 SUMMON PICTURES
 ---------------
 
-The last line of the Edit Monster Sprites list (press End), "Summon pictures", lists the 17
+"Summon sprites" in Edit Monster Sprites lists the 17
 pictures the game draws for the summons: Imp, Bomb, Cockatrice, Mage, Chocobo, Shiva, Lamu, Jinn,
 Titan, Mist, Sylph, Odin, Leviatan, Asura (three entries that share one picture) and Bahamut.
 Each line gives the graphics pointer, written like a monster's (it can be typed under Pointer:
