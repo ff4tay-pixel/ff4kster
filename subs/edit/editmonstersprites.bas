@@ -30,6 +30,15 @@ dim shared ms_fill_y(191 * 191) as Integer
 
 declare sub MsCommitPalette()
 
+'The summon pictures use this editor too (editsummonpictures.bas): with ms_summon set, "index" is a summon
+dim shared ms_summon as Boolean
+declare function MsLoadSummon(index as Integer, byref problem as String) as Boolean
+declare function SummonName(index as Integer) as String
+declare function SummonSharedText(index as Integer) as String
+declare function ExportSummonImage(index as Integer) as String
+declare function ImportSummonImage(index as Integer) as String
+declare sub SummonPictures()
+
 
 function MsRomByte(rom as String, offset as Integer) as Integer
 
@@ -103,8 +112,13 @@ function MsLoad(index as Integer, byref problem as String) as Boolean
 
  'Reads the monster's picture and palette. False, with the reason, if it can't be edited here.
 
- dim gfx_ptr as Integer = monsters(index).gfx_ptr1 + monsters(index).gfx_ptr2 * &h100
- dim size as Integer = monsters(index).size
+ dim gfx_ptr as Integer
+ dim size as Integer
+
+ if ms_summon then return MsLoadSummon(index, problem)
+
+ gfx_ptr = monsters(index).gfx_ptr1 + monsters(index).gfx_ptr2 * &h100
+ size = monsters(index).size
 
  ms_deep = MonsterIsDeep(gfx_ptr)
  if size >= &h40 and size < &h80 then ms_deep = false
@@ -555,17 +569,27 @@ sub MsDrawScreen(index as Integer, mode as Integer, zoom as Integer, cx as Integ
  dim sx as Integer
  dim sy as Integer
  dim v as UInteger
- dim shared_count as Integer = MonsterSharedCount(index, monsters(index).gfx_ptr1 + monsters(index).gfx_ptr2 * &h100, ms_palette_id, monsters(index).size)
+ dim shared_count as Integer
+ dim shared_text as String
+
+ if ms_summon then
+  shared_text = SummonSharedText(index)
+ else
+  shared_count = MonsterSharedCount(index, monsters(index).gfx_ptr1 + monsters(index).gfx_ptr2 * &h100, ms_palette_id, monsters(index).size)
+  if shared_count > 0 then shared_text = "Shared with " + str(shared_count) + " other monsters, they change too"
+ end if
 
  screenlock
  line (0, 0)-(639, 463), RGB(0, 0, 0), bf
 
  'Title
  BlueBox(0, 0, 78, 2)
- WriteText(FF4Text(FF4Name(monsters(index).name) + "   monster " + str(index) + "   " + str(ms_tiles_wide * 8) + "x" + str(ms_tiles_high * 8) + "   palette " + str(ms_palette_id) + iif(ms_deep, " and the next", "")), 2, 1, 15)
- if shared_count > 0 then
-  WriteText(FF4Text("Shared with " + str(shared_count) + " other monsters, they change too"), 2, 2, 14)
+ if ms_summon then
+  WriteText(FF4Text(SummonName(index) + "   summon " + str(index) + "   " + str(ms_tiles_wide * 8) + "x" + str(ms_tiles_high * 8) + "   palette " + str(ms_palette_id)), 2, 1, 15)
+ else
+  WriteText(FF4Text(FF4Name(monsters(index).name) + "   monster " + str(index) + "   " + str(ms_tiles_wide * 8) + "x" + str(ms_tiles_high * 8) + "   palette " + str(ms_palette_id) + iif(ms_deep, " and the next", "")), 2, 1, 15)
  end if
+ if len(shared_text) > 0 then WriteText(FF4Text(shared_text), 2, 2, 14)
 
  'Picture
  BlueBox(0, 4, 53, 40)
@@ -614,14 +638,22 @@ sub MsDrawScreen(index as Integer, mode as Integer, zoom as Integer, cx as Integ
   LuText("Editing color " + str(brush) + iif(brush = 0, ", transparent, not editable", ""), 2, 48, 14)
   LuText("Left Right: pick the color to change.", 2, 49, 15)
   LuText("Enter: the menu to change its red, green and blue, move it, undo and more.", 2, 50, 15)
-  LuText("Moving a color moves the pixels of every monster that uses the palette.", 2, 51, 15)
+  if ms_summon then
+   LuText("Monsters that use this palette change too. A summon's colors are not moved.", 2, 51, 15)
+  else
+   LuText("Moving a color moves the pixels of every monster that uses the palette.", 2, 51, 15)
+  end if
   LuText("Esc: back to the picture.", 2, 52, 15)
  else
   LuText(" ACTIONS, PICTURE ", 1, 46, 14)
   LuText("Arrows: move.  Space: paint with the brush color.  Mouse: drag to paint.", 2, 48, 15)
   LuText("Enter: the menu of every action, like fill, flip, palette and export.", 2, 49, 15)
   LuText("The menu shows each action's key, so the keys can be learned as you go.", 2, 50, 15)
-  LuText("PgUp PgDn: other monster.   Esc: store the changes and go back to the list.", 2, 51, 15)
+  if ms_summon then
+   LuText("PgUp PgDn: other summon.   Esc: store the changes and go back to the list.", 2, 51, 15)
+  else
+   LuText("PgUp PgDn: other monster.   Esc: store the changes and go back to the list.", 2, 51, 15)
+  end if
  end if
  if len(message) > 0 then LuText(message, 2, 54, 12)
  screenunlock
@@ -672,20 +704,31 @@ function MonsterSpriteActions(mode as Integer, byref brush as Integer) as UInteg
   SmAdd("Undo", "Ctrl-Z", 26)
   SmAdd("Revert this picture", "Ctrl-R", 18)
   SmAdd("Edit the palette colors", "P", asc("p"))
-  SmAdd("Sort the palette", "O", asc("o"))
-  SmAdd("Previous monster", "PgUp", PAGEUP_KEY)
-  SmAdd("Next monster", "PgDn", PAGEDOWN_KEY)
-  SmAdd("Export this monster as BMP", "E", asc("e"))
-  SmAdd("Import this monster from BMP", "I", asc("i"))
-  SmAdd("Back to the list", "Esc", ESC_KEY)
-  choice = SmRun("Monster sprite")
+  if ms_summon then
+   SmAdd("Previous summon", "PgUp", PAGEUP_KEY)
+   SmAdd("Next summon", "PgDn", PAGEDOWN_KEY)
+   SmAdd("Export this summon as BMP", "E", asc("e"))
+   SmAdd("Import this summon from BMP", "I", asc("i"))
+   SmAdd("Back to the list", "Esc", ESC_KEY)
+   choice = SmRun("Summon picture")
+  else
+   SmAdd("Sort the palette", "O", asc("o"))
+   SmAdd("Previous monster", "PgUp", PAGEUP_KEY)
+   SmAdd("Next monster", "PgDn", PAGEDOWN_KEY)
+   SmAdd("Export this monster as BMP", "E", asc("e"))
+   SmAdd("Import this monster from BMP", "I", asc("i"))
+   SmAdd("Back to the list", "Esc", ESC_KEY)
+   choice = SmRun("Monster sprite")
+  end if
  else
   SmAdd("Choose the color", "Left Right", 0, 11)
   SmAdd("Change its red", "Q A", 0, 12)
   SmAdd("Change its green", "W S", 0, 13)
   SmAdd("Change its blue", "E D", 0, 14)
-  SmAdd("Move the color left", "Bracket", asc("["))
-  SmAdd("Move the color right", "Bracket", asc("]"))
+  if not ms_summon then
+   SmAdd("Move the color left", "Bracket", asc("["))
+   SmAdd("Move the color right", "Bracket", asc("]"))
+  end if
   SmAdd("Undo", "Ctrl-Z", 26)
   SmAdd("Revert this palette", "Ctrl-R", 18)
   SmAdd("Back to the picture", "Esc", ESC_KEY)
@@ -783,9 +826,13 @@ sub EditMonsterSprite(index_start as Integer)
    else
     screenlock
     line (0, 0)-(639, 463), RGB(0, 0, 0), bf
-    WriteText(FF4Text(FF4Name(monsters(index).name) + "   monster " + str(index)), 2, 1, 15)
+    if ms_summon then
+     WriteText(FF4Text(SummonName(index) + "   summon " + str(index)), 2, 1, 15)
+    else
+     WriteText(FF4Text(FF4Name(monsters(index).name) + "   monster " + str(index)), 2, 1, 15)
+    end if
     WriteText(FF4Text("Cannot edit here: " + problem), 2, 3, 12)
-    WriteText(FF4Text("PgUp PgDn other monster   Esc leaves"), 2, 5, 15)
+    WriteText(FF4Text("PgUp PgDn other picture   Esc leaves"), 2, 5, 15)
     screenunlock
    end if
 
@@ -877,9 +924,14 @@ sub EditMonsterSprite(index_start as Integer)
      case asc("="), asc("]"), asc("+")
       brush = (brush + 1) mod ms_color_count
      case asc("x"), asc("X"), asc("y"), asc("Y")
-      size_ok = (monsters(index).size < &h40)
+      if ms_summon then
+       size_ok = false
+       message = "Flipping is not available for summons"
+      else
+       size_ok = (monsters(index).size < &h40)
+      end if
       if not size_ok then
-       message = "Flipping is only for plain monsters, not bosses"
+       if not ms_summon then message = "Flipping is only for plain monsters, not bosses"
       else
        MsSaveUndo()
        if keycode = asc("x") or keycode = asc("X") then
@@ -905,17 +957,23 @@ sub EditMonsterSprite(index_start as Integer)
       end if
      case asc("e"), asc("E")
       MsCommit()
-      if ConfirmExport("this monster") then InfoBox(ExportMonsterImage(index) + "||Press any key", 4, 20)
+      if ms_summon then
+       if ConfirmExport("this summon") then InfoBox(ExportSummonImage(index) + "||Press any key", 4, 20)
+      elseif ConfirmExport("this monster") then
+       InfoBox(ExportMonsterImage(index) + "||Press any key", 4, 20)
+      end if
      case asc("i"), asc("I")
-      if ConfirmBox("Import replaces this monster's tiles and palette. Continue?") then
-       message = ImportMonsterImage(index)
+      if ConfirmBox("Import replaces this " + iif(ms_summon, "summon", "monster") + "'s tiles and palette. Continue?") then
+       if ms_summon then message = ImportSummonImage(index) else message = ImportMonsterImage(index)
        loaded = MsLoad(index, problem)
-       if loaded then message += "||" + MsSortPalette()
+       if loaded and not ms_summon then message += "||" + MsSortPalette()
        InfoBox(message + "||Press any key", 4, 20)
        message = ""
       end if
      case asc("o"), asc("O")
-      if ConfirmBox("Sort the palette: 1 black, 2 white, the rest light to dark?") then
+      if ms_summon then
+       message = "Sorting the palette is only for monsters"
+      elseif ConfirmBox("Sort the palette: 1 black, 2 white, the rest light to dark?") then
        message = MsSortPalette()
       end if
      case asc("p"), asc("P")
@@ -949,7 +1007,9 @@ sub EditMonsterSprite(index_start as Integer)
       end if
      case asc("["), asc("]")
       direction_slot = brush + iif(keycode = asc("["), -1, 1)
-      if direction_slot >= 1 and direction_slot < ms_color_count then
+      if ms_summon then
+       message = "A summon's colors are not moved"
+      elseif direction_slot >= 1 and direction_slot < ms_color_count then
        MsMoveColor(brush, direction_slot)
        brush = direction_slot
       end if
@@ -966,8 +1026,13 @@ sub EditMonsterSprite(index_start as Integer)
   if loaded then MsCommit()
   if direction <> 0 then
    index += direction
-   if index < 1 then index = total_monsters
-   if index > total_monsters then index = 1
+   if ms_summon then
+    if index < 1 then index = 17
+    if index > 17 then index = 1
+   else
+    if index < 1 then index = total_monsters
+    if index > total_monsters then index = 1
+   end if
    loaded = MsLoad(index, problem)
    if not loaded and len(problem) = 0 then problem = "unknown"
   end if
@@ -994,7 +1059,7 @@ sub EditMonsterSprites()
  select_monster.AddOption(FF4Text("Add a picture from a BMP"))
  select_monster.AddOption(FF4Text("Stored pictures"))
  select_monster.AddOption(FF4Text("Summon pictures"))
- SetHints(select_monster, hint_text + "Enter reads a BMP into free room of the ROM as a new picture, without replacing one.|Enter lists the pictures added from BMP files, to give them to monsters.|Enter shows the pictures of the 17 summons: pointer, palette, tiles. Read only.")
+ SetHints(select_monster, hint_text + "Enter reads a BMP into free room of the ROM as a new picture, without replacing one.|Enter lists the pictures added from BMP files, to give them to monsters.|Enter lists the 17 summon pictures: edit, export and import them.")
 
  do
 

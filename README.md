@@ -651,15 +651,33 @@ Only ordinary monsters can be added, not bosses (which need a tile map).
 SUMMON PICTURES
 ---------------
 
-The last line of the Edit Monster Sprites list (press End), "Summon pictures", shows the 17
+The last line of the Edit Monster Sprites list (press End), "Summon pictures", lists the 17
 pictures the game draws for the summons: Imp, Bomb, Cockatrice, Mage, Chocobo, Shiva, Lamu, Jinn,
-Titan, Mist, Sylph, Odin, Leviatan, Asura (three entries that share one picture) and Bahamut. It is
-read only. Each line gives the graphics pointer, written like a monster's (it can be typed under
-Pointer: Manual in the Graphics box of Edit Monsters), the monster palette number, the number
-of tiles and a preview. Chocobo, Shiva, Lamu, Jinn and Sylph are not used by any enemy. The game stores a summon's
-tiles without the blank cells of its picture and a tile map says where each goes, so for most
-summons no monster size shows them correctly. The picture beside the list is drawn through that tile
-map, with the summon's palette. Esc goes back.
+Titan, Mist, Sylph, Odin, Leviatan, Asura (three entries that share one picture) and Bahamut.
+Each line gives the graphics pointer, written like a monster's (it can be typed under Pointer:
+Manual in the Graphics box of Edit Monsters), the monster palette number and the number of tiles,
+and the picture is shown beside the list. Chocobo, Shiva, Lamu, Jinn and Sylph are not used by
+any enemy. The game stores a summon's tiles without the blank cells of its picture and a tile
+map says where each goes, so for most summons no monster size shows them correctly; the preview
+and the editor draw them through that tile map, with the summon's palette.
+
+Enter on a summon opens a menu: Edit the picture and palette, Export as BMP, Import from BMP
+and Back. Edit opens the monster sprite editor (the same keys and menu: paint, fill, undo,
+revert, palette colors, E and I for export and import, PgUp PgDn for the other summons). The
+layout of the picture never changes: blank cells are shown in red and cannot be painted, flipping
+and sorting or moving palette colors are not available. Tiles and palette are shared with the
+monsters that have the same graphics pointer or palette (the title says how many monsters and
+other summons change too, and the import message repeats it): Imp, Bomb, Cockatrice, Mage, Titan,
+Mist, Odin, Leviatan, Asura and Bahamut each have an enemy, Chocobo, Shiva, Lamu, Jinn and Sylph
+have none. Esc stores the changes in
+the ROM image; Save ROM writes them.
+
+Export writes exports/summons/summon_NN_Name.bmp, 4 bits per pixel, as large as the picture
+(Chocobo 64x32, Shiva 96x48, Jinn 128x48 and so on), with the summon's palette as the BMP's own
+color table and blank cells empty. Import reads it back: the color table becomes the palette, so
+an image editor must not renumber the colors, and the size must stay the same. Pixels in blank
+cells are ignored. The summon's tile data cannot grow: only the tiles the summon already has are
+changed.
 
 
 PORTRAITS
@@ -2133,7 +2151,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.1
-    - Summon pictures: a read only list in Edit Monster Sprites of the 17 summon pictures with a preview, their graphics pointer, palette and tile count
+    - Summon pictures: in Edit Monster Sprites, the 17 summon pictures with a preview, graphics pointer, palette and tile count, an editor (the monster sprite editor) and BMP export and import (exports/summons)
     - Stored monster pictures: add a picture from a BMP to free room of the ROM without replacing a monster's own, keep it in a list (config/monsterpictures.dat) and give it to any monster later, in Edit Monster Sprites or with Pointer, Stored picture in the Graphics box of Edit Monsters; Space Usage shows the room
     - Level up data: Save ROM places each character's rows in the original area or in unused bytes of the same bank, so every character can start at level 1, and refuses when they do not fit; Space Usage lists the room
     - Added Field Sprites editor: the 107 walking sprite sheets of the party and the NPCs (pixels, frame flip and copy, 36 palettes with colors that can be rearranged, a palette pick per sheet kept in config/fieldpalettes.dat, BMP export and import); the palette number in the file names of Portraits imports is read correctly
