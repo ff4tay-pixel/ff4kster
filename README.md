@@ -1403,7 +1403,15 @@ editor and the map editor say how many fit. The game has other limits that a new
 first triggers of a map as the map's treasure chests (as many as the chest count says), so Save ROM writes the
 chests of a map first, whatever place they have in the list (after a reload they are listed first); and it has 256
 chest switches for the maps up to 256 and 256 more for the maps after, so Save ROM refuses more chests than that
-(the original uses 242 and 161). The world triggers (82) are a separate table and are not moved. Each of these takes 64 KB of the new banks
+(the original uses 242 and 161). The world triggers (82) are a separate table and are not moved.
+
+Monster pictures work differently: a monster's graphics pointer picks one of 8 banks (09 to 10) with 3 bits, but only
+banks 09 to 0C hold pictures and they are full. The menu entry "Monster pictures: add 96 KB in the new banks" makes
+the game read picture banks 5, 6 and 7 from three new banks instead (bank 4, 0D, stays as it is, so the stored
+pictures already there keep working). Nothing moves: the three banks start empty, and Stored monster pictures and
+Edit Monster Sprites use them as free room, pointer and all. Save ROM changes one instruction of the game (the bank
+number calculation in the monster picture loader) into a jump to a 16 byte routine. Moving back is refused while a
+monster uses the extra banks. Each of these takes 64 KB of the new banks
 and 18 bytes of routine for each distance the game reads at (a trigger is read at 5 distances).
 
     ENTER:   Edit the message.
@@ -2186,6 +2194,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.2
+    - Monster pictures: 96 KB of extra room in three new banks of an expanded ROM for stored and edited pictures (Free Space, Move data to the new banks)
     - Events and triggers can also be moved to the new banks (65520 bytes each; the trigger limit then follows the room, 13104 instead of 979); Free Space has a Move data to the new banks entry for message text, events and triggers
     - Messages: the text of banks 1 to 3 can be moved to the new banks of an expanded ROM for about 65 KB of room each (the game's text reading is patched to read it there); Space Usage and the bank list show the new room
     - Free Space: expand the ROM to 2 MB or 4 MB (header size and checksum written by Save ROM) and reserve or release blocks of the new banks in a table kept in the ROM; the groundwork for moving tables out of the full original banks

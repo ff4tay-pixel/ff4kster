@@ -47,6 +47,7 @@
 #include once "subs/write/writebyte.bas"
 #include once "subs/general/freespace.bas"
 #include once "subs/general/msgbanks.bas"
+#include once "subs/general/monsterbanks.bas"
 #include once "subs/read/readfont.bas"
 #include once "subs/read/readmonsterpalettes.bas"
 #include once "subs/read/readspellsets.bas"

@@ -17,7 +17,7 @@
 
 const mp_max = 40
 const mp_name_length = 20
-const mp_region_count = 5
+const mp_region_count = 5 'the runs in the original banks, three more come with the extra banks
 const mp_file = "config/monsterpictures.dat"
 
 dim shared mp_name(1 to mp_max) as String
@@ -37,7 +37,8 @@ function MpRegionStart(region as Integer) as Integer
   case 2: return &h5FF58 'end of the third tile bank
   case 3: return &h634F8 'end of the fourth tile bank, before the battle animation graphics
   case 4: return &h68440 'between the field sprite palettes and the portrait palettes
-  case else: return &h6EA18 'end of the fifth tile group, before the summon tilemap
+  case 5: return &h6EA18 'end of the fifth tile group, before the summon tilemap
+  case else: return mg_block + (region - mp_region_count - 1) * &h8000 'the extra banks
  end select
 
 end function
@@ -50,8 +51,18 @@ function MpRegionEnd(region as Integer) as Integer
   case 2: return &h60200
   case 3: return &h638C0
   case 4: return &h688D0
-  case else: return &h6F460
+  case 5: return &h6F460
+  case else: return mg_block + (region - mp_region_count) * &h8000
  end select
+
+end function
+
+
+function MpRegionCount() as Integer
+
+ if mg_state = 1 then return mp_region_count + mg_bank_count
+
+ return mp_region_count
 
 end function
 
@@ -60,7 +71,7 @@ function MpCapacity() as Integer
 
  dim total as Integer
 
- for r as Integer = 1 to mp_region_count
+ for r as Integer = 1 to MpRegionCount()
   total += MpRegionEnd(r) - MpRegionStart(r)
  next
 
@@ -75,7 +86,7 @@ function MpFreeBytes() as Integer
 
  dim total as Integer
 
- for r as Integer = 1 to mp_region_count
+ for r as Integer = 1 to MpRegionCount()
   for o as Integer = MpRegionStart(r) to MpRegionEnd(r) - 1
    if ByteAt(o) = &hFF then total += 1
   next
@@ -93,7 +104,7 @@ function MpLargestRun() as Integer
  dim best as Integer
  dim current as Integer
 
- for r as Integer = 1 to mp_region_count
+ for r as Integer = 1 to MpRegionCount()
   current = 0
   for o as Integer = MpRegionStart(r) to MpRegionEnd(r) - 1
    if ByteAt(o) = &hFF then
@@ -142,6 +153,10 @@ end function
 
 function MpPointerFor(offset as Integer) as Integer
 
+ if mg_state = 1 and offset >= mg_block and offset < mg_block + mg_bank_count * &h8000 then
+  return &h8000 + (mg_first_bank + (offset - mg_block) \ &h8000) * &h1000 + ((offset - mg_block) mod &h8000) \ 8
+ end if
+
  return &h8000 + (offset - monster_sprite_base) \ 8
 
 end function
@@ -176,7 +191,7 @@ function MpFindSpace(bytes as Integer) as Integer
  dim position as Integer
  dim blocked as Integer
 
- for r as Integer = 1 to mp_region_count
+ for r as Integer = 1 to MpRegionCount()
   position = MpRegionStart(r)
   do while position + bytes <= MpRegionEnd(r)
    blocked = -1
@@ -199,7 +214,7 @@ end function
 
 function MpInRegion(start as Integer, bytes as Integer) as Boolean
 
- for r as Integer = 1 to mp_region_count
+ for r as Integer = 1 to MpRegionCount()
   if start >= MpRegionStart(r) and start + bytes <= MpRegionEnd(r) then return true
  next
 

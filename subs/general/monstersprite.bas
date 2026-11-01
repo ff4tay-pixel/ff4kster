@@ -50,6 +50,12 @@ end sub
 
 function MonsterSpriteOffset(gfx_ptr as UInteger) as Integer
 
+ 'Pointer banks 5 to 7 are the three extra banks of an expanded ROM when the editor moved them (monsterbanks.bas)
+
+ dim bank as Integer = (gfx_ptr shr 12) and 7
+
+ if mg_state = 1 and bank >= mg_first_bank then return mg_block + (bank - mg_first_bank) * &h8000 + (gfx_ptr and &hFFF) * 8
+
  return monster_sprite_base + ((gfx_ptr * 8) mod &h40000)
 
 end function

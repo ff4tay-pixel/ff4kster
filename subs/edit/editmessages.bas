@@ -569,12 +569,23 @@ sub MovedDataMenu()
     SmAdd(MbRegionName(i) + ": stored by another tool", "", 0, 0)
    end if
   next
+  if mg_state = 1 then
+   SmAdd("Monster pictures: move back to the original banks", "", 0, mb_regions + 11)
+  elseif mg_state = 0 then
+   SmAdd("Monster pictures: add 96 KB in the new banks", "", 0, mb_regions + 1)
+  else
+   SmAdd("Monster pictures: changed by another tool", "", 0, 0)
+  end if
   b = SmRun("Data stored in the new banks")
   if b = 0 then exit do
   b = sm_special(b)
   if b = 0 then continue do
 
-  if b > 10 then
+  if b = mb_regions + 1 then
+   if ConfirmBox("Add three picture banks in the new banks? It takes 96 KB.") then reason = MgMove() else reason = "cancel"
+  elseif b = mb_regions + 11 then
+   if ConfirmBox("Move the monster pictures back? Monsters in them must be moved first.") then reason = MgMoveBack() else reason = "cancel"
+  elseif b > 10 then
    b -= 10
    if ConfirmBox("Move " + MbRegionName(b) + " back? Save ROM refuses if it does not fit.") then
     reason = MbMoveBack(b)
