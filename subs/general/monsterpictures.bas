@@ -510,3 +510,78 @@ sub MpUse(i as Integer, monster_index as Integer)
  monsters(monster_index).pal = mp_pal(i)
 
 end sub
+
+
+function PbUsers() as Integer
+
+ 'Monsters, bosses and stored pictures that use a palette the original table does not have
+
+ dim total as Integer
+
+ for m as Integer = 1 to total_monsters
+  if monsters(m).pal >= pb_original_count then total += 1
+ next
+ for i as Integer = 1 to total_special_sizes
+  if special_sizes(i).palette_index >= pb_original_count then total += 1
+ next
+ for i as Integer = 1 to mp_count
+  if mp_pal(i) >= pb_original_count then total += 1
+ next
+
+ return total
+
+end function
+
+
+function PbMove() as String
+
+ 'Copies the palettes to a new table. Returns "" when done, otherwise why not.
+
+ dim block_at as Integer
+
+ if pb_state = 1 then return "That is already in the new banks."
+ if pb_state = 2 then return "The game's palette instruction was changed by another tool."
+ if not FsHasTable() then return "Expand the ROM first (Free Space on the main menu)."
+
+ block_at = FsAlloc(pb_table_size, 6)
+ if block_at < 0 then return "There is no room for the palettes in the new banks."
+
+ for i as Integer = 0 to pb_table_size - 1
+  if i < pb_original_count * 16 then
+   WriteByte(block_at + i, ByteAt(monster_palette_table + i))
+  else
+   WriteByte(block_at + i, 0)
+  end if
+ next
+ monster_palette_table = block_at
+ pb_state = 1
+ for p as Integer = pb_original_count + 1 to monster_palette_max
+  for j as Integer = 0 to 7
+   monster_palettes(p, j) = RGB(0, 0, 0)
+  next
+ next
+
+ return ""
+
+end function
+
+
+function PbMoveBack() as String
+
+ 'Copies the first 240 palettes back to the original table and gives the new one back.
+
+ dim block_at as Integer = monster_palette_table
+
+ if pb_state <> 1 then return "That is not in the new banks."
+ if PbUsers() > 0 then return str(PbUsers()) + " monsters, bosses or pictures use palette 240 or more. Give them another palette first."
+
+ for i as Integer = 0 to pb_original_count * 16 - 1
+  WriteByte(pb_original_table + i, ByteAt(block_at + i))
+ next
+ FsRelease(block_at)
+ pb_state = 0
+ monster_palette_table = pb_original_table
+
+ return ""
+
+end function

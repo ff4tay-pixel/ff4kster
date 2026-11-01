@@ -25,7 +25,6 @@
 'same graphics pointer or the same palette changes too (the message says how many).
 
 const monster_swatch_count = 8
-const monster_palette_table = &hE7000 'total_monster_palettes palettes of 8 colors, 2 bytes each
 
 
 function MonsterImageName(index as Integer) as String

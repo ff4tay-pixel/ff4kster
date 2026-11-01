@@ -162,7 +162,7 @@ dim shared command3_end as UByte
 
 'Graphic data
 dim shared map_palettes(32, 8, 8) as UInteger
-dim shared monster_palettes(total_monster_palettes, 7) as UInteger
+dim shared monster_palettes(monster_palette_max, 7) as UInteger
 
 'Odds and ends
 dim shared jobchange_actor as UByte

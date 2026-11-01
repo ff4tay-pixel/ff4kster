@@ -76,10 +76,10 @@ function MsColor(c as Integer) as UInteger
 end function
 
 
-sub MsLoadPalette(rom as String)
+sub MsLoadPalette(rom as String, table_at as Integer)
 
  for i as Integer = 0 to ms_color_count - 1
-  ms_pal(i) = MsRomByte(rom, monster_palette_table + ms_palette_id * 16 + i * 2) + MsRomByte(rom, monster_palette_table + ms_palette_id * 16 + i * 2 + 1) * &h100
+  ms_pal(i) = MsRomByte(rom, table_at + ms_palette_id * 16 + i * 2) + MsRomByte(rom, table_at + ms_palette_id * 16 + i * 2 + 1) * &h100
  next
 
 end sub
@@ -140,7 +140,7 @@ function MsLoad(index as Integer, byref problem as String) as Boolean
  next
 
  MsLoadPixels(ff4rom)
- MsLoadPalette(ff4rom)
+ MsLoadPalette(ff4rom, monster_palette_table)
  ms_undo_count = 0
  ms_pal_undo_count = 0
 
@@ -1015,7 +1015,7 @@ sub EditMonsterSprite(index_start as Integer)
       end if
      case 18 'Ctrl-R
       if ConfirmBox("Revert this palette to the loaded ROM?") then
-       MsLoadPalette(original_rom)
+       MsLoadPalette(original_rom, monster_palette_table_loaded)
        ms_pal_undo_count = 0
       end if
     end select

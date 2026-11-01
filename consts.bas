@@ -62,7 +62,9 @@ const total_condition_hps = 24
 const total_scripts = &h15A
 const total_monsters = &hE0
 const total_special_sizes = &h40
-const total_monster_palettes = 234
+const monster_palette_max = 256 'the palette number is one byte
+declare function MonsterPaletteCount() as Integer
+#define total_monster_palettes (MonsterPaletteCount())
 const total_battle_char_sheets = 15
 
 const total_dialogues_bank1 = 512

@@ -569,6 +569,13 @@ sub MovedDataMenu()
     SmAdd(MbRegionName(i) + ": stored by another tool", "", 0, 0)
    end if
   next
+  if pb_state = 1 then
+   SmAdd("Monster palettes: move back to the original table", "", 0, mb_regions + 12)
+  elseif pb_state = 0 then
+   SmAdd("Monster palettes: room for 256 instead of 240", "", 0, mb_regions + 2)
+  else
+   SmAdd("Monster palettes: changed by another tool", "", 0, 0)
+  end if
   if mg_state = 1 then
    SmAdd("Monster pictures: move back to the original banks", "", 0, mb_regions + 11)
   elseif mg_state = 0 then
@@ -581,7 +588,11 @@ sub MovedDataMenu()
   b = sm_special(b)
   if b = 0 then continue do
 
-  if b = mb_regions + 1 then
+  if b = mb_regions + 2 then
+   if ConfirmBox("Move the monster palettes to a table of 256? It takes 4 KB.") then reason = PbMove() else reason = "cancel"
+  elseif b = mb_regions + 12 then
+   if ConfirmBox("Move the monster palettes back to the original table?") then reason = PbMoveBack() else reason = "cancel"
+  elseif b = mb_regions + 1 then
    if ConfirmBox("Add three picture banks in the new banks? It takes 96 KB.") then reason = MgMove() else reason = "cancel"
   elseif b = mb_regions + 11 then
    if ConfirmBox("Move the monster pictures back? Monsters in them must be moved first.") then reason = MgMoveBack() else reason = "cancel"

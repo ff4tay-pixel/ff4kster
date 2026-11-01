@@ -48,6 +48,7 @@
 #include once "subs/general/freespace.bas"
 #include once "subs/general/msgbanks.bas"
 #include once "subs/general/monsterbanks.bas"
+#include once "subs/general/palettebanks.bas"
 #include once "subs/read/readfont.bas"
 #include once "subs/read/readmonsterpalettes.bas"
 #include once "subs/read/readspellsets.bas"
@@ -85,6 +86,8 @@
 #include once "subs/csv/exportcsv.bas"
 #include once "subs/csv/importcsv.bas"
 #include once "subs/general/romdiff.bas"
+declare function PbMove() as String
+declare function PbMoveBack() as String
 declare function ChestFormation(m as Integer, chest_byte as Integer) as Integer
 #include once "subs/general/listtools.bas"
 #include once "subs/general/mainhelp.bas"

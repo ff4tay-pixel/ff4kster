@@ -235,7 +235,7 @@ function MsLoadSummon(index as Integer, byref problem as String) as Boolean
  ms_palette_id = pal
 
  MsLoadPixels(ff4rom)
- MsLoadPalette(ff4rom)
+ MsLoadPalette(ff4rom, monster_palette_table)
  ms_undo_count = 0
  ms_pal_undo_count = 0
 

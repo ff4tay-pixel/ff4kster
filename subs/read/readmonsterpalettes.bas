@@ -6,7 +6,7 @@ sub ReadMonsterPalettes()
  dim g as UByte
  dim b as UByte
 
- start = &hE7000
+ start = monster_palette_table
  
  for i as Integer = 1 to total_monster_palettes
   for j as Integer = 0 to 7

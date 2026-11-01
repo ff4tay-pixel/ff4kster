@@ -1411,7 +1411,13 @@ the game read picture banks 5, 6 and 7 from three new banks instead (bank 4, 0D,
 pictures already there keep working). Nothing moves: the three banks start empty, and Stored monster pictures and
 Edit Monster Sprites use them as free room, pointer and all. Save ROM changes one instruction of the game (the bank
 number calculation in the monster picture loader) into a jump to a 16 byte routine. Moving back is refused while a
-monster uses the extra banks. Each of these takes 64 KB of the new banks
+monster uses the extra banks.
+
+Monster palettes: the original table has room for 240 palettes (the editor used to show 234; the last six are empty and
+can be used now). A palette number is one byte, so 256 is the most. The menu entry "Monster palettes: room for 256
+instead of 240" copies the table to a new 4 KB block of the new banks and changes the address in the game's palette
+instruction (Save ROM writes it); palettes 241 to 256 start black. Moving back copies the first 240 palettes back and is
+refused while a monster, boss or stored picture uses palette 240 or more. Each of these takes 64 KB of the new banks
 and 18 bytes of routine for each distance the game reads at (a trigger is read at 5 distances).
 
     ENTER:   Edit the message.
@@ -2194,6 +2200,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.2
+    - Monster palettes: 240 instead of 234 shown, and room for 256 in a table in the new banks of an expanded ROM
     - Monster pictures: 96 KB of extra room in three new banks of an expanded ROM for stored and edited pictures (Free Space, Move data to the new banks)
     - Events and triggers can also be moved to the new banks (65520 bytes each; the trigger limit then follows the room, 13104 instead of 979); Free Space has a Move data to the new banks entry for message text, events and triggers
     - Messages: the text of banks 1 to 3 can be moved to the new banks of an expanded ROM for about 65 KB of room each (the game's text reading is patched to read it there); Space Usage and the bank list show the new room

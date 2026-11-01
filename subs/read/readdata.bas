@@ -51,6 +51,7 @@ sub ReadData(filename as String)
  original_rom = ff4rom
  MbDetect() 'where the message text, events and triggers are
  MgDetect() 'where the extra monster picture banks are
+ PbDetect() 'where the monster palettes are
  
  old_path = curdir
  chdir(system_path)
