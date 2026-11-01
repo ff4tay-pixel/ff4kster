@@ -46,8 +46,8 @@ function TriggerAddAt(m as Integer, position as Integer) as Boolean
    InfoBox("No room for another trigger.||The game has room for " + str(max_overworld_triggers) + " world triggers in all|and the original ROM uses them all. Delete one first.||Press any key")
    return false
   end if
- elseif total_triggers >= max_triggers then
-  InfoBox("No room for another trigger.||The game has room for " + str(max_triggers) + " triggers on the maps in all|and the original ROM uses them all. Delete one first.||Press any key")
+ elseif total_triggers >= TriggerMax() then
+  InfoBox("No room for another trigger.||The game has room for " + str(TriggerMax()) + " triggers on the maps in all.|Delete one first, or move the triggers to the new banks|of an expanded ROM (Free Space on the main menu).||Press any key")
   return false
  end if
 

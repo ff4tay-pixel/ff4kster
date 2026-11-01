@@ -481,7 +481,7 @@ function MsgPickBank(byref bank as Integer) as Boolean
  for b as Integer = 1 to msg_bank_count
   picker.AddOption(MsgBankLine(b), MsgSpaceColor(b))
  next
- picker.AddOption(FF4Text("Where the text of banks 1 to 3 is stored..."), 11)
+ picker.AddOption(FF4Text("Where the text, events and triggers are stored..."), 11)
  picker.ChangeSelected(bank)
  picker.title = "Pick a bank"
 
@@ -498,8 +498,8 @@ function MsgPickBank(byref bank as Integer) as Boolean
    WriteText(FF4Text(MsgBankInfo(picker.selected)), 1, 3 + msg_bank_count + 4, 14)
    if picker.selected <= mb_banks then WriteText(FF4Text(MbLocationText(picker.selected)), 1, 3 + msg_bank_count + 6, 15)
   else
-   WriteText(FF4Text("Move the text of bank 1, 2 or 3 to the new banks of an expanded ROM"), 1, 3 + msg_bank_count + 4, 14)
-   WriteText(FF4Text("for room for about twice as much text. Enter opens the choices."), 1, 3 + msg_bank_count + 5, 14)
+   WriteText(FF4Text("Move the text of bank 1, 2 or 3, the events or the triggers to the new banks"), 1, 3 + msg_bank_count + 4, 14)
+   WriteText(FF4Text("of an expanded ROM for about twice as much room. Enter opens the choices."), 1, 3 + msg_bank_count + 5, 14)
   end if
   if picker.selected = 2 then WriteText(FF4Text("Pick a map next: the messages of a bank 2 list belong to that map."), 1, 3 + msg_bank_count + 5, 23)
   screenunlock
@@ -549,40 +549,40 @@ function MsgPickMap(byref mp as Integer) as Boolean
 end function
 
 
-sub MsgStorage()
+sub MovedDataMenu()
 
- 'Where the text of banks 1 to 3 is stored: move a bank to the new banks of an expanded ROM, or back.
+ 'Where the message text (banks 1 to 3), the events and the triggers are stored: move one to the new banks of an
+ ' expanded ROM, or back. Also reached from Free Space on the main menu.
 
  dim b as Integer
  dim reason as String
- dim ids(1 to 3) as Integer
 
  b = 1
  do
   SmReset()
-  for i as Integer = 1 to mb_banks
+  for i as Integer = 1 to mb_regions
    if mb_state(i) = 1 then
-    SmAdd("Bank " + str(i) + ": move back to the original area", "", 0, i + 10)
+    SmAdd(MbRegionName(i) + ": move back to the original area", "", 0, i + 10)
    elseif mb_state(i) = 0 then
-    SmAdd("Bank " + str(i) + ": move to the new banks", "", 0, i)
+    SmAdd(MbRegionName(i) + ": move to the new banks", "", 0, i)
    else
-    SmAdd("Bank " + str(i) + ": stored by another tool", "", 0, 0)
+    SmAdd(MbRegionName(i) + ": stored by another tool", "", 0, 0)
    end if
   next
-  b = SmRun("Message text storage")
+  b = SmRun("Data stored in the new banks")
   if b = 0 then exit do
   b = sm_special(b)
   if b = 0 then continue do
 
   if b > 10 then
    b -= 10
-   if ConfirmBox("Move bank " + str(b) + " back? Save ROM refuses if it does not fit.") then
+   if ConfirmBox("Move " + MbRegionName(b) + " back? Save ROM refuses if it does not fit.") then
     reason = MbMoveBack(b)
    else
     reason = "cancel"
    end if
   else
-   if ConfirmBox("Move bank " + str(b) + " to the new banks? It takes 64 KB.") then
+   if ConfirmBox("Move " + MbRegionName(b) + " to the new banks? It takes 64 KB.") then
     reason = MbMove(b)
    else
     reason = "cancel"
@@ -590,7 +590,7 @@ sub MsgStorage()
   end if
   if reason = "" then
    modified = true
-   InfoBox("Done. Save ROM writes the text and patches the game.||Press any key", 4, 20)
+   InfoBox("Done. Save ROM writes the data and patches the game.||Press any key", 4, 20)
   elseif reason <> "cancel" then
    InfoBox(reason + "||Press any key", 4, 20)
   end if
@@ -630,7 +630,7 @@ sub EditMessages()
   if not MsgPickBank(bank) then exit do
 
   if bank > msg_bank_count then
-   MsgStorage()
+   MovedDataMenu()
   elseif bank = 2 then
    do
     if not MsgPickMap(mp) then exit do

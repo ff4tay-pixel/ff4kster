@@ -6,8 +6,6 @@ sub ReadDialogues()
  dim temp as UByte
  dim message as String
  
- MbDetect()
-
  'Read Bank 1
  start = &h80200
  for i as Integer = 1 to total_dialogues_bank1

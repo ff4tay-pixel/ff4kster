@@ -1,7 +1,7 @@
 'Helpers for the event editor: how full the event room is, the hint lines, undo and copy / paste of
 'script commands, keys and mouse for the script menus, and where an event is used.
 
-const event_room = &h6E00 'bytes the game has for all the events' scripts
+#define event_room (mb_limit(mb_events) - mb_text(mb_events)) 'bytes the game has for all the events' scripts
 
 dim shared event_undo(49) as String
 dim shared event_undo_count as Integer

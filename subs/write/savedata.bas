@@ -241,6 +241,10 @@ sub ApplyDataToROM()
  SavePortraits()
  SaveFieldSprites()
 
+ for b as Integer = 1 to mb_regions
+  MbWriteSites(b)
+ next
+
  FsFixChecksum()
 
 end sub

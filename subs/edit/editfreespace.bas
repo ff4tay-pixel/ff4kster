@@ -122,7 +122,7 @@ end sub
 sub EditFreeSpace()
 
  dim m as BlueMenu
- dim ids(1 to 6) as Integer
+ dim ids(1 to 8) as Integer
  dim hints as String
  dim n as Integer
  dim done as Boolean
@@ -146,6 +146,8 @@ sub EditFreeSpace()
    n += 1: ids(n) = 2: m.AddOption(FF4Text("Expand to 4 MB"))
    hints += "Add banks up to 7F to the ROM. Nothing is written until Save ROM.|"
   end if
+  n += 1: ids(n) = 6: m.AddOption(FF4Text("Move data to the new banks"))
+  hints += "Move the message text, events or triggers to the new banks for more room.|"
   if FsHasTable() then
    n += 1: ids(n) = 3: m.AddOption(FF4Text("Reserve a block"))
    hints += "Claim room in the new banks for a table, so nothing else is put there.|"
@@ -175,6 +177,7 @@ sub EditFreeSpace()
      end if
     case 3: FsReserveBlock()
     case 4: FsReleaseBlock()
+    case 6: MovedDataMenu()
     case else: done = true
    end select
   end if

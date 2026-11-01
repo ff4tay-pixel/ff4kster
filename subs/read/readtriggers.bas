@@ -14,10 +14,10 @@ sub ReadTriggers()
  for i as Integer = 1 to total_maps
   address = ByteAt(start + (i - 1) * 2)
   address += ByteAt(start + (i - 1) * 2 + 1) * &h100
-  address += &hA8500
+  address += mb_text(mb_triggers)
   finish = ByteAt(start + i * 2)
   finish += ByteAt(start + i * 2 + 1) * &h100
-  finish += &hA8500
+  finish += mb_text(mb_triggers)
   if finish > address then
    for j as Integer = 0 to finish - address - 5 step 5
     t = callocate(SizeOf(Trigger))

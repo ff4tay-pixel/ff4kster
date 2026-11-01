@@ -247,7 +247,7 @@ sub Event.ReadFromROM(index as UByte)
  dim entry as String
  dim i as Integer
  
- start = ByteAt(&h90200 + (index) * 2) + ByteAt(&h90200 + (index) * 2 + 1) * &h100 + &h90400
+ start = ByteAt(&h90200 + (index) * 2) + ByteAt(&h90200 + (index) * 2 + 1) * &h100 + mb_text(mb_events)
  
  i = 0
  else_clause = false

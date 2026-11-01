@@ -1385,8 +1385,9 @@ start of its text, so messages can be told apart; yellow ones differ from the
 ROM as it was loaded. The selected message is shown on the right as the game
 displays it, and the space used by the whole bank is always in the title.
 
-The last line of the first screen, "Where the text of banks 1 to 3 is stored...", moves the text of one of those
-banks to the new banks of an expanded ROM (see Free Space) and back. The text of banks 1 to 3 has a room of about
+The last line of the first screen, "Where the text, events and triggers are stored..." (also in Free Space on the
+main menu), moves the text of one of banks 1 to 3, the events or the triggers to the new banks of an expanded ROM
+(see Free Space) and back. The text of banks 1 to 3 has a room of about
 31 KB, 32 KB and 11 KB in the original game, and cannot grow because the game reads it with an address that cannot
 leave its bank. Moving a bank takes 64 KB of the new banks (and a few bytes for two small routines) and gives it
 65520 bytes of text. Save ROM writes the text there and changes the game's text reading instructions into jumps to
@@ -1394,6 +1395,16 @@ the routines (the pointer tables and everything else stay as they are), so the o
 used (and is not erased). The place of each bank is read back from the ROM when it is opened. A ROM where those
 instructions were changed by another tool is left alone. Not tried in an emulator or on a console: the routines
 were checked with a simulation of their instructions.
+
+Events and triggers work the same way. The events (all the scripts together, 28160 bytes in the original) get 65520
+bytes in the new banks. The triggers of the maps (4895 bytes, so 979 triggers in the original, which uses them all)
+get 65520 bytes, which is room for 13104 triggers, and the limit the trigger editors enforce follows: the Triggers
+editor and the map editor say how many fit. The game has other limits that a new trigger can meet: it takes the
+first triggers of a map as the map's treasure chests (as many as the chest count says), so Save ROM writes the
+chests of a map first, whatever place they have in the list (after a reload they are listed first); and it has 256
+chest switches for the maps up to 256 and 256 more for the maps after, so Save ROM refuses more chests than that
+(the original uses 242 and 161). The world triggers (82) are a separate table and are not moved. Each of these takes 64 KB of the new banks
+and 18 bytes of routine for each distance the game reads at (a trigger is read at 5 distances).
 
     ENTER:   Edit the message.
     SPACE:   The menu of the message, with the key of each action beside it:
@@ -2175,6 +2186,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.2
+    - Events and triggers can also be moved to the new banks (65520 bytes each; the trigger limit then follows the room, 13104 instead of 979); Free Space has a Move data to the new banks entry for message text, events and triggers
     - Messages: the text of banks 1 to 3 can be moved to the new banks of an expanded ROM for about 65 KB of room each (the game's text reading is patched to read it there); Space Usage and the bank list show the new room
     - Free Space: expand the ROM to 2 MB or 4 MB (header size and checksum written by Save ROM) and reserve or release blocks of the new banks in a table kept in the ROM; the groundwork for moving tables out of the full original banks
     - Summon pictures: in Edit Monster Sprites, the 17 summon pictures with a preview, graphics pointer, palette and tile count, an editor (the monster sprite editor) and BMP export and import (exports/summons)

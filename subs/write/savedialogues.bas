@@ -69,10 +69,6 @@ sub SaveDialogues()
   start += 1
  next
  
- for b as Integer = 1 to mb_banks
-  MbWriteSites(b)
- next
-
  'Write battle messages
  start = &h77574
  for i as Integer = 1 to total_dialogues_battle

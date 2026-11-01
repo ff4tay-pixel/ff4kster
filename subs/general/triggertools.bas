@@ -311,8 +311,8 @@ function AddTriggerAt(m as Integer, tile_x as Integer, tile_y as Integer) as Int
    InfoBox("The game has room for " + str(max_overworld_triggers) + " world triggers in all.|Delete one first.||Press any key", 20, 20)
    return 0
   end if
- elseif total_triggers >= max_triggers then
-  InfoBox("There is no room for more triggers.|The game has room for " + str(max_triggers) + " in all.||Press any key", 20, 20)
+ elseif total_triggers >= TriggerMax() then
+  InfoBox("There is no room for more triggers.|The game has room for " + str(TriggerMax()) + " in all. Delete one, or move|the triggers to the new banks (Free Space).||Press any key", 20, 20)
   return 0
  end if
 

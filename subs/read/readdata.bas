@@ -49,6 +49,7 @@ sub ReadData(filename as String)
   end if
  close
  original_rom = ff4rom
+ MbDetect() 'where the message text, events and triggers are
  
  old_path = curdir
  chdir(system_path)

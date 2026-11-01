@@ -41,7 +41,7 @@ function SpaceUsageText() as String
  for i as Integer = 1 to total_maps
   if i < 252 or i > 254 then used += maps(i).triggers.Length() * 5
  next
- lines += SpaceLine("Triggers", used, &hA9820 - &hA8500) + "|"
+ lines += SpaceLine("Triggers", used, mb_limit(mb_triggers) - mb_text(mb_triggers)) + "|"
 
  lines += SpaceLine("Map messages", ListBytes(dialogues_bank1, total_dialogues_bank1), mb_limit(1) - mb_text(1)) + "|"
 
