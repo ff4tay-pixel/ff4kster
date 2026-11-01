@@ -1385,6 +1385,16 @@ start of its text, so messages can be told apart; yellow ones differ from the
 ROM as it was loaded. The selected message is shown on the right as the game
 displays it, and the space used by the whole bank is always in the title.
 
+The last line of the first screen, "Where the text of banks 1 to 3 is stored...", moves the text of one of those
+banks to the new banks of an expanded ROM (see Free Space) and back. The text of banks 1 to 3 has a room of about
+31 KB, 32 KB and 11 KB in the original game, and cannot grow because the game reads it with an address that cannot
+leave its bank. Moving a bank takes 64 KB of the new banks (and a few bytes for two small routines) and gives it
+65520 bytes of text. Save ROM writes the text there and changes the game's text reading instructions into jumps to
+the routines (the pointer tables and everything else stay as they are), so the old copy in the original area is no longer
+used (and is not erased). The place of each bank is read back from the ROM when it is opened. A ROM where those
+instructions were changed by another tool is left alone. Not tried in an emulator or on a console: the routines
+were checked with a simulation of their instructions.
+
     ENTER:   Edit the message.
     SPACE:   The menu of the message, with the key of each action beside it:
              edit, find text in the list (the whole text, not only the start
@@ -2165,6 +2175,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.2
+    - Messages: the text of banks 1 to 3 can be moved to the new banks of an expanded ROM for about 65 KB of room each (the game's text reading is patched to read it there); Space Usage and the bank list show the new room
     - Free Space: expand the ROM to 2 MB or 4 MB (header size and checksum written by Save ROM) and reserve or release blocks of the new banks in a table kept in the ROM; the groundwork for moving tables out of the full original banks
     - Summon pictures: in Edit Monster Sprites, the 17 summon pictures with a preview, graphics pointer, palette and tile count, an editor (the monster sprite editor) and BMP export and import (exports/summons)
     - Stored monster pictures: add a picture from a BMP to free room of the ROM without replacing a monster's own, keep it in a list (config/monsterpictures.dat) and give it to any monster later, in Edit Monster Sprites or with Pointer, Stored picture in the Graphics box of Edit Monsters; Space Usage shows the room

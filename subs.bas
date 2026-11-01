@@ -43,7 +43,10 @@
 #include once "subs/general/flagmooncreatures.bas"
 #include once "subs/general/seteventmaplinks.bas"
 
-'Data reading
+'Data reading (the free space routines first: ReadDialogues needs to know where the message text is)
+#include once "subs/write/writebyte.bas"
+#include once "subs/general/freespace.bas"
+#include once "subs/general/msgbanks.bas"
 #include once "subs/read/readfont.bas"
 #include once "subs/read/readmonsterpalettes.bas"
 #include once "subs/read/readspellsets.bas"
@@ -61,8 +64,6 @@
 #include once "subs/read/readdata.bas"
 
 'Data writing
-#include once "subs/write/writebyte.bas"
-#include once "subs/general/freespace.bas"
 #include once "subs/write/savespellsets.bas"
 #include once "subs/write/saveevents.bas"
 #include once "subs/write/saveeventcalls.bas"

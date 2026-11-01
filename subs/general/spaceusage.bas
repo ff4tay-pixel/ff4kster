@@ -43,7 +43,7 @@ function SpaceUsageText() as String
  next
  lines += SpaceLine("Triggers", used, &hA9820 - &hA8500) + "|"
 
- lines += SpaceLine("Map messages", ListBytes(dialogues_bank1, total_dialogues_bank1), &h881FF - &h80600) + "|"
+ lines += SpaceLine("Map messages", ListBytes(dialogues_bank1, total_dialogues_bank1), mb_limit(1) - mb_text(1)) + "|"
 
  used = 0
  for i as Integer = 1 to total_maps
@@ -51,9 +51,9 @@ function SpaceUsageText() as String
    used += len(maps(i).dialogues.ItemAt(j)) + 1
   next
  next
- lines += SpaceLine("Map dialogue", used, &h901FB - &h88500) + "|"
+ lines += SpaceLine("Map dialogue", used, mb_limit(2) - mb_text(2)) + "|"
 
- lines += SpaceLine("Bank 3 text", ListBytes(dialogues_bank3, total_dialogues_bank3), &h9D3FF - &h9A900) + "|"
+ lines += SpaceLine("Bank 3 text", ListBytes(dialogues_bank3, total_dialogues_bank3), mb_limit(3) - mb_text(3)) + "|"
  lines += SpaceLine("Battle messages", ListBytes(dialogues_battle, total_dialogues_battle), &h781FF - &h77574) + "|"
  lines += SpaceLine("Battle alerts", ListBytes(dialogues_alerts, total_dialogues_alerts), &h7B5FF - &h7B276) + "|"
  lines += SpaceLine("Monster AI groups", AIBytes(1), AIRoom(1)) + "|"

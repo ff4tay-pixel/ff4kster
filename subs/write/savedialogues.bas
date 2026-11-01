@@ -5,11 +5,11 @@ sub SaveDialogues()
  dim total as UInteger
  
  'Write Bank 1
- start = &h80600
+ start = mb_text(1)
  for i as Integer = 1 to total_dialogues_bank1
-  WriteByte(&h80200 + (i - 1) * 2, (start - &h80600) mod &h100)
-  WriteByte(&h80200 + (i - 1) * 2 + 1, (start - &h80600) \ &h100)
-  if start + len(dialogues_bank1.ItemAt(i)) + 1 > &h881FF then
+  WriteByte(&h80200 + (i - 1) * 2, (start - mb_text(1)) mod &h100)
+  WriteByte(&h80200 + (i - 1) * 2 + 1, (start - mb_text(1)) \ &h100)
+  if start + len(dialogues_bank1.ItemAt(i)) + 1 > mb_limit(1) then
    WarningMessage(FF4Text("Bank 1 overflow!"))
    exit for
   end if
@@ -23,18 +23,18 @@ sub SaveDialogues()
  next
  
  'Write Bank 2
- start = &h88500
+ start = mb_text(2)
  for i as Integer = 1 to total_maps
   total = 0
   for j as Integer = 1 to maps(i).dialogues.Length()
    total += len(maps(i).dialogues.ItemAt(j)) + 1
   next
-  if start + total > &h901FB then
+  if start + total > mb_limit(2) then
    WarningMessage(FF4Text("Bank 2 overflow!"))
    exit for
   else
-   WriteByte(&h88200 + (i - 1) * 2, (start - &h88500) mod &h100)
-   WriteByte(&h88200 + (i - 1) * 2 + 1, (start - &h88500) \ &h100)
+   WriteByte(&h88200 + (i - 1) * 2, (start - mb_text(2)) mod &h100)
+   WriteByte(&h88200 + (i - 1) * 2 + 1, (start - mb_text(2)) \ &h100)
    for j as Integer = 1 to maps(i).dialogues.Length()
     temp = maps(i).dialogues.ItemAt(j)
     for k as Integer = 1 to len(temp)
@@ -46,17 +46,17 @@ sub SaveDialogues()
    next
   end if
   if i = total_maps then
-   WriteByte(&h901FE, (start - &h88500) mod &h100)
-   WriteByte(&h901FF, (start - &h88500) \ &h100)
+   WriteByte(&h901FE, (start - mb_text(2)) mod &h100)
+   WriteByte(&h901FF, (start - mb_text(2)) \ &h100)
   end if
  next
  
  'Write Bank 3
- start = &h9A900
+ start = mb_text(3)
  for i as Integer = 1 to total_dialogues_bank3
-  WriteByte(&h9A700 + (i - 1) * 2, (start - &h9A900) mod &h100)
-  WriteByte(&h9A700 + (i - 1) * 2 + 1, (start - &h9A900) \ &h100)
-  if start + len(dialogues_bank3.ItemAt(i)) + 1 > &h9D3FF then
+  WriteByte(&h9A700 + (i - 1) * 2, (start - mb_text(3)) mod &h100)
+  WriteByte(&h9A700 + (i - 1) * 2 + 1, (start - mb_text(3)) \ &h100)
+  if start + len(dialogues_bank3.ItemAt(i)) + 1 > mb_limit(3) then
    WarningMessage(FF4Text("Bank 3 overflow!"))
    exit for
   end if
@@ -69,6 +69,10 @@ sub SaveDialogues()
   start += 1
  next
  
+ for b as Integer = 1 to mb_banks
+  MbWriteSites(b)
+ next
+
  'Write battle messages
  start = &h77574
  for i as Integer = 1 to total_dialogues_battle

@@ -6,10 +6,12 @@ sub ReadDialogues()
  dim temp as UByte
  dim message as String
  
+ MbDetect()
+
  'Read Bank 1
  start = &h80200
  for i as Integer = 1 to total_dialogues_bank1
-  next_line = &h80600 + ByteAt(start + (i - 1) * 2) + ByteAt(start + (i - 1) * 2 + 1) * &h100
+  next_line = mb_text(1) + ByteAt(start + (i - 1) * 2) + ByteAt(start + (i - 1) * 2 + 1) * &h100
   message = ""
   do
    temp = ByteAt(next_line)
@@ -26,10 +28,10 @@ sub ReadDialogues()
  'Read Bank 2
  start = &h88200
  for i as Integer = 1 to total_maps
-  next_line = &h88500 + ByteAt(start + (i - 1) * 2) + ByteAt(start + (i - 1) * 2 + 1) * &h100
+  next_line = mb_text(2) + ByteAt(start + (i - 1) * 2) + ByteAt(start + (i - 1) * 2 + 1) * &h100
   if i = total_maps then start = &h901FE - i * 2
-  finish = &h88500 + ByteAt(start + i * 2) + ByteAt(start + i * 2 + 1) * &h100
-  if finish = &h88500 + &hFFFF then finish = &h901FB
+  finish = mb_text(2) + ByteAt(start + i * 2) + ByteAt(start + i * 2 + 1) * &h100
+  if finish = mb_text(2) + &hFFFF then finish = mb_limit(2)
   do until next_line >= finish
    message = ""
    do
@@ -48,7 +50,7 @@ sub ReadDialogues()
  'Read Bank 3
  start = &h9A700
  for i as Integer = 1 to total_dialogues_bank3
-  next_line = &h9A900 + ByteAt(start + (i - 1) * 2) + ByteAt(start + (i - 1) * 2 + 1) * &h100
+  next_line = mb_text(3) + ByteAt(start + (i - 1) * 2) + ByteAt(start + (i - 1) * 2 + 1) * &h100
   message = ""
   do
    temp = ByteAt(next_line)

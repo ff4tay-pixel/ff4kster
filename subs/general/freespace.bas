@@ -20,6 +20,7 @@ const fs_bank_size = &h8000
 const fs_header = &h200
 const fs_size_byte = &h7FD7 + &h200
 const fs_checksum = &h7FDC + &h200
+const fs_rom_cap = &h3F0000 'rom offset of banks 7E and 7F, which are RAM to the console: nothing is placed from here on
 
 const fs_owner_reserved = 1
 const fs_owner_count = 10
@@ -164,9 +165,12 @@ end function
 
 function FsGapEnd(g as Integer) as Integer
 
- if g >= fs_blocks then return FsRomSize()
+ dim result as Integer
 
- return fs_start(g + 1)
+ if g >= fs_blocks then result = Min(FsRomSize(), fs_rom_cap) else result = fs_start(g + 1)
+ if result < FsGapStart(g) then result = FsGapStart(g)
+
+ return result
 
 end function
 
@@ -204,13 +208,14 @@ function FsUsedBytes() as Integer
 end function
 
 
-function FsGapFit(g as Integer, size as Integer, cross_banks as Boolean) as Integer
+function FsGapFit(g as Integer, size as Integer, cross_banks as Boolean, align_bank as Boolean = false) as Integer
 
  'Where a block of that size fits in gap g, -1 if it does not. Unless cross_banks is true the block must not cross
  ' a bank boundary: a 16-bit pointer inside the game's code only reaches within one bank.
 
  dim s as Integer = FsGapStart(g)
 
+ if align_bank and s mod fs_bank_size <> 0 then s = (s \ fs_bank_size + 1) * fs_bank_size
  if not cross_banks and size <= fs_bank_size and s mod fs_bank_size + size > fs_bank_size then
   s = (s \ fs_bank_size + 1) * fs_bank_size
  end if
@@ -252,9 +257,9 @@ function FsLargestRun(within_bank as Boolean) as Integer
 end function
 
 
-function FsAlloc(size as Integer, owner as Integer, cross_banks as Boolean = false) as Integer
+function FsAlloc(size as Integer, owner as Integer, cross_banks as Boolean = false, align_bank as Boolean = false) as Integer
 
- 'Claims the first place of that size. Returns the file offset (header included) or -1 when there is no room, no
+ 'Claims the first place of that size (starting on a bank boundary with align_bank). Returns the file offset (header included) or -1 when there is no room, no
  ' table, or the table is full. The bytes are left as they are (FF in a fresh bank).
 
  dim s as Integer
@@ -264,7 +269,7 @@ function FsAlloc(size as Integer, owner as Integer, cross_banks as Boolean = fal
  if fs_blocks >= fs_max_blocks then return -1
 
  for g as Integer = 0 to fs_blocks
-  s = FsGapFit(g, size, cross_banks)
+  s = FsGapFit(g, size, cross_banks, align_bank)
   if s >= 0 then
    'insert as block g + 1
    for i as Integer = fs_blocks to g + 1 step -1

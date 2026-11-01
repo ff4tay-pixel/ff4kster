@@ -318,9 +318,7 @@ function MsgRoom(bank as Integer) as Integer
  'Bytes the ROM has for the bank (the same areas as Save ROM and Space Usage)
 
  select case bank
-  case 1: return &h881FF - &h80600
-  case 2: return &h901FB - &h88500
-  case 3: return &h9D3FF - &h9A900
+  case 1, 2, 3: return mb_limit(bank) - mb_text(bank)
   case 4: return &h781FF - &h77574
   case 5: return &h7B5FF - &h7B276
   case 6: return &h7B6FF - &h7B640

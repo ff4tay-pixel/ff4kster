@@ -481,6 +481,7 @@ function MsgPickBank(byref bank as Integer) as Boolean
  for b as Integer = 1 to msg_bank_count
   picker.AddOption(MsgBankLine(b), MsgSpaceColor(b))
  next
+ picker.AddOption(FF4Text("Where the text of banks 1 to 3 is stored..."), 11)
  picker.ChangeSelected(bank)
  picker.title = "Pick a bank"
 
@@ -492,9 +493,15 @@ function MsgPickBank(byref bank as Integer) as Boolean
   BlueBox(0, 0, 78, 1)
   WriteText(FF4Text("MESSAGES"), 2, 1, 15)
   WriteText(FF4Text("Yellow: nearly full. Red: over the limit, Save ROM would refuse."), 12, 1, 23)
-  line (0, (3 + msg_bank_count + 3) * 8)-(639, (3 + msg_bank_count + 5) * 8 - 1), RGB(0, 0, 0), bf
-  WriteText(FF4Text(MsgBankInfo(picker.selected)), 1, 3 + msg_bank_count + 3, 14)
-  if picker.selected = 2 then WriteText(FF4Text("Pick a map next: the messages of a bank 2 list belong to that map."), 1, 3 + msg_bank_count + 4, 23)
+  line (0, (3 + msg_bank_count + 4) * 8)-(639, (3 + msg_bank_count + 8) * 8 - 1), RGB(0, 0, 0), bf
+  if picker.selected <= msg_bank_count then
+   WriteText(FF4Text(MsgBankInfo(picker.selected)), 1, 3 + msg_bank_count + 4, 14)
+   if picker.selected <= mb_banks then WriteText(FF4Text(MbLocationText(picker.selected)), 1, 3 + msg_bank_count + 6, 15)
+  else
+   WriteText(FF4Text("Move the text of bank 1, 2 or 3 to the new banks of an expanded ROM"), 1, 3 + msg_bank_count + 4, 14)
+   WriteText(FF4Text("for room for about twice as much text. Enter opens the choices."), 1, 3 + msg_bank_count + 5, 14)
+  end if
+  if picker.selected = 2 then WriteText(FF4Text("Pick a map next: the messages of a bank 2 list belong to that map."), 1, 3 + msg_bank_count + 5, 23)
   screenunlock
  loop until picker.UserInput()
 
@@ -542,6 +549,57 @@ function MsgPickMap(byref mp as Integer) as Boolean
 end function
 
 
+sub MsgStorage()
+
+ 'Where the text of banks 1 to 3 is stored: move a bank to the new banks of an expanded ROM, or back.
+
+ dim b as Integer
+ dim reason as String
+ dim ids(1 to 3) as Integer
+
+ b = 1
+ do
+  SmReset()
+  for i as Integer = 1 to mb_banks
+   if mb_state(i) = 1 then
+    SmAdd("Bank " + str(i) + ": move back to the original area", "", 0, i + 10)
+   elseif mb_state(i) = 0 then
+    SmAdd("Bank " + str(i) + ": move to the new banks", "", 0, i)
+   else
+    SmAdd("Bank " + str(i) + ": stored by another tool", "", 0, 0)
+   end if
+  next
+  b = SmRun("Message text storage")
+  if b = 0 then exit do
+  b = sm_special(b)
+  if b = 0 then continue do
+
+  if b > 10 then
+   b -= 10
+   if ConfirmBox("Move bank " + str(b) + " back? Save ROM refuses if it does not fit.") then
+    reason = MbMoveBack(b)
+   else
+    reason = "cancel"
+   end if
+  else
+   if ConfirmBox("Move bank " + str(b) + " to the new banks? It takes 64 KB.") then
+    reason = MbMove(b)
+   else
+    reason = "cancel"
+   end if
+  end if
+  if reason = "" then
+   modified = true
+   InfoBox("Done. Save ROM writes the text and patches the game.||Press any key", 4, 20)
+  elseif reason <> "cancel" then
+   InfoBox(reason + "||Press any key", 4, 20)
+  end if
+  cls
+ loop
+
+end sub
+
+
 sub MsgOpenAt(code as Integer)
 
  'Opens the list of messages on one message: code is (bank * 1000 + map) * 1000 + number (from the search)
@@ -571,7 +629,9 @@ sub EditMessages()
 
   if not MsgPickBank(bank) then exit do
 
-  if bank = 2 then
+  if bank > msg_bank_count then
+   MsgStorage()
+  elseif bank = 2 then
    do
     if not MsgPickMap(mp) then exit do
     MsgEditList(2, mp)
