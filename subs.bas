@@ -62,6 +62,7 @@
 
 'Data writing
 #include once "subs/write/writebyte.bas"
+#include once "subs/general/freespace.bas"
 #include once "subs/write/savespellsets.bas"
 #include once "subs/write/saveevents.bas"
 #include once "subs/write/saveeventcalls.bas"
@@ -141,4 +142,5 @@ declare function ChestFormation(m as Integer, chest_byte as Integer) as Integer
 #include once "subs/edit/exportimport.bas"
 #include once "subs/general/globalsearch.bas"
 #include once "subs/general/spaceusage.bas"
+#include once "subs/edit/editfreespace.bas"
 #include once "subs/general/lastrom.bas"

@@ -241,6 +241,8 @@ sub ApplyDataToROM()
  SavePortraits()
  SaveFieldSprites()
 
+ FsFixChecksum()
+
 end sub
 
 

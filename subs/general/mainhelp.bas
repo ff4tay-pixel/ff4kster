@@ -200,6 +200,10 @@ sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
    HelpLine(lines(), n, "Shows how full each fixed ROM area is")
    HelpLine(lines(), n, "events, triggers, text, descriptions.")
    HelpLine(lines(), n, "Over 100% means Save ROM will refuse.")
+  case 38
+   HelpLine(lines(), n, "Expand the ROM to 2 MB or 4 MB and keep track")
+   HelpLine(lines(), n, "of the blocks in the new banks. Nothing is")
+   HelpLine(lines(), n, "written until Save ROM.")
   case 29
    HelpLine(lines(), n, "Lists every spell, item, monster, shop,")
    HelpLine(lines(), n, "formation and job you changed since loading,")

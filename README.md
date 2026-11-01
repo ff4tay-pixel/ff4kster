@@ -256,7 +256,7 @@ headings. The editors are in this order: Features, Spells, Spell Sets,
 Weapons, Armors, Medicines, Tools, Shops, Jobs, Characters, Commands, Actors,
 Battle Sprites, Portraits, Field Sprites, Messages, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
 Monsters, Formations, Encounters, Autobattles, Solobattles and Battle Formulas, followed by
-Search Everywhere, Space Usage and Changed Entries. "Edit World Maps" (under World) first lists
+Search Everywhere, Space Usage, Free Space and Changed Entries. "Edit World Maps" (under World) first lists
 the three worlds, like the list of maps, with a picture of the selected one and how
 full its data is; Enter edits it. The editor looks and works like the map editor:
 the tile palette on the left (8 tiles wide, tile numbers in the same order as in the
@@ -2052,6 +2052,20 @@ actor. In that case, only that actor will be hidden, and the rest will be
 visible/playable as normal.
 
 
+FREE SPACE
+----------
+The Free Space entry (under Overview) expands the ROM and keeps track of what is in the new space.
+"Expand to 2 MB" adds the empty banks 20-3F after the game's 32 banks, "Expand to 4 MB" adds banks up to 7F
+(the last two are only reachable through their mirrors, FE and FF). The new bytes are FF. Nothing is written until
+Save ROM, which also writes the size byte and the checksum of the header (an unexpanded ROM is left as it is).
+The first 2048 bytes of bank 20 hold a table of blocks ("F4KS", then for each block its start, length and owner), so
+the list travels with the ROM. "Reserve a block" claims room that stays inside one bank (a pointer in the game's
+code only reaches within a bank) for an owner you pick, and "Release a block" gives it back, filling it with FF.
+Only the new banks are managed: the free bytes inside the original 1 MB are not known to be free. A ROM that was
+extended by another tool has no table, so the screen shows its size but does not manage it. The routines other
+editors will use are in subs/general/freespace.bas (FsAlloc, FsRelease, FsResize).
+
+
 CONFIG FILES
 ------------
 
@@ -2151,6 +2165,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.2
+    - Free Space: expand the ROM to 2 MB or 4 MB (header size and checksum written by Save ROM) and reserve or release blocks of the new banks in a table kept in the ROM; the groundwork for moving tables out of the full original banks
     - Summon pictures: in Edit Monster Sprites, the 17 summon pictures with a preview, graphics pointer, palette and tile count, an editor (the monster sprite editor) and BMP export and import (exports/summons)
     - Stored monster pictures: add a picture from a BMP to free room of the ROM without replacing a monster's own, keep it in a list (config/monsterpictures.dat) and give it to any monster later, in Edit Monster Sprites or with Pointer, Stored picture in the Graphics box of Edit Monsters; Space Usage shows the room
     - Level up data: Save ROM places each character's rows in the original area or in unused bytes of the same bank, so every character can start at level 1, and refuses when they do not fit; Space Usage lists the room
