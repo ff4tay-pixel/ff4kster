@@ -49,6 +49,7 @@
 #include once "subs/general/msgbanks.bas"
 #include once "subs/general/monsterbanks.bas"
 #include once "subs/general/palettebanks.bas"
+#include once "subs/general/shopbanks.bas"
 #include once "subs/read/readfont.bas"
 #include once "subs/read/readmonsterpalettes.bas"
 #include once "subs/read/readspellsets.bas"

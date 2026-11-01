@@ -9,6 +9,7 @@ sub EditShops()
  for i as Integer = 1 to total_shops
   select_shop.AddOption(shop_names.ItemAt(i))
  next
+ if total_shops > screen_height - 3 then select_shop.max_rows = screen_height - 3 'the bottom row is the hint line; a long list scrolls
  
  edit_wares.x = select_shop.options.Width() + 2
  edit_wares.hint = "Enter picks the item for this slot. Esc goes back to the shop list."

@@ -89,7 +89,7 @@ dim shared weapons(total_weapons) as Weapon
 dim shared armors(total_armors) as Armor
 dim shared medicines(total_medicines) as Medicine
 dim shared tools(total_tools) as Tool
-dim shared shops(total_shops) as Shop
+dim shared shops(256) as Shop
 dim shared jobs(total_jobs) as Job
 dim shared characters(total_characters) as Character
 dim shared menucommands(total_commands) as MenuCommand

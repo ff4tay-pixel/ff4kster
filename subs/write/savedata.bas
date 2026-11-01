@@ -246,6 +246,7 @@ sub ApplyDataToROM()
  next
  MgWriteSite()
  PbWriteSite()
+ SbWriteSite()
 
  FsFixChecksum()
 

@@ -52,6 +52,7 @@ sub ReadData(filename as String)
  MbDetect() 'where the message text, events and triggers are
  MgDetect() 'where the extra monster picture banks are
  PbDetect() 'where the monster palettes are
+ SbDetect() 'where the shops are
  
  old_path = curdir
  chdir(system_path)

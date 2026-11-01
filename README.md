@@ -1417,7 +1417,14 @@ Monster palettes: the original table has room for 240 palettes (the editor used 
 can be used now). A palette number is one byte, so 256 is the most. The menu entry "Monster palettes: room for 256
 instead of 240" copies the table to a new 4 KB block of the new banks and changes the address in the game's palette
 instruction (Save ROM writes it); palettes 241 to 256 start black. Moving back copies the first 240 palettes back and is
-refused while a monster, boss or stored picture uses palette 240 or more. Each of these takes 64 KB of the new banks
+refused while a monster, boss or stored picture uses palette 240 or more.
+
+Shops: a shop is 8 items in a table, and the game works out where a shop is with a multiplication that overflows
+for shop 32 and above (the original game uses shops 0 to 31, the 33rd shop of the table, "Shop 33" in the editor, can
+not be opened by an event). The menu entry "Shops: room for 256 instead of 32" copies the table to the new banks (2 KB) and
+changes that part of the game (19 bytes become a jump to a 24 byte routine written by Save ROM), so the editor and the
+event shop list show 256 shops (names from config/shop.dat, the others are "Shop 34" and so on). Moving back is refused
+while a shop after the 33rd has items. Each of these takes 64 KB of the new banks
 and 18 bytes of routine for each distance the game reads at (a trigger is read at 5 distances).
 
     ENTER:   Edit the message.
@@ -2200,6 +2207,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.2
+    - Shops: 256 shops (up from 32 that the game can open) in a table in the new banks of an expanded ROM
     - Monster palettes: 240 instead of 234 shown, and room for 256 in a table in the new banks of an expanded ROM
     - Monster pictures: 96 KB of extra room in three new banks of an expanded ROM for stored and edited pictures (Free Space, Move data to the new banks)
     - Events and triggers can also be moved to the new banks (65520 bytes each; the trigger limit then follows the room, 13104 instead of 979); Free Space has a Move data to the new banks entry for message text, events and triggers

@@ -1,4 +1,5 @@
-const total_shops = 33
+declare function ShopCount() as Integer
+#define total_shops (ShopCount())
 const total_maps = 384
 const total_map_labels = &h79
 const total_spritesheets = 16
