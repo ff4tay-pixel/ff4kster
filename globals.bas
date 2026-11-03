@@ -116,6 +116,16 @@ dim shared battle_char_gfx(total_battle_char_sheets - 1, 63, 7, 7) as UByte 'she
 dim shared battle_palette_raw(15, 15) as UInteger 'battle character palettes as SNES colors: 0bbbbbgggggrrrrr
 dim shared portrait_gfx(16, 31, 31) as UByte 'menu portrait, row, column: color 0-7
 dim shared portrait_palette_raw(15, 7) as UInteger 'menu portrait palettes as SNES colors
+dim shared title_px(255, 255) as UByte 'title screen, row, column: color 0-15 within the palette of its tile
+dim shared title_cellpal(31, 31) as UByte 'title screen palette 0-7 of each 8x8 tile, row then column
+dim shared title_pal_raw(7, 15) as UInteger 'title screen palettes as SNES colors
+dim shared title_cmp_px(255, 255) as UByte 'scratch copies used when saving
+dim shared title_cmp_cellpal(31, 31) as UByte
+dim shared title_cmp_pal(7, 15) as UInteger
+dim shared title_tile_cell(1023) as Integer 'first cell of each different title tile
+dim shared title_cell_tile(1023) as Integer 'tile of each title cell
+dim shared title_tiles_used as Integer
+dim shared title_tiles_stale as Boolean = true
 dim shared formations(total_formations) as Formation
 dim shared encounters(total_encounters, 8) as UByte
 dim shared encounter_tables(total_encounter_tables) as UByte

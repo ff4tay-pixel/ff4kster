@@ -254,7 +254,7 @@ The main menu groups the editors under yellow headings (Items and magic,
 Party, Story and text, World, Battles, Overview); the cursor skips the
 headings. The editors are in this order: Features, Spells, Spell Sets,
 Weapons, Armors, Medicines, Tools, Shops, Jobs, Characters, Commands, Actors,
-Battle Sprites, Portraits, Field Sprites, Messages, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
+Battle Sprites, Portraits, Field Sprites, Title Screen, Messages, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
 Monsters, Formations, Encounters, Autobattles, Solobattles and Battle Formulas, followed by
 Search Everywhere, Space Usage, Free Space and Changed Entries. "Edit World Maps" (under World) first lists
 the three worlds, like the list of maps, with a picture of the selected one and how
@@ -788,6 +788,43 @@ four to a row (64x32 for a sheet of 8 frames) and the color table of the BMP is 
 palette: entry N is color N and a pixel's value is its color number, so your image
 editor must not renumber the colors. Import also sets the colors 1 to 7 of palette
 PP. Like everything else it only changes the in-memory data until Save ROM.
+
+
+TITLE SCREEN
+------------
+
+"Edit Title Screen" (in the Party group, after Edit Field Sprites) edits the picture
+shown before New Game: the Final Fantasy II logo, the sword and the two lines of
+text. It is 256x224 pixels of 16 colors; the screen is made of 32x28 tiles of 8x8
+pixels and every tile uses one of 8 palettes of 16 colors. Color 0 of a tile is
+transparent: the game shows the backdrop there, which is color 0 of palette 0 (black
+in the original), so that is the one color 0 you can change.
+
+The left window is the picture at zoom 8 (Z switches to zoom 4), the right one the
+whole picture at actual size with a yellow frame where the zoom window is. Arrows move
+a pixel, Home, End, PgUp and PgDn move a whole tile, 0 to 9 choose a brush color and
+paint, Space paints, F fills (the connected pixels of the same color in tiles with the
+same palette), G shows or hides the tile grid, Comma and Period change the palette of
+the tile under the cursor, Ctrl-C and Ctrl-V copy and paste a tile (with its palette),
+Ctrl-Z undoes, Ctrl-R reverts the picture and P edits the palette colors (Q A, W S, E D
+change red, green and blue of the color picked with Left and Right, the bracket keys move
+a color and the pixels follow, Comma and Period pick the palette). Enter opens a
+menu with every action and its key. Changing a palette color changes every tile
+that uses it.
+
+The game has room for 256 different tiles. The screen counts the different tiles of
+the picture ("Tiles used 195 of 256", in red over the limit) and Save ROM refuses a
+picture that needs more. The original uses 195, so there is room to draw. Saving finds
+the different tiles again and renumbers them; a picture that was not edited is not
+rewritten.
+
+E exports exports	itle	itlescreen.bmp and I imports it. It is an 8 bits per pixel
+BMP of 256x224 and the value of a pixel is its palette times 16 plus its color, so the
+palette of each tile is part of the image: a tile may only use colors of one palette
+(color 0 of any palette counts as transparent). The color table holds the 8 palettes in
+order, entries 0 to 127, and sets the colors of the palettes on import. Your image editor
+must not renumber the colors. Like everything else it only changes the in-memory data
+until Save ROM.
 
 
 BATTLE SPRITES
@@ -2207,6 +2244,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.2
+    - Added Title Screen editor: the 256x224 picture shown before New Game with a zoom window and the whole picture, pixel painting, fill, tile palettes, the 8 palettes of 16 colors with a palette editor, a count of the 256 tiles the ROM has room for, BMP export and import (exports/title)
     - Shops: 256 shops (up from 32 that the game can open) in a table in the new banks of an expanded ROM
     - Monster palettes: 240 instead of 234 shown, and room for 256 in a table in the new banks of an expanded ROM
     - Monster pictures: 96 KB of extra room in three new banks of an expanded ROM for stored and edited pictures (Free Space, Move data to the new banks)

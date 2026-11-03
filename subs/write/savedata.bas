@@ -240,6 +240,7 @@ sub ApplyDataToROM()
  SaveBattleCharGfx()
  SavePortraits()
  SaveFieldSprites()
+ SaveTitle()
 
  for b as Integer = 1 to mb_regions
   MbWriteSites(b)

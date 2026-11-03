@@ -28,7 +28,7 @@ const max_pose_uses = 12
 const special_pose_id = &h24 'the Golbez-style special pose, which no normal pose shares tiles with
 const image_pose_count = 13 'poses 0-11 and the special pose
 
-dim shared bmp_px(191, 191) as UByte 'scratch image, row then column (big enough for the largest monster)
+dim shared bmp_px(255, 255) as UByte 'scratch image, row then column (big enough for the largest monster and the title screen)
 dim shared bmp_table(255) as UInteger 'color table of the BMP last read, as RGB
 dim shared bmp_table_count as Integer
 
