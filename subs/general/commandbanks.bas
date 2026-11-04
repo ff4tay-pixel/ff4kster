@@ -41,6 +41,11 @@ dim shared cb_site_table(1 to cb_sites) as Integer
 dim shared cb_site_add(1 to cb_sites) as Integer 'bytes after the start of the table that the instruction reads
 dim shared cb_block_size as Integer
 dim shared cb_rewrite_all as Boolean 'the tables changed place: Save ROM writes every command again
+dim shared cb_hook as Boolean 'the game starts a command through a routine in the new banks that also reads the bank of the code
+dim shared cb_hook_at as Integer 'file offset of that routine
+dim shared cb_bank_at as Integer 'file offset of the table of banks (2 bytes per command: the bank and a zero)
+const cb_hook_size = 21
+const cb_hook_total = cb_hook_size + cb_slots * 2
 
 cb_orig(1) = &h7A9C6: cb_size(1) = 5 'names
 cb_orig(2) = &h9FFC3: cb_size(2) = 1 'targeting
@@ -124,6 +129,21 @@ function CbDefaultName(index as Integer) as String
 end function
 
 
+function CbHookBytes() as String
+
+ 'The routine that starts a command: pointer from the table, bank from the table of banks, then JML [$80]
+
+ dim p as Integer = MbSnes(cb_at(6))
+ dim q as Integer = MbSnes(cb_at(6) + 1)
+ dim b as Integer = MbSnes(cb_bank_at)
+
+ return chr(&hBF) + chr(p and &hFF) + chr((p shr 8) and &hFF) + chr(p shr 16) + chr(&h85) + chr(&h80) + _
+  chr(&hBF) + chr(q and &hFF) + chr((q shr 8) and &hFF) + chr(q shr 16) + chr(&h85) + chr(&h81) + _
+  chr(&hBF) + chr(b and &hFF) + chr((b shr 8) and &hFF) + chr(b shr 16) + chr(&h85) + chr(&h82) + chr(&hDC) + chr(&h80) + chr(&h00)
+
+end function
+
+
 sub CbDetect()
 
  dim operand as Integer
@@ -134,14 +154,22 @@ sub CbDetect()
  dim base_at as Integer = -1
  dim agree as Boolean = true
 
+ dim hooked as Boolean = (ByteAt(cb_site(9)) = &h5C)
+ dim needed as Integer = cb_sites
+
  cb_state = 0
  cb_block = 0
+ cb_hook = false
+ cb_hook_at = 0
+ cb_bank_at = 0
  cb_rewrite_all = false
  for t as Integer = 1 to cb_tables
   cb_at(t) = cb_orig(t)
  next
+ if hooked then needed = cb_sites - 2
 
  for s as Integer = 1 to cb_sites
+  if hooked and (s = 9 or s = 10) then continue for
   if ByteAt(cb_site(s)) <> &hBF then
    cb_state = 2
    exit sub
@@ -159,12 +187,27 @@ sub CbDetect()
 
  if n_orig = cb_sites then exit sub
 
- if n_new = cb_sites and agree and base_at >= fs_header + fs_original_size and base_at + cb_block_size <= len(ff4rom) then
+ if n_new = needed and agree and base_at >= fs_header + fs_original_size and base_at + cb_block_size <= len(ff4rom) then
   cb_state = 1
   cb_block = base_at
   for t as Integer = 1 to cb_tables
    cb_at(t) = base_at + cb_off(t)
   next
+  if hooked then
+   'the routine must be exactly what this file writes
+   dim target as Integer = MbFileOffset(MbOperand(cb_site(9)))
+   dim bank_operand as Integer
+   cb_state = 2
+   if target >= fs_header + fs_original_size and target + cb_hook_size <= len(ff4rom) then
+    bank_operand = ByteAt(target + 13) + ByteAt(target + 14) * &h100 + ByteAt(target + 15) * &h10000
+    cb_bank_at = MbFileOffset(bank_operand)
+    if cb_bank_at >= fs_header + fs_original_size and cb_bank_at + cb_slots * 2 <= len(ff4rom) and mid(ff4rom, target + 1, cb_hook_size) = CbHookBytes() then
+     cb_state = 1
+     cb_hook = true
+     cb_hook_at = target
+    end if
+   end if
+  end if
  else
   cb_state = 2
  end if
@@ -181,11 +224,73 @@ sub CbWriteSite()
  if cb_state = 2 then exit sub
 
  for s as Integer = 1 to cb_sites
+  if cb_hook and (s = 9 or s = 10) then continue for
   operand = MbSnes(cb_at(cb_site_table(s)) + cb_site_add(s))
   WriteByte(cb_site(s) + 1, operand and &hFF)
   WriteByte(cb_site(s) + 2, (operand shr 8) and &hFF)
   WriteByte(cb_site(s) + 3, operand shr 16)
  next
+
+ 'the start of a command: the original instructions, or a jump to the routine
+ if cb_hook then
+  dim code as String = CbHookBytes()
+  for i as Integer = 1 to cb_hook_size
+   WriteByte(cb_hook_at + i - 1, asc(mid(code, i, 1)))
+  next
+  operand = MbSnes(cb_hook_at)
+  WriteByte(cb_site(9), &h5C)
+  WriteByte(cb_site(9) + 1, operand and &hFF)
+  WriteByte(cb_site(9) + 2, (operand shr 8) and &hFF)
+  WriteByte(cb_site(9) + 3, operand shr 16)
+  for i as Integer = 4 to 18
+   WriteByte(cb_site(9) + i, &hEA)
+  next
+ else
+  for i as Integer = 0 to 18
+   WriteByte(cb_site(9) + i, val("&h" + mid("BF7CB3038580BF7DB30385" + "81A9038582DC8000", i * 2 + 1, 2)))
+  next
+  for s as Integer = 9 to 10
+   operand = MbSnes(cb_at(6) + cb_site_add(s))
+   WriteByte(cb_site(s) + 1, operand and &hFF)
+   WriteByte(cb_site(s) + 2, (operand shr 8) and &hFF)
+   WriteByte(cb_site(s) + 3, operand shr 16)
+  next
+ end if
+
+end sub
+
+
+function CbInstallHook() as String
+
+ 'Puts the routine that starts a command in the new banks (127 bytes with the table of banks) and the jump to it
+
+ dim block_at as Integer
+
+ if cb_state <> 1 then return "The command tables are not in the new banks."
+ if cb_hook then return ""
+ block_at = FsAlloc(cb_hook_total, cb_owner)
+ if block_at < 0 then return "There is no room for the command routine in the new banks."
+ cb_hook_at = block_at
+ cb_bank_at = block_at + cb_hook_size
+ for i as Integer = 0 to cb_slots - 1
+  WriteByte(cb_bank_at + i * 2, 3)
+  WriteByte(cb_bank_at + i * 2 + 1, 0)
+ next
+ cb_hook = true
+ CbWriteSite()
+
+ return ""
+
+end function
+
+
+sub CbRemoveHook()
+
+ if not cb_hook then exit sub
+ FsRelease(cb_hook_at)
+ cb_hook = false
+ cb_hook_at = 0
+ cb_bank_at = 0
 
 end sub
 
@@ -246,6 +351,16 @@ function CbMove() as String
   cb_at(t) = block_at + cb_off(t)
  next
  cb_state = 1
+ name_text = CbInstallHook()
+ if name_text <> "" then
+  cb_state = 0
+  for t as Integer = 1 to cb_tables
+   cb_at(t) = cb_orig(t)
+  next
+  FsRelease(block_at)
+  cb_block = 0
+  return name_text
+ end if
  cb_rewrite_all = true
  CbReadNewCommands()
 
@@ -268,6 +383,7 @@ function CbMoveBack() as String
  next
 
  CcClearAll()
+ CbRemoveHook()
  for t as Integer = 1 to cb_tables
   cb_at(t) = cb_orig(t)
  next

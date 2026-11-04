@@ -414,7 +414,11 @@ sub MenuCommand.ReadStealChance()
   steal_known = false
  end if
  steal_shift = 0
- if ByteAt(&h1E416) = &h20 and ByteAt(&h1E418) = &h84 and ByteAt(&h1E417) >= &h82 and ByteAt(&h1E417) <= &h87 then steal_shift = &h88 - ByteAt(&h1E417)
+ if cc_red_on then
+  steal_shift = cc_red_shift 'a copy of Steal: the call is a call of a thunk, the shift was read from the thunk
+ elseif ByteAt(&h1E416) = &h20 and ByteAt(&h1E418) = &h84 and ByteAt(&h1E417) >= &h82 and ByteAt(&h1E417) <= &h87 then
+  steal_shift = &h88 - ByteAt(&h1E417)
+ end if
  if steal_shift = 0 then steal_known = false
 
 end sub

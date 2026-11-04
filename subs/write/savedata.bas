@@ -105,6 +105,7 @@ sub ApplyDataToROM()
   spells(i).WriteToROM(i)
  next
  
+ CcSaveStart()
  for i as Integer = 1 to total_commands
   'a command that was not edited is not written: a ROM hack may have changed the code that some of its bytes are in
   'A command that was written once is written again, so that undoing the edit puts its bytes back.

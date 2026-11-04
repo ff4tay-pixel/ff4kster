@@ -189,6 +189,10 @@ sub ReadData(filename as String)
  for i as Integer = 1 to total_commands
   menucommands(i).ReadFromROM(i)
  next
+ 'a ROM whose tables were moved before the routine that starts a command existed gets it now (Save ROM writes it)
+ if cb_state = 1 and not cb_hook then
+  if CbInstallHook() = "" then cb_rewrite_all = true
+ end if
  formulas.ReadFromROM()
  for k as Integer = 1 to 4
   internal_command_names(k) = ""

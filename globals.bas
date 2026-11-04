@@ -92,6 +92,10 @@ dim shared tools(total_tools) as Tool
 dim shared shops(256) as Shop
 dim shared jobs(total_jobs) as Job
 dim shared characters(total_characters) as Character
+dim shared cc_red_on as Boolean 'ByteAt and WriteByte act on a copy of a command's routine (commandcode.bas)
+dim shared cc_red_entry as Integer 'file offset of the first byte of the original routine
+dim shared cc_red_block as Integer 'file offset of the copy
+dim shared cc_red_map(0 to 1023) as Integer 'where each byte of the original is in the copy, -1 if it is not
 dim shared menucommands(command_slots) as MenuCommand
 dim shared formulas as BattleFormulas 'spell damage settings, Summon Book and weapon spell hits
 dim shared orig_menucommands(command_slots) as MenuCommand 'the commands as they were when the ROM was loaded

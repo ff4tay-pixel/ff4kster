@@ -553,6 +553,11 @@ sub CommandParametersMenu.Display()
    steal_menu.ChangeOption(9, FF4Text("'Caught' message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
    steal_menu.ChangeOption(10, FF4Text("Failure message:  ") + message_menu.options.ItemAt((menucommands(id).message(2) + 2) mod &h100), 15)
    steal_menu.ChangeOption(11, FF4Text("Success message:  ") + message_menu.options.ItemAt((menucommands(id).message(3) + 2) mod &h100), 15)
+   if MenuCommand.IsClone(id) then
+    steal_menu.ChangeOption(12, FF4Text("Routine: own copy of Steal, Enter changes it"), 15)
+   else
+    steal_menu.Remove(12)
+   end if
    steal_menu.Display()
   
   case 26 'Regen
@@ -1306,6 +1311,11 @@ sub CommandParametersMenu.UserSelect()
        message_menu.ChangeSelected(menucommands(id).message(3) + 2)
        message_menu.UserSelect()
        if not message_menu.cancelled then menucommands(id).message(3) = message_menu.selected - 2
+      case 12 'The routine of a new command
+       if MenuCommand.IsClone(id) then
+        PickRoutine()
+        steal_menu.cancelled = true
+       end if
      end select
     end if
     Display()
@@ -1397,6 +1407,10 @@ sub CommandParametersMenu.PickRoutine()
   source_ids(source_menu.options.Length()) = 112
   source_menu.AddOption(FF4Text("Own copy of ") + menucommands(16).name)
   source_ids(source_menu.options.Length()) = 116
+  if CcCopyOK(24) then
+   source_menu.AddOption(FF4Text("Own copy of ") + menucommands(24).name)
+   source_ids(source_menu.options.Length()) = 124
+  end if
  end if
  source_menu.x = x + 15
  source_menu.y = y
@@ -1413,10 +1427,33 @@ sub CommandParametersMenu.PickRoutine()
  if picked >= 100 then
   index = picked - 100
   if menucommands(id).own_kind = index then exit sub
-  if not CcNeedBlock(id) then
+  if CcIsCopied(index) then
+   if not CcNeedBlock(id, CcCopySize(index)) then
+    InfoBox("There is no room in the new banks for another routine.")
+    exit sub
+   end if
+  elseif not CcNeedBlock(id) then
    InfoBox("There is no room in the new banks for another routine.")
    exit sub
   end if
+  if CcIsCopied(index) then
+   'every setting of the command it is a copy of; the name, target, delay, statuses and stance stay the ones of this command
+   dim keep as MenuCommand = menucommands(id)
+   menucommands(id) = menucommands(index)
+   menucommands(id).name = keep.name
+   menucommands(id).target_byte = keep.target_byte
+   menucommands(id).target = keep.target
+   menucommands(id).delay = keep.delay
+   menucommands(id).disabling_persistent = keep.disabling_persistent
+   menucommands(id).disabling_temporary = keep.disabling_temporary
+   menucommands(id).charging_stance = keep.charging_stance
+   menucommands(id).action_stance = &hFF
+   menucommands(id).action_stance2 = &hFF
+   menucommands(id).action_stance3 = &hFF
+   menucommands(id).own_kind = index
+   menucommands(id).behaves_like = 0
+   menucommands(id).behaves_known = true
+  else
   'start from the settings of the command it is a copy of
   with menucommands(id)
    .own_kind = index
@@ -1433,6 +1470,7 @@ sub CommandParametersMenu.PickRoutine()
    .behaves_like = 0
    .behaves_known = true
   end with
+  end if
  else
   if menucommands(id).own_kind > 0 then
    CcRelease(id)
