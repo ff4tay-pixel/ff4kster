@@ -316,9 +316,9 @@ end function
 
 function CcIsCopied(kind as Integer) as Boolean
 
- 'Jump, Recall, Sing, Throw and Steal
+ 'Jump, Recall, Sing, Aim, Throw and Steal
 
- return kind = 7 or kind = 8 or kind = 9 or kind = 23 or kind = 24
+ return kind = 7 or kind = 8 or kind = 9 or kind = 13 or kind = 23 or kind = 24
 
 end function
 

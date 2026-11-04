@@ -342,7 +342,7 @@ sub MenuCommand.ReadAim()
 
  aim_known = (b(0) = &hAD and b(2) = &h26 and b(3) = &h48 and b(4) = &hAD and b(6) = &h27 and b(7) = &h48)
  aim_known = aim_known and b(8) = &h7B and b(19) = &h68 and b(20) = &h8D and b(22) = &h27
- aim_known = aim_known and b(23) = &h68 and b(24) = &h8D and b(26) = &h26 and b(27) = &h60
+ aim_known = aim_known and b(23) = &h68 and b(24) = &h8D and b(26) = &h26 and (b(27) = &h60 or cc_red_on) 'in a copy the RTS is a jump to one
  aim_known = aim_known and b(1) >= &h80 and b(5) < &h80 and b(21) = b(5) and b(25) = b(1)
  if aim_target_set then
   aim_known = aim_known and b(10) = b(5) and b(11) = &h27
