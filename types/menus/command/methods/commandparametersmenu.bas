@@ -1222,7 +1222,10 @@ sub CommandParametersMenu.UserSelect()
    clone_menu.cancelled = false
    do until clone_menu.cancelled
     clone_menu.UserSelect()
-    if not clone_menu.cancelled and clone_menu.selected = 1 and menucommands(id).behaves_known then PickRoutine()
+    if not clone_menu.cancelled and clone_menu.selected = 1 and menucommands(id).behaves_known then
+     PickRoutine()
+     if menucommands(id).own_kind > 0 then clone_menu.cancelled = true 'the settings of its own copy are on the next screen
+    end if
     clone_menu.Hide()
     Display()
    loop
