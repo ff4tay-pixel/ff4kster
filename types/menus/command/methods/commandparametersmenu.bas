@@ -379,11 +379,19 @@ sub CommandParametersMenu.Display()
    if not menucommands(id).reverse_known then
     temp = FF4Text("Effect: custom code, not changed")
    elseif menucommands(id).reversed then
-    temp = FF4Text("Effect: lowers the stat, stops at 0")
+    temp = FF4Text("Effect: lowers the stat")
    else
-    temp = FF4Text("Effect: raises the stat, up to 99")
+    temp = FF4Text("Effect: raises the stat")
    end if
    boast_menu.ChangeOption(4, temp, 15)
+   if not menucommands(id).reverse_known then
+    temp = FF4Text("Limit: custom code, not changed")
+   elseif menucommands(id).reversed then
+    temp = FF4Text("Lowering stops at " + str(menucommands(id).reverse_limit))
+   else
+    temp = FF4Text("A raised stat stops at " + Pad(str(menucommands(id).reverse_limit), 3))
+   end if
+   boast_menu.ChangeOption(5, temp, 15)
    boast_menu.Display()
    
   case 19 'Cry
@@ -393,11 +401,19 @@ sub CommandParametersMenu.Display()
    if not menucommands(id).reverse_known then
     temp = FF4Text("Effect: custom code, not changed")
    elseif menucommands(id).reversed then
-    temp = FF4Text("Effect: raises the stat, up to 99")
+    temp = FF4Text("Effect: raises the stat")
    else
-    temp = FF4Text("Effect: lowers the stat, stops at 1")
+    temp = FF4Text("Effect: lowers the stat")
    end if
    cry_menu.ChangeOption(4, temp, 15)
+   if not menucommands(id).reverse_known then
+    temp = FF4Text("Limit: custom code, not changed")
+   elseif menucommands(id).reversed then
+    temp = FF4Text("A raised stat stops at " + Pad(str(menucommands(id).reverse_limit), 3))
+   else
+    temp = FF4Text("Lowering stops at " + str(menucommands(id).reverse_limit))
+   end if
+   cry_menu.ChangeOption(6, temp, 15)
    if not menucommands(id).cry_known then
     cry_menu.ChangeOption(5, FF4Text("Works on: custom code, not changed"), 15)
    elseif menucommands(id).cry_allies then
@@ -980,15 +996,32 @@ sub CommandParametersMenu.UserSelect()
        message_menu.UserSelect()
        if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
       case 4 'Raise or lower
-       if menucommands(id).reverse_known then menucommands(id).reversed = not menucommands(id).reversed
+       if menucommands(id).reverse_known then
+        menucommands(id).reversed = not menucommands(id).reversed
+        if menucommands(id).reversed then menucommands(id).reverse_limit = 0 else menucommands(id).reverse_limit = 99
+       end if
+      case 5 'Limit
+       if menucommands(id).reverse_known then
+        if menucommands(id).reversed then
+         menucommands(id).reverse_limit = 1 - (menucommands(id).reverse_limit and 1)
+        else
+         success_input.y = y + 4
+         success_input.starting_number = menucommands(id).reverse_limit
+         success_input.UserSelect()
+         menucommands(id).reverse_limit = success_input.number
+         success_input.y = y + 1
+        end if
+       end if
      end select
     end if
     Display()
    loop
-   
+
   case 19 'Cry
    cry_menu.cancelled = false
    stat_menu.x = x + 16
+   success_input.x = x + 3
+   success_input.max_value = &hFF
    do until cry_menu.cancelled
     cry_menu.UserSelect()
     if not cry_menu.cancelled then
@@ -1010,9 +1043,23 @@ sub CommandParametersMenu.UserSelect()
        message_menu.UserSelect()
        if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
       case 4 'Raise or lower
-       if menucommands(id).reverse_known then menucommands(id).reversed = not menucommands(id).reversed
+       if menucommands(id).reverse_known then
+        menucommands(id).reversed = not menucommands(id).reversed
+        if menucommands(id).reversed then menucommands(id).reverse_limit = 99 else menucommands(id).reverse_limit = 1
+       end if
       case 5 'Enemies or allies
        if menucommands(id).cry_known then menucommands(id).cry_allies = not menucommands(id).cry_allies
+      case 6 'Limit
+       if menucommands(id).reverse_known then
+        if menucommands(id).reversed then
+         success_input.y = y + 5
+         success_input.starting_number = menucommands(id).reverse_limit
+         success_input.UserSelect()
+         menucommands(id).reverse_limit = success_input.number
+        else
+         menucommands(id).reverse_limit = 1 - (menucommands(id).reverse_limit and 1)
+        end if
+       end if
      end select
     end if
     Display()

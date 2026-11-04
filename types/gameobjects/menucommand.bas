@@ -32,6 +32,7 @@ type MenuCommand
  jump_air as UByte 'Jump: ticks in the air
  reversed as Boolean 'Boast raises or lowers, Cry lowers or raises: the code is the reversed variant
  reverse_known as Boolean 'false if those bytes are not one of the two known variants
+ reverse_limit as UByte 'Boast and Cry: the cap of a raise (99 in the original), or the value a stat that would drop to 0 or less is set to (0 for Boast, 1 for Cry)
  aim_known as Boolean 'false if the Aim code is not one of the known variants
  aim_target_stat as UByte 'byte of the target properties that Aim changes (the game sets it to 0)
  aim_user_stat as UByte 'byte of the user properties that Aim changes (the game sets it to 255)
@@ -59,7 +60,8 @@ type MenuCommand
 
  declare static function ReverseParts(index as UByte) as Integer
  declare static function ReverseOffset(index as UByte, part as Integer) as UInteger
- declare static function ReverseBytes(index as UByte, part as Integer, reversed as Boolean) as String
+ declare static function ReverseBytes(index as UByte, part as Integer, reversed as Boolean, limit as UByte = 0) as String
+ declare static function ReverseLimitPos(index as UByte, reversed as Boolean) as Integer
  declare static function BytesAre(offset as UInteger, hex_text as String) as Boolean
  declare static function DelayDescription(index as UByte, value as UByte) as String
  declare static function DelayText(value as UByte) as String

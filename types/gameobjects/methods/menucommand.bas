@@ -110,7 +110,19 @@ function MenuCommand.ReverseOffset(index as UByte, part as Integer) as UInteger
 end function
 
 
-function MenuCommand.ReverseBytes(index as UByte, part as Integer, reversed as Boolean) as String
+function MenuCommand.ReverseLimitPos(index as UByte, reversed as Boolean) as Integer
+
+ 'Where the limit byte is inside the third piece (0 based). In every variant it is the immediate of the lda,
+ ' which is the cap of a raise or the value a stat that dropped to 0 or less is set to.
+
+ if index = 18 and reversed then return 3
+
+ return 5
+
+end function
+
+
+function MenuCommand.ReverseBytes(index as UByte, part as Integer, reversed as Boolean, limit as UByte = 0) as String
 
  'The bytes of the original code (reversed false) or of the reversed one, in hex. Boast: raise with
  ' adc, capped at 99 / lower with sbc, stopping at 0. Cry: lower with sbc, stopping at 1 / raise with
@@ -120,13 +132,13 @@ function MenuCommand.ReverseBytes(index as UByte, part as Integer, reversed as B
   select case part
    case 1: if reversed then return "38" else return "18"
    case 2: if reversed then return "E9" else return "69"
-   case 3: if reversed then return "B002A900EAEA" else return "C9639002A963"
+   case 3: if reversed then return "B002A9" + right("0" + hex(limit), 2) + "EAEA" else return "C9" + right("0" + hex(limit), 2) + "9002A9" + right("0" + hex(limit), 2)
   end select
  else
   select case part
    case 1: if reversed then return "18" else return "38"
    case 2: if reversed then return "65A9" else return "E5A9"
-   case 3: if reversed then return "C9649002A963" else return "F002B002A901"
+   case 3: if reversed then return "C9" + right("0" + hex(iif(limit < 255, limit + 1, 255)), 2) + "9002A9" + right("0" + hex(limit), 2) else return "F002B002A9" + right("0" + hex(limit), 2)
   end select
  end if
 
@@ -138,6 +150,7 @@ end function
 sub MenuCommand.ReadReverse(index as UByte)
 
  dim matches as Boolean
+ dim lim as UByte
 
  reverse_known = false
  reversed = false
@@ -146,11 +159,13 @@ sub MenuCommand.ReadReverse(index as UByte)
  for variant as Integer = 0 to 1
   matches = true
   for part as Integer = 1 to ReverseParts(index)
-   if not BytesAre(ReverseOffset(index, part), ReverseBytes(index, part, (variant = 1))) then matches = false
+   lim = ByteAt(ReverseOffset(index, 3) + ReverseLimitPos(index, (variant = 1)))
+   if not BytesAre(ReverseOffset(index, part), ReverseBytes(index, part, (variant = 1), lim)) then matches = false
   next
   if matches then
    reverse_known = true
    reversed = (variant = 1)
+   reverse_limit = lim
    exit for
   end if
  next
@@ -165,7 +180,7 @@ sub MenuCommand.WriteReverse(index as UByte)
  if ReverseParts(index) = 0 or not reverse_known then exit sub
 
  for part as Integer = 1 to ReverseParts(index)
-  bytes_text = ReverseBytes(index, part, reversed)
+  bytes_text = ReverseBytes(index, part, reversed, reverse_limit)
   for i as Integer = 0 to len(bytes_text) \ 2 - 1
    WriteByte(ReverseOffset(index, part) + i, val("&h" + mid(bytes_text, i * 2 + 1, 2)))
   next
