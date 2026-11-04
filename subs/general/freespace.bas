@@ -23,7 +23,7 @@ const fs_checksum = &h7FDC + &h200
 const fs_rom_cap = &h3F0000 'rom offset of banks 7E and 7F, which are RAM to the console: nothing is placed from here on
 
 const fs_owner_reserved = 1
-const fs_owner_count = 11
+const fs_owner_count = 12
 
 dim shared fs_owner_name(1 to fs_owner_count) as String
 fs_owner_name(1) = "Reserved"
@@ -37,6 +37,7 @@ fs_owner_name(8) = "Portraits"
 fs_owner_name(9) = "Battle sprites"
 fs_owner_name(10) = "Spells"
 fs_owner_name(11) = "Commands"
+fs_owner_name(12) = "Command code"
 
 dim shared fs_start(1 to fs_max_blocks) as Integer 'rom offsets
 dim shared fs_length(1 to fs_max_blocks) as Integer

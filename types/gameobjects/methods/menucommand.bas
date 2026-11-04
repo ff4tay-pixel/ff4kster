@@ -849,7 +849,9 @@ sub MenuCommand.ReadFromROM(index as UByte)
    
   case 22, 38 to 53 'Unused in the original game and the new commands; the editor can make them run another command's routine
    behaves_like = 0
+   own_kind = 0
    behaves_known = (ByteAt(cb_at(6) + (index - 1) * 2) = 0 and ByteAt((cb_at(6) + 1) + (index - 1) * 2) = 0)
+   if CcRead(this, index) then exit select
    for i as Integer = 1 to cb_game
     if CanBeCopied(i) and ByteAt(cb_at(6) + (index - 1) * 2) = ByteAt(cb_at(6) + (i - 1) * 2) and ByteAt((cb_at(6) + 1) + (index - 1) * 2) = ByteAt((cb_at(6) + 1) + (i - 1) * 2) then
      behaves_like = i
@@ -1186,6 +1188,11 @@ sub MenuCommand.WriteToROM(index as UByte)
    WriteByte(&h149AB, action_stance)
   
   case 22, 38 to 53 'Runs the routine (and plays the animation) of the command it behaves like
+   if own_kind > 0 then
+    CcWrite(this, index)
+    exit select
+   end if
+   CcWipeSlot(index)
    for i as Integer = 0 to 1
     if not behaves_known then exit for
     if behaves_like = 0 then

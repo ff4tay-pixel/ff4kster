@@ -51,6 +51,7 @@
 #include once "subs/general/palettebanks.bas"
 #include once "subs/general/shopbanks.bas"
 #include once "subs/general/commandbanks.bas"
+#include once "subs/general/commandcode.bas"
 #include once "subs/read/readfont.bas"
 #include once "subs/read/readmonsterpalettes.bas"
 #include once "subs/read/readspellsets.bas"

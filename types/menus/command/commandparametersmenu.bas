@@ -39,6 +39,8 @@ type CommandParametersMenu
  
  declare function MultiplierText(value as Integer) as String
  declare sub Display()
+ declare function Kind() as Integer
+ declare sub PickRoutine()
  declare sub SetTo(index as UByte)
  declare sub EditThrowRow(row as Integer)
  declare sub UserSelect()

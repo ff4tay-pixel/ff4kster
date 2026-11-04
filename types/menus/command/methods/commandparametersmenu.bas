@@ -240,7 +240,7 @@ sub CommandParametersMenu.Display()
  
  dim temp as String
 
- select case id
+ select case Kind()
  
   case 1 'Fight
    fight_menu.ChangeOption(1, FF4Text("Extra-Weak to element:  ") + MultiplierText(menucommands(1).misc_bytes(1)), 15)
@@ -392,6 +392,11 @@ sub CommandParametersMenu.Display()
     temp = FF4Text("A raised stat stops at " + Pad(str(menucommands(id).reverse_limit), 3))
    end if
    boast_menu.ChangeOption(5, temp, 15)
+   if MenuCommand.IsClone(id) then
+    boast_menu.ChangeOption(6, FF4Text("Routine: own copy of Boast, Enter changes it"), 15)
+   else
+    boast_menu.Remove(6)
+   end if
    boast_menu.Display()
    
   case 19 'Cry
@@ -414,6 +419,11 @@ sub CommandParametersMenu.Display()
     temp = FF4Text("Lowering stops at " + str(menucommands(id).reverse_limit))
    end if
    cry_menu.ChangeOption(6, temp, 15)
+   if MenuCommand.IsClone(id) then
+    cry_menu.ChangeOption(7, FF4Text("Routine: own copy of Cry, Enter changes it"), 15)
+   else
+    cry_menu.Remove(7)
+   end if
    if not menucommands(id).cry_known then
     cry_menu.ChangeOption(5, FF4Text("Works on: custom code, not changed"), 15)
    elseif menucommands(id).cry_allies then
@@ -620,7 +630,7 @@ sub CommandParametersMenu.UserSelect()
  dim temp as String
  dim n as Integer
 
- select case id
+ select case Kind()
    
   case 1 'Fight
    stat_menu.x = x + 24
@@ -1000,6 +1010,8 @@ sub CommandParametersMenu.UserSelect()
         menucommands(id).reversed = not menucommands(id).reversed
         if menucommands(id).reversed then menucommands(id).reverse_limit = 0 else menucommands(id).reverse_limit = 99
        end if
+      case 6 'The routine of a new command
+       if MenuCommand.IsClone(id) then PickRoutine()
       case 5 'Limit
        if menucommands(id).reverse_known then
         if menucommands(id).reversed then
@@ -1049,6 +1061,8 @@ sub CommandParametersMenu.UserSelect()
        end if
       case 5 'Enemies or allies
        if menucommands(id).cry_known then menucommands(id).cry_allies = not menucommands(id).cry_allies
+      case 7 'The routine of a new command
+       if MenuCommand.IsClone(id) then PickRoutine()
       case 6 'Limit
        if menucommands(id).reverse_known then
         if menucommands(id).reversed then
@@ -1185,39 +1199,7 @@ sub CommandParametersMenu.UserSelect()
    clone_menu.cancelled = false
    do until clone_menu.cancelled
     clone_menu.UserSelect()
-    if not clone_menu.cancelled and clone_menu.selected = 1 and menucommands(id).behaves_known then
-     source_menu.ClearAll()
-     source_menu.AddOption(FF4Text("-- NONE --"))
-     source_ids(1) = 0
-     for i as Integer = 1 to total_commands
-      if MenuCommand.CanBeCopied(i) then
-       source_menu.AddOption(menucommands(i).name)
-       source_ids(source_menu.options.Length()) = i
-      end if
-     next
-     source_menu.x = x + 15
-     source_menu.y = y
-     source_menu.top_row = 1
-     source_menu.ChangeSelected(1)
-     for i as Integer = 1 to source_menu.options.Length()
-      if source_ids(i) = menucommands(id).behaves_like then source_menu.ChangeSelected(i)
-     next
-     source_menu.UserSelect()
-     if not source_menu.cancelled then
-      menucommands(id).behaves_like = source_ids(source_menu.selected)
-      if menucommands(id).behaves_like > 0 then
-       'start from the borrowed command's settings, which can then be changed on the Information screen
-       with menucommands(menucommands(id).behaves_like)
-        menucommands(id).target_byte = .target_byte
-        menucommands(id).target = .target
-        menucommands(id).delay = .delay
-        menucommands(id).disabling_persistent = .disabling_persistent
-        menucommands(id).disabling_temporary = .disabling_temporary
-        menucommands(id).charging_stance = .charging_stance
-       end with
-      end if
-     end if
-    end if
+    if not clone_menu.cancelled and clone_menu.selected = 1 and menucommands(id).behaves_known then PickRoutine()
     clone_menu.Hide()
     Display()
    loop
@@ -1350,4 +1332,92 @@ sub CommandParametersMenu.UserSelect()
  
  end select
  
+end sub
+
+
+function CommandParametersMenu.Kind() as Integer
+
+ 'Which parameters to show: those of the command, or of the command that a new command has its own copy of
+
+ if menucommands(id).own_kind > 0 then return menucommands(id).own_kind
+
+ return id
+
+end function
+
+
+sub CommandParametersMenu.PickRoutine()
+
+ 'Picks the routine of a new command: that of another command, or its own copy of Boast or Cry
+
+ dim index as Integer
+ dim picked as Integer
+
+ source_menu.ClearAll()
+ source_menu.AddOption(FF4Text("-- NONE --"))
+ source_ids(1) = 0
+ for i as Integer = 1 to total_commands
+  if MenuCommand.CanBeCopied(i) then
+   source_menu.AddOption(menucommands(i).name)
+   source_ids(source_menu.options.Length()) = i
+  end if
+ next
+ if CbIsNew(id) and CcAvailable() then
+  source_menu.AddOption(FF4Text("Own copy of ") + menucommands(18).name)
+  source_ids(source_menu.options.Length()) = 118
+  source_menu.AddOption(FF4Text("Own copy of ") + menucommands(19).name)
+  source_ids(source_menu.options.Length()) = 119
+ end if
+ source_menu.x = x + 15
+ source_menu.y = y
+ source_menu.top_row = 1
+ source_menu.ChangeSelected(1)
+ for i as Integer = 1 to source_menu.options.Length()
+  if source_ids(i) = menucommands(id).behaves_like and menucommands(id).own_kind = 0 then source_menu.ChangeSelected(i)
+  if source_ids(i) = 100 + menucommands(id).own_kind and menucommands(id).own_kind > 0 then source_menu.ChangeSelected(i)
+ next
+ source_menu.UserSelect()
+ if source_menu.cancelled then exit sub
+
+ picked = source_ids(source_menu.selected)
+ if picked >= 100 then
+  index = picked - 100
+  if menucommands(id).own_kind = index then exit sub
+  if not CcNeedBlock(id) then
+   InfoBox("There is no room in the new banks for another routine.")
+   exit sub
+  end if
+  'start from the settings of the command it is a copy of
+  with menucommands(id)
+   .own_kind = index
+   .misc_bytes(1) = menucommands(index).misc_bytes(1)
+   .misc_bytes(2) = menucommands(index).misc_bytes(2)
+   .message(1) = menucommands(index).message(1)
+   .reversed = menucommands(index).reversed
+   .reverse_limit = menucommands(index).reverse_limit
+   .cry_allies = menucommands(index).cry_allies
+   .reverse_known = true
+   .cry_known = true
+   .behaves_like = 0
+   .behaves_known = true
+  end with
+ else
+  if menucommands(id).own_kind > 0 then
+   CcRelease(id)
+   menucommands(id).own_kind = 0
+  end if
+  menucommands(id).behaves_like = picked
+  if picked > 0 then
+   'start from the borrowed command's settings, which can then be changed on the Information screen
+   with menucommands(picked)
+    menucommands(id).target_byte = .target_byte
+    menucommands(id).target = .target
+    menucommands(id).delay = .delay
+    menucommands(id).disabling_persistent = .disabling_persistent
+    menucommands(id).disabling_temporary = .disabling_temporary
+    menucommands(id).charging_stance = .charging_stance
+   end with
+  end if
+ end if
+
 end sub

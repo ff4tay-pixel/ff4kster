@@ -54,6 +54,7 @@ sub ReadData(filename as String)
  PbDetect() 'where the monster palettes are
  SbDetect() 'where the shops are
  CbDetect() 'where the battle command tables are
+ CcDetect() 'the routines that new commands have of their own
  
  old_path = curdir
  chdir(system_path)

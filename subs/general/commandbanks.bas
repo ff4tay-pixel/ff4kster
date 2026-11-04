@@ -70,6 +70,7 @@ cb_site(12) = &h14242: cb_site_table(12) = 7: cb_site_add(12) = 1
 
 
 declare sub CbReadNewCommands()
+declare sub CcClearAll()
 
 
 function CommandCount() as Integer
@@ -266,6 +267,7 @@ function CbMoveBack() as String
   next
  next
 
+ CcClearAll()
  for t as Integer = 1 to cb_tables
   cb_at(t) = cb_orig(t)
  next
