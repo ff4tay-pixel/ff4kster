@@ -20,6 +20,7 @@ sub EditCommands()
  
  'Set up command editing menu
  dim choice as String
+ dim hint_text as String
  dim goto_command as Integer
  
  'Set up name input window
@@ -104,15 +105,20 @@ sub EditCommands()
    edit_command.ClearAll()
    edit_command.AddOption(FF4Text("Ranges"))
    edit_command.AddOption(FF4Text("Information"))
-   if MenuCommand.HasParameters(select_command.selected) then edit_command.AddOption(FF4Text("Parameters"))
+   hint_text = "Enter edits the item ranges that three commands are limited to.|Enter edits name, target, delay, disabling statuses and stances."
+   if MenuCommand.HasParameters(select_command.selected) then
+    edit_command.AddOption(FF4Text("Parameters"))
+    hint_text += "|Enter edits the details that go with this command."
+   end if
+   if MenuCommand.IsClone(select_command.selected) and CbIsNew(select_command.selected) then
+    edit_command.AddOption(FF4Text("Routine"))
+    hint_text += "|Enter picks which routine this command runs: another command's or its own copy of one."
+   end if
    edit_command.AddOption(FF4Text("Overview of all commands"))
    edit_command.AddOption(FF4Text("Internal command names"))
+   hint_text += "|Enter shows every command on one screen.|Enter edits the names of the commands the game adds itself."
    edit_command.x = 78 - edit_command.options.Width()
-   if MenuCommand.HasParameters(select_command.selected) then
-    SetHints(edit_command, "Enter edits the item ranges that three commands are limited to.|Enter edits name, target, delay, disabling statuses and stances.|Enter edits the details that go with this command.|Enter shows every command on one screen.|Enter edits the names of the commands the game adds itself.")
-   else
-    SetHints(edit_command, "Enter edits the item ranges that three commands are limited to.|Enter edits name, target, delay, disabling statuses and stances.|Enter shows every command on one screen.|Enter edits the names of the commands the game adds itself.")
-   end if
+   SetHints(edit_command, hint_text)
    edit_command.top_row = 1
    edit_command.ChangeSelected(1)
 
@@ -300,6 +306,14 @@ sub EditCommands()
       
      case "Parameters"
       edit_parameters.UserSelect()
+
+     case "Routine"
+      if not menucommands(select_command.selected).behaves_known then
+       InfoBox("This command has code that the editor does not know, so it is left alone.")
+      else
+       edit_parameters.SetTo(select_command.selected)
+       edit_parameters.PickRoutine()
+      end if
 
      case "Overview of all commands"
       goto_command = CommandOverview()

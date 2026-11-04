@@ -316,7 +316,9 @@ end function
 
 function CcIsCopied(kind as Integer) as Boolean
 
- return kind = 24
+ 'Jump, Recall, Sing, Throw and Steal
+
+ return kind = 7 or kind = 8 or kind = 9 or kind = 23 or kind = 24
 
 end function
 
@@ -423,20 +425,29 @@ function CcReadCopy(byref c as MenuCommand, index as Integer, block as Integer) 
 
  'Whether the block is a copy of a command that is copied as it is; reads its settings if it is
 
- dim kind as Integer = 24
- dim size as Integer = CcCopySize(kind)
+ dim kind as Integer
+ dim size as Integer
  dim t as MenuCommand
  dim saved as MenuCommand = c
  dim thunk_at as Integer
  dim shift as Integer
  dim at_ as Integer
 
- if size = 0 or block + size > len(ff4rom) then return false
- if ByteAt(block + size - 2) <> kind or ByteAt(block + size - 1) <> &hA5 then return false
+ for k as Integer = 7 to 24
+  if CcIsCopied(k) then
+   size = CcCopySize(k)
+   if size > 0 and block + size <= len(ff4rom) then
+    if ByteAt(block + size - 2) = k and ByteAt(block + size - 1) = &hA5 then kind = k
+   end if
+  end if
+ next
+ if kind = 0 then return false
+ CcPrepare(kind)
 
  'the thunk that Steal calls to shift the max HP of the thief
  shift = 0
- at_ = RelocMapOffset(cc_steal_shift_at)
+ at_ = -1
+ if kind = 24 then at_ = RelocMapOffset(cc_steal_shift_at)
  if at_ >= 0 then
   thunk_at = MbFileOffset(ByteAt(block + at_ + 1) + ByteAt(block + at_ + 2) * &h100 + ByteAt(block + at_ + 3) * &h10000)
   if thunk_at >= cc_area and thunk_at < cc_area + cc_area_size then
