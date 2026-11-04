@@ -331,6 +331,11 @@ sub CommandParametersMenu.Display()
    pray_menu.ChangeOption(1, FF4Text("Spell: ") + Pad(spells(menucommands(id).spell(1)).name, 8,, FF4Text(" ")) + FF4Text(" - "), 15)
    pray_menu.ChangeOption(2, FF4Text(Pad(str(menucommands(id).success(1)), 3, true) + "/256: " + str(fix(menucommands(id).success(1)*100/256)) + "%"), 15)
    pray_menu.ChangeOption(3, FF4Text("Message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
+   if MenuCommand.IsClone(id) then
+    pray_menu.ChangeOption(4, FF4Text("Routine: own copy of Pray, Enter changes it"), 15)
+   else
+    pray_menu.Remove(4)
+   end if
    pray_menu.Display()
    
   case 13 'Aim
@@ -357,6 +362,11 @@ sub CommandParametersMenu.Display()
   case 16 'Bear
    bear_menu.ChangeOption(1, FF4Text("Spell:   ") + Pad(spells(menucommands(id).spell(1)).name, 8,, FF4Text(" ")), 15)
    bear_menu.ChangeOption(2, FF4Text("Message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
+   if MenuCommand.IsClone(id) then
+    bear_menu.ChangeOption(3, FF4Text("Routine: own copy of Bear, Enter changes it"), 15)
+   else
+    bear_menu.Remove(3)
+   end if
    bear_menu.Display()
    
   case 17 'Twin
@@ -828,6 +838,11 @@ sub CommandParametersMenu.UserSelect()
        message_menu.ChangeSelected(menucommands(id).message(1) + 2)
        message_menu.UserSelect()
        if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+      case 4 'The routine of a new command
+       if MenuCommand.IsClone(id) then
+        PickRoutine()
+        pray_menu.cancelled = true
+       end if
      end select
     end if
     Display()
@@ -900,6 +915,8 @@ sub CommandParametersMenu.UserSelect()
       message_menu.ChangeSelected(menucommands(id).message(1) + 2)
       message_menu.UserSelect()
       if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+     case 3 'The routine of a new command
+      if MenuCommand.IsClone(id) then PickRoutine()
     end select
    end if
    
@@ -1011,7 +1028,10 @@ sub CommandParametersMenu.UserSelect()
         if menucommands(id).reversed then menucommands(id).reverse_limit = 0 else menucommands(id).reverse_limit = 99
        end if
       case 6 'The routine of a new command
-       if MenuCommand.IsClone(id) then PickRoutine()
+       if MenuCommand.IsClone(id) then
+        PickRoutine()
+        boast_menu.cancelled = true
+       end if
       case 5 'Limit
        if menucommands(id).reverse_known then
         if menucommands(id).reversed then
@@ -1062,7 +1082,10 @@ sub CommandParametersMenu.UserSelect()
       case 5 'Enemies or allies
        if menucommands(id).cry_known then menucommands(id).cry_allies = not menucommands(id).cry_allies
       case 7 'The routine of a new command
-       if MenuCommand.IsClone(id) then PickRoutine()
+       if MenuCommand.IsClone(id) then
+        PickRoutine()
+        cry_menu.cancelled = true
+       end if
       case 6 'Limit
        if menucommands(id).reverse_known then
         if menucommands(id).reversed then
@@ -1367,6 +1390,10 @@ sub CommandParametersMenu.PickRoutine()
   source_ids(source_menu.options.Length()) = 118
   source_menu.AddOption(FF4Text("Own copy of ") + menucommands(19).name)
   source_ids(source_menu.options.Length()) = 119
+  source_menu.AddOption(FF4Text("Own copy of ") + menucommands(12).name)
+  source_ids(source_menu.options.Length()) = 112
+  source_menu.AddOption(FF4Text("Own copy of ") + menucommands(16).name)
+  source_ids(source_menu.options.Length()) = 116
  end if
  source_menu.x = x + 15
  source_menu.y = y
@@ -1393,6 +1420,8 @@ sub CommandParametersMenu.PickRoutine()
    .misc_bytes(1) = menucommands(index).misc_bytes(1)
    .misc_bytes(2) = menucommands(index).misc_bytes(2)
    .message(1) = menucommands(index).message(1)
+   .spell(1) = menucommands(index).spell(1)
+   .success(1) = menucommands(index).success(1)
    .reversed = menucommands(index).reversed
    .reverse_limit = menucommands(index).reverse_limit
    .cry_allies = menucommands(index).cry_allies

@@ -1476,7 +1476,7 @@ copies them to a table of 53 commands in the new banks (under 1 KB) and changes 
 added to the game's code. The new commands are Cmd01 to Cmd16 (command numbers 37 to 52, editor 38 to 53). Each one runs the routine and
 animation of an existing command, as the unused command 22 always could (Parameters, Behaves like), and has its own name, target, delay,
 disabling statuses and waiting stance. A new command shares the settings that are inside the routine's code (its spell, messages, stat,
-chance) with the command it copies, unless it has its own copy: the routine list of a new command also offers "Own copy of Boast" and "Own copy of Cry". That writes a routine for the new command in the new banks (72 bytes) reached through a 4 byte jump in the unused bytes at the end of bank 03 (03:F210), and its stat, amount, limit, message and targets (Cry) are its own; the battle banner shows the name of the new command. Choosing another routine, or moving back, frees it. The game's own commands after the 26 (Change Row, Defend, Appear and the others up to Run Away) are listed too but cannot be edited. The new
+chance) with the command it copies, unless it has its own copy: the routine list of a new command also offers "Own copy of" Boast, Cry, Pray and Bear. That writes a routine for the new command in the new banks (72 bytes) reached through a 4 byte jump in the unused bytes at the end of bank 03 (03:F210, with 24 more bytes of small jumps for the routines the copy calls), and its settings (Boast and Cry: stat, amount, limit, message, targets of Cry; Pray: spell, chance and message; Bear: spell and message) are its own; the battle banner shows the name of the new command. Choosing another routine, or moving back, frees it. The game's own commands after the 26 (Change Row, Defend, Appear and the others up to Run Away) are listed too but cannot be edited. The new
 commands can go in a character's command list (Actors) but the monster AI cannot use them. Moving back is refused while a character has
 one of them.
 
@@ -2279,7 +2279,7 @@ VERSION HISTORY
     - Commands: overview of all commands with what changed, and the names of the four internal commands
     - Commands: the unused command 22 can "Behave like" another command (runs its routine and animation)
     - Commands: Free Space can move the command tables to the new banks for 16 new commands that run the routine of an existing command with their own name, target, delay, statuses and stance
-    - Commands: a new command can have its own copy of Boast or Cry, so that its stat, amount, limit and message do not change the original
+    - Commands: a new command can have its own copy of Boast, Cry, Pray or Bear, so that its settings do not change the original
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
     - Commands: Fight has the list of temporary statuses that its attack cures in the attacker (Charm in the original)
     - Commands: Dark Wave and Kick have code settings (HP cost, damage to undead, Kick multiplier, shared base damage) and Peep has one (bosses)
