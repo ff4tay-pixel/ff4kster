@@ -92,6 +92,11 @@ sub EditCommands()
   
   loop until ListInput(select_command, "commands")
   
+  if not select_command.cancelled and CbIsGameCommand(select_command.selected) then
+   InfoBox("The game uses this command itself, so it cannot be edited here.")
+   continue do
+  end if
+
   if not select_command.cancelled then
   
    'The menu is built each time: Parameters only exists for commands that have some, and the last two

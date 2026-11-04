@@ -1470,6 +1470,16 @@ event shop list show 256 shops (names from config/shop.dat, the others are "Shop
 while a shop after the 33rd has items. Each of these takes 64 KB of the new banks
 and 18 bytes of routine for each distance the game reads at (a trigger is read at 5 distances).
 
+Battle commands: the game has 37 battle commands and seven tables indexed by the command number (names, targeting, delay,
+disabling statuses, waiting stance, routine and animation). The menu entry "Battle commands: room for 16 more than the game has"
+copies them to a table of 53 commands in the new banks (under 1 KB) and changes the 12 instructions that read them, so nothing is
+added to the game's code. The new commands are Cmd01 to Cmd16 (command numbers 37 to 52, editor 38 to 53). Each one runs the routine and
+animation of an existing command, as the unused command 22 always could (Parameters, Behaves like), and has its own name, target, delay,
+disabling statuses and waiting stance. A new command shares the settings that are inside the routine's code (its spell, messages, stat,
+chance) with the command it copies. The game's own commands after the 26 (Change Row, Defend, Appear and the others up to Run Away) are listed too but cannot be edited. The new
+commands can go in a character's command list (Actors) but the monster AI cannot use them. Moving back is refused while a character has
+one of them.
+
     ENTER:   Edit the message.
     SPACE:   The menu of the message, with the key of each action beside it:
              edit, find text in the list (the whole text, not only the start
@@ -2268,6 +2278,7 @@ VERSION HISTORY
     - Battle Formulas: spell effect 29, the unused copy of Count, can raise or lower a stat of its target like Armor, including the modified strength, agility, vitality, wisdom and will
     - Commands: overview of all commands with what changed, and the names of the four internal commands
     - Commands: the unused command 22 can "Behave like" another command (runs its routine and animation)
+    - Commands: Free Space can move the command tables to the new banks for 16 new commands that run the routine of an existing command with their own name, target, delay, statuses and stance
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
     - Commands: Fight has the list of temporary statuses that its attack cures in the attacker (Charm in the original)
     - Commands: Dark Wave and Kick have code settings (HP cost, damage to undead, Kick multiplier, shared base damage) and Peep has one (bosses)

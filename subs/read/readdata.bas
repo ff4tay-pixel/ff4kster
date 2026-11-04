@@ -53,6 +53,7 @@ sub ReadData(filename as String)
  MgDetect() 'where the extra monster picture banks are
  PbDetect() 'where the monster palettes are
  SbDetect() 'where the shops are
+ CbDetect() 'where the battle command tables are
  
  old_path = curdir
  chdir(system_path)
@@ -191,7 +192,7 @@ sub ReadData(filename as String)
  for k as Integer = 1 to 4
   internal_command_names(k) = ""
   for j as Integer = 0 to 4
-   internal_command_names(k) += chr(ByteAt(&h7A9C6 + (total_commands + k - 1) * 5 + j))
+   internal_command_names(k) += chr(ByteAt(cb_at(1) + (cb_standard + k - 1) * 5 + j))
   next
  next
  print "DONE"

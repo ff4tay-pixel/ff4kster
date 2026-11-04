@@ -45,7 +45,9 @@ const total_weapon_sprites = 256
 
 const total_poses = 37
 const total_stances = 16
-const total_commands = 26
+declare function CommandCount() as Integer
+#define total_commands (CommandCount())
+const command_slots = 53 'the most commands: the 37 of the game and 16 new ones
 const total_characters = 14
 const total_actors = 20
 const total_events = 254

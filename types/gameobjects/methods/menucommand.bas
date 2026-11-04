@@ -11,7 +11,7 @@ function MenuCommand.HasParameters(index as UByte) as Boolean
    temp = true
   case 16 to 20
    temp = true
-  case 22
+  case 22, 38 to 53
    temp = true
   case 7, 23
    temp = true
@@ -25,19 +25,28 @@ function MenuCommand.HasParameters(index as UByte) as Boolean
 end function
 
 
+function MenuCommand.IsClone(index as UByte) as Boolean
+
+ 'The commands that run the routine of another one: the unused command 22 and the new commands
+
+ return index = 22 or (index >= cb_first_extra and index <= cb_slots)
+
+end function
+
+
 function MenuCommand.CanBeCopied(index as UByte) as Boolean
 
  'Whether command 22 can borrow this command's routine: the game must have one for it
  ' (White, Black, Call and Ninja are run by the spell menu, they have none).
 
- return index <> 22 and (ByteAt(&h1B57C + (index - 1) * 2) <> 0 or ByteAt(&h1B57D + (index - 1) * 2) <> 0)
+ return not IsClone(index) and (ByteAt(cb_at(6) + (index - 1) * 2) <> 0 or ByteAt((cb_at(6) + 1) + (index - 1) * 2) <> 0)
 
 end function
 
 
 function MenuCommand.TargetsCorrectly(index as UByte) as Boolean
 
- return index = 8 or index = 9 or index = 11 or index = 12 or index = 16 or index = 17 or index = 22
+ return index = 8 or index = 9 or index = 11 or index = 12 or index = 16 or index = 17 or IsClone(index)
 
 end function
 
@@ -676,20 +685,22 @@ sub MenuCommand.ReadFromROM(index as UByte)
  dim start as UInteger
  dim total as UInteger
  
- start = &h7A9C6 + (index - 1) * 5
+ start = cb_at(1) + (index - 1) * 5
  for i as Integer = 0 to 4
   name += chr(ByteAt(start + i))
  next
  
- target_byte = ByteAt(&h9FFC3 + index - 1)
+ if CbGameName(index) <> "" then name = CbGameName(index)
+ 
+ target_byte = ByteAt(cb_at(2) + index - 1)
  target = (target_byte \ &h10) mod 8
  
- delay = ByteAt(&hA0089 + index - 1)
+ delay = ByteAt(cb_at(3) + index - 1)
  
- disabling_persistent = ByteAt(&h9FF19 + (index - 1) * 2)
- disabling_temporary = ByteAt(&h9FF19 + (index - 1) * 2  + 1)
+ disabling_persistent = ByteAt(cb_at(4) + (index - 1) * 2)
+ disabling_temporary = ByteAt(cb_at(4) + (index - 1) * 2  + 1)
  
- charging_stance = ByteAt(&hB7E60 + (index - 1))
+ charging_stance = ByteAt(cb_at(5) + (index - 1))
  ReadCode(index)
  if index = 8 then ReadRecall()
  if index = 1 then
@@ -787,7 +798,7 @@ sub MenuCommand.ReadFromROM(index as UByte)
   
   case 14 'Charge
    message(1) = ByteAt(&h1EA1E)
-   extra_delay = ByteAt(&hA0089 + &h1F)
+   extra_delay = ByteAt(cb_at(3) + &h1F)
    
   case 15 'Kick
    action_stance = ByteAt(&h1451D)
@@ -806,7 +817,7 @@ sub MenuCommand.ReadFromROM(index as UByte)
    misc_bytes(2) = ByteAt(&h1E778) 'Golbez
    message(1) = ByteAt(&h1E6DC) 'Cancel message
    message(2) = ByteAt(&h1E787) 'Failure message
-   extra_delay = ByteAt(&hA0089 + &h20)
+   extra_delay = ByteAt(cb_at(3) + &h20)
    
   case 18 'Boast
    action_stance = ByteAt(&h149AB)
@@ -836,11 +847,11 @@ sub MenuCommand.ReadFromROM(index as UByte)
   case 21 'Peep
    action_stance = ByteAt(&h149AB)
    
-  case 22 'Unused in the original game; the editor can make it run another command's routine
+  case 22, 38 to 53 'Unused in the original game and the new commands; the editor can make them run another command's routine
    behaves_like = 0
-   behaves_known = (ByteAt(&h1B57C + (index - 1) * 2) = 0 and ByteAt(&h1B57D + (index - 1) * 2) = 0)
-   for i as Integer = 1 to 26
-    if CanBeCopied(i) and ByteAt(&h1B57C + (index - 1) * 2) = ByteAt(&h1B57C + (i - 1) * 2) and ByteAt(&h1B57D + (index - 1) * 2) = ByteAt(&h1B57D + (i - 1) * 2) then
+   behaves_known = (ByteAt(cb_at(6) + (index - 1) * 2) = 0 and ByteAt((cb_at(6) + 1) + (index - 1) * 2) = 0)
+   for i as Integer = 1 to cb_game
+    if CanBeCopied(i) and ByteAt(cb_at(6) + (index - 1) * 2) = ByteAt(cb_at(6) + (i - 1) * 2) and ByteAt((cb_at(6) + 1) + (index - 1) * 2) = ByteAt((cb_at(6) + 1) + (i - 1) * 2) then
      behaves_like = i
      behaves_known = true
      exit for
@@ -869,7 +880,7 @@ sub MenuCommand.ReadFromROM(index as UByte)
   case 26 'Regen
    action_stance = ByteAt(&h149AB)
    regen_amount = ByteAt(&h1E5FE)
-   extra_delay = ByteAt(&hA0089 + &h22)
+   extra_delay = ByteAt(cb_at(3) + &h22)
    if ByteAt(&h1E616) = 1 and ByteAt(&h1E624) = 0 then
     regen_freeze = false
    else
@@ -889,17 +900,17 @@ sub MenuCommand.WriteToROM(index as UByte)
  dim start as UInteger
  dim total as UInteger
  
- start = &h7A9C6 + (index - 1) * 5
+ start = cb_at(1) + (index - 1) * 5
  for i as Integer = 0 to 4
   WriteByte(start + i, asc(mid(name, i + 1, 1)))
  next
  
  target_byte = target_byte mod &h10 + target * &h10 + (target_byte \ &h80) * &h80
- WriteByte(&h9FFC3 + index - 1, target_byte)
- WriteByte(&hA0089 + index - 1, delay)
- WriteByte(&h9FF19 + (index - 1) * 2, disabling_persistent)
- WriteByte(&h9FF19 + (index - 1) * 2 + 1, disabling_temporary) 
- WriteByte(&hB7E60 + (index - 1), charging_stance)
+ WriteByte(cb_at(2) + index - 1, target_byte)
+ WriteByte(cb_at(3) + index - 1, delay)
+ WriteByte(cb_at(4) + (index - 1) * 2, disabling_persistent)
+ WriteByte(cb_at(4) + (index - 1) * 2 + 1, disabling_temporary) 
+ WriteByte(cb_at(5) + (index - 1), charging_stance)
  WriteCode(index)
  if index = 8 then WriteRecall()
  if index = 1 then
@@ -1066,7 +1077,7 @@ sub MenuCommand.WriteToROM(index as UByte)
    WriteAim()
    
   case 14 'Charge
-   WriteByte(&hA0089 + &h1F, extra_delay)
+   WriteByte(cb_at(3) + &h1F, extra_delay)
    WriteByte(&h1EA1E, message(1))
    if message(1) = &hFF then
     WriteByte(&h1EA1F, &hEA)
@@ -1113,7 +1124,7 @@ sub MenuCommand.WriteToROM(index as UByte)
     WriteByte(&h1E6DF, &h34)
    end if
    WriteByte(&h1E787, message(2))
-   WriteByte(&hA0089 + &h20, extra_delay)
+   WriteByte(cb_at(3) + &h20, extra_delay)
    if message(2) = &hFF then
     WriteByte(&h1E788, &hEA)
     WriteByte(&h1E789, &hEA)
@@ -1174,15 +1185,15 @@ sub MenuCommand.WriteToROM(index as UByte)
   case 21 'Peep
    WriteByte(&h149AB, action_stance)
   
-  case 22 'Runs the routine (and plays the animation) of the command it behaves like
+  case 22, 38 to 53 'Runs the routine (and plays the animation) of the command it behaves like
    for i as Integer = 0 to 1
     if not behaves_known then exit for
     if behaves_like = 0 then
-     WriteByte(&h1B57C + (index - 1) * 2 + i, 0)
-     WriteByte(&h1424B + (index - 1) * 2 + i, ByteAt(&h1424B + &h1D * 2 + i)) 'the "no animation" routine
+     WriteByte(cb_at(6) + (index - 1) * 2 + i, 0)
+     WriteByte(cb_at(7) + (index - 1) * 2 + i, ByteAt(cb_at(7) + &h1D * 2 + i)) 'the "no animation" routine
     else
-     WriteByte(&h1B57C + (index - 1) * 2 + i, ByteAt(&h1B57C + (behaves_like - 1) * 2 + i))
-     WriteByte(&h1424B + (index - 1) * 2 + i, ByteAt(&h1424B + (behaves_like - 1) * 2 + i))
+     WriteByte(cb_at(6) + (index - 1) * 2 + i, ByteAt(cb_at(6) + (behaves_like - 1) * 2 + i))
+     WriteByte(cb_at(7) + (index - 1) * 2 + i, ByteAt(cb_at(7) + (behaves_like - 1) * 2 + i))
     end if
    next
 
@@ -1235,7 +1246,7 @@ sub MenuCommand.WriteToROM(index as UByte)
   case 26 'Regen
    if regen_every_known then WriteByte(&h1ACA7, regen_every - 1)
    WriteByte(&h1E5FE, regen_amount)
-   WriteByte(&hA0089 + &h22, extra_delay)
+   WriteByte(cb_at(3) + &h22, extra_delay)
    if regen_freeze then
     WriteByte(&h1E616, &h0C)
     WriteByte(&h1E624, &h08)

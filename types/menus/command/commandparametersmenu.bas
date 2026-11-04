@@ -33,7 +33,7 @@ type CommandParametersMenu
  code_choice_menu as BlueMenu
  fail_menu as BlueMenu 'Jump and Throw: the message when the action fails, Throw also has its damage formula here
  source_menu as BlueMenu
- source_ids(26) as UByte
+ source_ids(60) as UByte
 
  declare constructor(starting_x as UByte = 0, starting_y as UByte = 0)
  

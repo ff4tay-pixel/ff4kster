@@ -576,6 +576,13 @@ sub MovedDataMenu()
   else
    SmAdd("Shops: changed by another tool", "", 0, 0)
   end if
+  if cb_state = 1 then
+   SmAdd("Battle commands: move back to the original tables", "", 0, mb_regions + 14)
+  elseif cb_state = 0 then
+   SmAdd("Battle commands: room for 16 more than the game has", "", 0, mb_regions + 4)
+  else
+   SmAdd("Battle commands: changed by another tool", "", 0, 0)
+  end if
   if pb_state = 1 then
    SmAdd("Monster palettes: move back to the original table", "", 0, mb_regions + 12)
   elseif pb_state = 0 then
@@ -599,6 +606,10 @@ sub MovedDataMenu()
    if ConfirmBox("Move the shops to a table of 256? It takes 2 KB.") then reason = SbMove() else reason = "cancel"
   elseif b = mb_regions + 13 then
    if ConfirmBox("Move the shops back to the original table?") then reason = SbMoveBack() else reason = "cancel"
+  elseif b = mb_regions + 4 then
+   if ConfirmBox("Move the command tables to room for 16 new commands? It takes under 1 KB.") then reason = CbMove() else reason = "cancel"
+  elseif b = mb_regions + 14 then
+   if ConfirmBox("Move the command tables back? The 16 new commands are removed.") then reason = CbMoveBack() else reason = "cancel"
   elseif b = mb_regions + 2 then
    if ConfirmBox("Move the monster palettes to a table of 256? It takes 4 KB.") then reason = PbMove() else reason = "cancel"
   elseif b = mb_regions + 12 then

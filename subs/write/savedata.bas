@@ -108,7 +108,8 @@ sub ApplyDataToROM()
  for i as Integer = 1 to total_commands
   'a command that was not edited is not written: a ROM hack may have changed the code that some of its bytes are in
   'A command that was written once is written again, so that undoing the edit puts its bytes back.
-  if not menucommands(i).SameAs(orig_menucommands(i)) or command_written(i) then
+  if CbIsGameCommand(i) then continue for
+  if not menucommands(i).SameAs(orig_menucommands(i)) or command_written(i) or cb_rewrite_all then
    menucommands(i).WriteToROM(i)
    command_written(i) = true
   end if
@@ -116,7 +117,7 @@ sub ApplyDataToROM()
  formulas.WriteToROM()
  for k as Integer = 1 to 4
   for j as Integer = 0 to 4
-   WriteByte(&h7A9C6 + (total_commands + k - 1) * 5 + j, asc(mid(internal_command_names(k), j + 1, 1)))
+   WriteByte(cb_at(1) + (cb_standard + k - 1) * 5 + j, asc(mid(internal_command_names(k), j + 1, 1)))
   next
  next
  
@@ -248,6 +249,7 @@ sub ApplyDataToROM()
  MgWriteSite()
  PbWriteSite()
  SbWriteSite()
+ CbWriteSite()
 
  FsFixChecksum()
 

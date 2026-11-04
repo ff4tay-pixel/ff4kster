@@ -492,10 +492,10 @@ sub CommandParametersMenu.Display()
     WriteText(FF4Text("the user plus a random part, up to the damage cap."), x + 1, y + 8, 15)
    end if
 
-  case 22 'Unused command: runs another command's routine
+  case 22, 38 to 53 'Unused command and the new commands: run another command's routine
    if not menucommands(id).behaves_known then
     temp = FF4Text("custom routine, not changed")
-    clone_menu.ChangeOption(2, FF4Text("This ROM has its own code for command 22."), 15)
+    clone_menu.ChangeOption(2, FF4Text("This ROM has its own code for this command."), 15)
    elseif menucommands(id).behaves_like = 0 then
     temp = FF4Text("-- NONE --")
     clone_menu.ChangeOption(2, FF4Text("It does nothing in battle."), 15)
@@ -1181,7 +1181,7 @@ sub CommandParametersMenu.UserSelect()
     Display()
    loop
 
-  case 22 'Unused command: choose the routine it runs
+  case 22, 38 to 53 'Unused command and the new commands: choose the routine it runs
    clone_menu.cancelled = false
    do until clone_menu.cancelled
     clone_menu.UserSelect()
