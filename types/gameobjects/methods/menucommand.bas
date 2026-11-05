@@ -160,9 +160,11 @@ sub MenuCommand.ReadReverse(index as UByte)
 
  dim matches as Boolean
  dim lim as UByte
+ dim lda_at as UInteger
 
  reverse_known = false
  reversed = false
+ reverse_set = false
  if ReverseParts(index) = 0 then exit sub
 
  for variant as Integer = 0 to 1
@@ -179,15 +181,45 @@ sub MenuCommand.ReadReverse(index as UByte)
   end if
  next
 
+ 'a fixed value: the add or subtract, the cap or floor and the first lda are replaced (lda #value, nops)
+ if not reverse_known then
+  lda_at = ReverseOffset(index, 1) + 1
+  if ByteAt(ReverseOffset(index, 1)) = &hEA and ByteAt(lda_at) = &hA9 and ByteAt(lda_at + 2) = &hEA and BytesAre(ReverseOffset(index, 2), "EAEA") and BytesAre(ReverseOffset(index, 3), "EAEAEAEAEAEA") then
+   reverse_known = true
+   reverse_set = true
+   reverse_limit = ByteAt(lda_at + 1)
+  end if
+ end if
+
 end sub
 
 
 sub MenuCommand.WriteReverse(index as UByte)
 
  dim bytes_text as String
+ dim lda_at as UInteger
 
  if ReverseParts(index) = 0 or not reverse_known then exit sub
 
+ lda_at = ReverseOffset(index, 1) + 1
+ if reverse_set then
+  'lda #value instead of the add or subtract, and nothing else between that and the store
+  WriteByte(ReverseOffset(index, 1), &hEA)
+  WriteByte(lda_at, &hA9)
+  WriteByte(lda_at + 1, reverse_limit)
+  WriteByte(lda_at + 2, &hEA)
+  for i as Integer = 0 to 1
+   WriteByte(ReverseOffset(index, 2) + i, &hEA)
+  next
+  for i as Integer = 0 to 5
+   WriteByte(ReverseOffset(index, 3) + i, &hEA)
+  next
+  exit sub
+ end if
+
+ 'the first lda is lda abs,x again (its stat was written by the caller)
+ WriteByte(lda_at, &hBD)
+ WriteByte(lda_at + 2, &h20)
  for part as Integer = 1 to ReverseParts(index)
   bytes_text = ReverseBytes(index, part, reversed, reverse_limit)
   for i as Integer = 0 to len(bytes_text) \ 2 - 1
@@ -825,15 +857,16 @@ sub MenuCommand.ReadFromROM(index as UByte)
    
   case 18 'Boast
    action_stance = ByteAt(&h149AB)
-   misc_bytes(1) = ByteAt(&h1ECD1) 'Stat
+   misc_bytes(1) = ByteAt(&h1ECDC) 'Stat (the store: the load before it is replaced when the stat is set to a fixed value)
    misc_bytes(2) = ByteAt(&h1ECD4) 'Amount
    ReadReverse(index)
+   if reverse_set then misc_bytes(2) = 0
    message(1) = ByteAt(&h1ECDF)
    
   case 19 'Cry
    action_stance = ByteAt(&h149AB)
    misc_bytes(1) = ByteAt(&h1ECF3) 'Read stat
-   misc_bytes(2) = ByteAt(&h1ED0C) 'Write stat
+   misc_bytes(2) = ByteAt(&h1ED17) 'Write stat (the store: the load before it is replaced when the stat is set to a fixed value)
    ReadReverse(index)
    'The loop over the units (battle/cmd.asm, Cmd_12): ldx #first, stx $ab at 1ECF8 and cmp #end at 1ED1D, the
    ' monsters are the slots 5 to 12 (the end is 13), the party the slots 0 to 4.

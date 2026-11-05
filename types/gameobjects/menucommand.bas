@@ -33,6 +33,7 @@ type MenuCommand
  reversed as Boolean 'Boast raises or lowers, Cry lowers or raises: the code is the reversed variant
  reverse_known as Boolean 'false if those bytes are not one of the two known variants
  reverse_limit as UByte 'Boast and Cry: the cap of a raise (99 in the original), or the value a stat that would drop to 0 or less is set to (0 for Boast, 1 for Cry)
+ reverse_set as Boolean 'Boast and Cry: the stat is set to a fixed value (reverse_limit) instead of raised or lowered
  own_kind as UByte 'a new command with its own copy of the routine of Boast (18) or Cry (19), 0 if it runs the routine of another command
  aim_known as Boolean 'false if the Aim code is not one of the known variants
  aim_target_stat as UByte 'byte of the target properties that Aim changes (the game sets it to 0)

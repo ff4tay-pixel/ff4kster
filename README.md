@@ -1126,6 +1126,8 @@ a stat by half the user's and stops at 1; reversed it raises it by that
 amount up to 99. If other changes have altered that code the line says
 "custom code, not changed" and leaves it alone.
 
+The Effect line also has a third choice, Set: the stat of the target is set to a fixed value (0 to 255) instead of being raised or lowered, with no limit; Enter on the Effect line goes through raise, lower and set, and Enter on the line under the stat edits the value (the amount of Boast is not kept while a fixed value is set, it comes back as 16 when you leave Set). It is written into the game's code in place of the add or subtract, and it works on the own copies of Boast and Cry too.
+
 Both also have a limit line. When the command raises a stat, Enter asks for the highest
 value it can reach, 0 to 255 (99 in the original); keep stat plus amount below 256.
 When it lowers a stat, Enter switches between stopping at 0 and stopping at 1 (0 for
@@ -2283,7 +2285,7 @@ VERSION HISTORY
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
     - Commands: Fight has the list of temporary statuses that its attack cures in the attacker (Charm in the original)
     - Commands: Dark Wave and Kick have code settings (HP cost, damage to undead, Kick multiplier, shared base damage) and Peep has one (bosses)
-    - Commands: Aim can use any stat of the target and the user, Boast and Cry can be reversed (raise or lower) and have a limit (the cap of a raise, 99 originally)
+    - Commands: Aim can use any stat of the target and the user, Boast and Cry can be reversed (raise or lower) or set a stat to a fixed value and have a limit (the cap of a raise, 99 originally)
     - Commands: Regen has the ticks between its heals, Cry can work on the allies instead of the enemies
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)

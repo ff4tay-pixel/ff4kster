@@ -351,7 +351,7 @@ function CommandChanges(i as Integer) as String
   if .steal_min <> orig_menucommands(i).steal_min or .steal_max <> orig_menucommands(i).steal_max then parameters = true
   if .steal_caught_fixed <> orig_menucommands(i).steal_caught_fixed or .steal_caught <> orig_menucommands(i).steal_caught then parameters = true
   if .steal_shift <> orig_menucommands(i).steal_shift then parameters = true
-  if .reversed <> orig_menucommands(i).reversed or .reverse_limit <> orig_menucommands(i).reverse_limit or .behaves_like <> orig_menucommands(i).behaves_like then code = true
+  if .reversed <> orig_menucommands(i).reversed or .reverse_set <> orig_menucommands(i).reverse_set or .reverse_limit <> orig_menucommands(i).reverse_limit or .behaves_like <> orig_menucommands(i).behaves_like then code = true
   if .extra_delay <> orig_menucommands(i).extra_delay or .jump_wait <> orig_menucommands(i).jump_wait then code = true
   if .jump_air <> orig_menucommands(i).jump_air or .throw_stat <> orig_menucommands(i).throw_stat then code = true
   if .throw_cap <> orig_menucommands(i).throw_cap or .aim_target_stat <> orig_menucommands(i).aim_target_stat then code = true

@@ -219,6 +219,10 @@ function CcBuild(c as MenuCommand, index as Integer) as String
  end if
 
  if c.own_kind = 18 then
+  if c.reverse_set then
+   'lda #value in place of the add or subtract
+   return head + CcFromHex("EAA9") + chr(c.reverse_limit) + CcFromHex("EAEAEAEAEAEAEAEAEA9D") + chr(c.misc_bytes(1)) + CcFromHex("20") + message_part + finish
+  end if
   return head + CcFromHex(MenuCommand.ReverseBytes(18, 1, c.reversed)) + CcFromHex("BD") + chr(c.misc_bytes(1)) + CcFromHex("20") + _
    CcFromHex(MenuCommand.ReverseBytes(18, 2, c.reversed)) + chr(c.misc_bytes(2)) + CcFromHex(MenuCommand.ReverseBytes(18, 3, c.reversed, c.reverse_limit)) + _
    CcFromHex("9D") + chr(c.misc_bytes(1)) + CcFromHex("20") + message_part + finish
@@ -231,6 +235,10 @@ function CcBuild(c as MenuCommand, index as Integer) as String
   else
    first = 5
    last = 13
+  end if
+  if c.reverse_set then
+   return head + CcFromHex("BD") + chr(c.misc_bytes(1)) + CcFromHex("204A85A9A2") + chr(first) + CcFromHex("0086ABA6ABBD4035D0168A") + CcJsl(cc_call_select_obj) + _
+    CcFromHex("A6A6EAA9") + chr(c.reverse_limit) + CcFromHex("EAEAEAEAEAEAEAEAEA9D") + chr(c.misc_bytes(2)) + CcFromHex("20E6ABA5ABC9") + chr(last) + CcFromHex("D0DB") + message_part + finish
   end if
   return head + CcFromHex("BD") + chr(c.misc_bytes(1)) + CcFromHex("204A85A9A2") + chr(first) + CcFromHex("0086ABA6ABBD4035D0168A") + CcJsl(cc_call_select_obj) + _
    CcFromHex("A6A6") + CcFromHex(MenuCommand.ReverseBytes(19, 1, c.reversed)) + CcFromHex("BD") + chr(c.misc_bytes(2)) + CcFromHex("20") + _
@@ -291,6 +299,39 @@ function CcParse(code as String, index as Integer, byref c as MenuCommand) as Bo
 
  t.cry_known = true
  t.reverse_known = true
+
+ 'Boast, a fixed value
+ if n = 36 and asc(mid(code, 13, 1)) = &hEA and asc(mid(code, 14, 1)) = &hA9 then
+  t.own_kind = 18
+  t.reverse_set = true
+  t.reversed = false
+  t.reverse_limit = asc(mid(code, 15, 1))
+  t.misc_bytes(1) = asc(mid(code, 26, 1))
+  t.misc_bytes(2) = 0
+  t.message(1) = asc(mid(code, 29, 1))
+  if CcMatch(t, index, code) then
+   c = t
+   return true
+  end if
+  t.reverse_set = false
+ end if
+
+ 'Cry, a fixed value
+ if n = 69 and asc(mid(code, 13, 1)) = &hBD and asc(mid(code, 38, 1)) = &hEA and asc(mid(code, 39, 1)) = &hA9 then
+  t.own_kind = 19
+  t.reverse_set = true
+  t.reversed = false
+  t.misc_bytes(1) = asc(mid(code, 14, 1))
+  t.cry_allies = (asc(mid(code, 20, 1)) = 0)
+  t.reverse_limit = asc(mid(code, 40, 1))
+  t.misc_bytes(2) = asc(mid(code, 51, 1))
+  t.message(1) = asc(mid(code, 62, 1))
+  if CcMatch(t, index, code) then
+   c = t
+   return true
+  end if
+  t.reverse_set = false
+ end if
 
  'Boast
  if n = 36 and asc(mid(code, 14, 1)) = &hBD then

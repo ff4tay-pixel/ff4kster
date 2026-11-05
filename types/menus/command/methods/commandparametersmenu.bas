@@ -383,11 +383,18 @@ sub CommandParametersMenu.Display()
    twin_menu.Display()
    
   case 18 'Boast
-   boast_menu.ChangeOption(1, FF4Text(iif(menucommands(id).reversed, "Decrease", "Increase") + " target's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(1) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
-   boast_menu.ChangeOption(2, FF4Text("By " + Pad(str(menucommands(id).misc_bytes(2)), 3, true)), 15)
+   if menucommands(id).reverse_set then
+    boast_menu.ChangeOption(1, FF4Text("Set target's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(1) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
+    boast_menu.ChangeOption(2, FF4Text("To " + Pad(str(menucommands(id).reverse_limit), 3, true)), 15)
+   else
+    boast_menu.ChangeOption(1, FF4Text(iif(menucommands(id).reversed, "Decrease", "Increase") + " target's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(1) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
+    boast_menu.ChangeOption(2, FF4Text("By " + Pad(str(menucommands(id).misc_bytes(2)), 3, true)), 15)
+   end if
    boast_menu.ChangeOption(3, FF4Text("Message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
    if not menucommands(id).reverse_known then
     temp = FF4Text("Effect: custom code, not changed")
+   elseif menucommands(id).reverse_set then
+    temp = FF4Text("Effect: sets the stat to a fixed value")
    elseif menucommands(id).reversed then
     temp = FF4Text("Effect: lowers the stat")
    else
@@ -396,6 +403,8 @@ sub CommandParametersMenu.Display()
    boast_menu.ChangeOption(4, temp, 15)
    if not menucommands(id).reverse_known then
     temp = FF4Text("Limit: custom code, not changed")
+   elseif menucommands(id).reverse_set then
+    temp = FF4Text("Limit: none, the value is set as it is")
    elseif menucommands(id).reversed then
     temp = FF4Text("Lowering stops at " + str(menucommands(id).reverse_limit))
    else
@@ -410,11 +419,18 @@ sub CommandParametersMenu.Display()
    boast_menu.Display()
    
   case 19 'Cry
-   cry_menu.ChangeOption(1, FF4Text(iif(menucommands(id).reversed, "Raise", "Reduce") + " target's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(2) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
-   cry_menu.ChangeOption(2, FF4Text(" by half user's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(1) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
+   if menucommands(id).reverse_set then
+    cry_menu.ChangeOption(1, FF4Text("Set target's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(2) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
+    cry_menu.ChangeOption(2, FF4Text(" to " + Pad(str(menucommands(id).reverse_limit), 3, true)), 15)
+   else
+    cry_menu.ChangeOption(1, FF4Text(iif(menucommands(id).reversed, "Raise", "Reduce") + " target's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(2) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
+    cry_menu.ChangeOption(2, FF4Text(" by half user's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(1) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
+   end if
    cry_menu.ChangeOption(3, FF4Text("Message: ") + message_menu.options.ItemAt((menucommands(id).message(1) + 2) mod &h100), 15)
    if not menucommands(id).reverse_known then
     temp = FF4Text("Effect: custom code, not changed")
+   elseif menucommands(id).reverse_set then
+    temp = FF4Text("Effect: sets the stat to a fixed value")
    elseif menucommands(id).reversed then
     temp = FF4Text("Effect: raises the stat")
    else
@@ -423,6 +439,8 @@ sub CommandParametersMenu.Display()
    cry_menu.ChangeOption(4, temp, 15)
    if not menucommands(id).reverse_known then
     temp = FF4Text("Limit: custom code, not changed")
+   elseif menucommands(id).reverse_set then
+    temp = FF4Text("Limit: none, the value is set as it is")
    elseif menucommands(id).reversed then
     temp = FF4Text("A raised stat stops at " + Pad(str(menucommands(id).reverse_limit), 3))
    else
@@ -1017,20 +1035,31 @@ sub CommandParametersMenu.UserSelect()
        stat_menu.ChangeSelected((menucommands(id).misc_bytes(1) + 1) mod &h80)
        stat_menu.UserSelect()
        if not stat_menu.cancelled then menucommands(id).misc_bytes(1) = stat_menu.selected - 1
-      case 2 'Amount
-       success_input.starting_number = menucommands(id).misc_bytes(2)
+      case 2 'Amount, or the fixed value
+       if menucommands(id).reverse_set then success_input.starting_number = menucommands(id).reverse_limit else success_input.starting_number = menucommands(id).misc_bytes(2)
        success_input.UserSelect()
-       menucommands(id).misc_bytes(2) = success_input.number
+       if menucommands(id).reverse_set then menucommands(id).reverse_limit = success_input.number else menucommands(id).misc_bytes(2) = success_input.number
       case 3 'Message
        message_menu.x = x + 9
        message_menu.y = y + 2
        message_menu.ChangeSelected(menucommands(id).message(1) + 2)
        message_menu.UserSelect()
        if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
-      case 4 'Raise or lower
+      case 4 'Raise, lower or set
        if menucommands(id).reverse_known then
-        menucommands(id).reversed = not menucommands(id).reversed
-        if menucommands(id).reversed then menucommands(id).reverse_limit = 0 else menucommands(id).reverse_limit = 99
+        if menucommands(id).reverse_set then
+         menucommands(id).reverse_set = false
+         menucommands(id).reversed = false
+         menucommands(id).reverse_limit = 99
+         menucommands(id).misc_bytes(2) = 16 'the original amount, which was not kept while the stat was set to a fixed value
+        elseif not menucommands(id).reversed then
+         menucommands(id).reversed = true
+         menucommands(id).reverse_limit = 0
+        else
+         menucommands(id).reversed = false
+         menucommands(id).reverse_set = true
+         menucommands(id).reverse_limit = 50
+        end if
        end if
       case 6 'The routine of a new command
        if MenuCommand.IsClone(id) then
@@ -1038,7 +1067,7 @@ sub CommandParametersMenu.UserSelect()
         boast_menu.cancelled = true
        end if
       case 5 'Limit
-       if menucommands(id).reverse_known then
+       if menucommands(id).reverse_known and not menucommands(id).reverse_set then
         if menucommands(id).reversed then
          menucommands(id).reverse_limit = 1 - (menucommands(id).reverse_limit and 1)
         else
@@ -1068,21 +1097,38 @@ sub CommandParametersMenu.UserSelect()
        stat_menu.ChangeSelected((menucommands(id).misc_bytes(2) + 1) mod &h80)
        stat_menu.UserSelect()
        if not stat_menu.cancelled then menucommands(id).misc_bytes(2) = stat_menu.selected - 1
-      case 2 'Read stat
-       stat_menu.y = y + 1
-       stat_menu.ChangeSelected((menucommands(id).misc_bytes(1) + 1) mod &h80)
-       stat_menu.UserSelect()
-       if not stat_menu.cancelled then menucommands(id).misc_bytes(1) = stat_menu.selected - 1' + &h80
+      case 2 'Read stat, or the fixed value
+       if menucommands(id).reverse_set then
+        success_input.y = y + 1
+        success_input.starting_number = menucommands(id).reverse_limit
+        success_input.UserSelect()
+        menucommands(id).reverse_limit = success_input.number
+       else
+        stat_menu.y = y + 1
+        stat_menu.ChangeSelected((menucommands(id).misc_bytes(1) + 1) mod &h80)
+        stat_menu.UserSelect()
+        if not stat_menu.cancelled then menucommands(id).misc_bytes(1) = stat_menu.selected - 1' + &h80
+       end if
       case 3 'Message
        message_menu.x = x + 9
        message_menu.y = y + 2
        message_menu.ChangeSelected(menucommands(id).message(1) + 2)
        message_menu.UserSelect()
        if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
-      case 4 'Raise or lower
+      case 4 'Lower, raise or set
        if menucommands(id).reverse_known then
-        menucommands(id).reversed = not menucommands(id).reversed
-        if menucommands(id).reversed then menucommands(id).reverse_limit = 99 else menucommands(id).reverse_limit = 1
+        if menucommands(id).reverse_set then
+         menucommands(id).reverse_set = false
+         menucommands(id).reversed = false
+         menucommands(id).reverse_limit = 1
+        elseif not menucommands(id).reversed then
+         menucommands(id).reversed = true
+         menucommands(id).reverse_limit = 99
+        else
+         menucommands(id).reversed = false
+         menucommands(id).reverse_set = true
+         menucommands(id).reverse_limit = 50
+        end if
        end if
       case 5 'Enemies or allies
        if menucommands(id).cry_known then menucommands(id).cry_allies = not menucommands(id).cry_allies
@@ -1092,7 +1138,7 @@ sub CommandParametersMenu.UserSelect()
         cry_menu.cancelled = true
        end if
       case 6 'Limit
-       if menucommands(id).reverse_known then
+       if menucommands(id).reverse_known and not menucommands(id).reverse_set then
         if menucommands(id).reversed then
          success_input.y = y + 5
          success_input.starting_number = menucommands(id).reverse_limit
