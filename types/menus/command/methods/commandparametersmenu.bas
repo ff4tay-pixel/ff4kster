@@ -1399,16 +1399,9 @@ sub CommandParametersMenu.PickRoutine()
   end if
  next
  if CbIsNew(id) and CcAvailable() then
-  source_menu.AddOption(FF4Text("Own copy of ") + menucommands(18).name)
-  source_ids(source_menu.options.Length()) = 118
-  source_menu.AddOption(FF4Text("Own copy of ") + menucommands(19).name)
-  source_ids(source_menu.options.Length()) = 119
-  source_menu.AddOption(FF4Text("Own copy of ") + menucommands(12).name)
-  source_ids(source_menu.options.Length()) = 112
-  source_menu.AddOption(FF4Text("Own copy of ") + menucommands(16).name)
-  source_ids(source_menu.options.Length()) = 116
+  'in the order of the commands: Jump, Recall, Sing, Split, Pray, Aim, Bear, Boast, Cry, Throw, Steal
   for k as Integer = 7 to 24
-   if CcCopyOK(k) then
+   if k = 12 or k = 16 or k = 18 or k = 19 or CcCopyOK(k) then
     source_menu.AddOption(FF4Text("Own copy of ") + menucommands(k).name)
     source_ids(source_menu.options.Length()) = 100 + k
    end if
