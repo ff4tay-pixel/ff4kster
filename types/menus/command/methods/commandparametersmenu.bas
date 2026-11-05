@@ -1619,6 +1619,8 @@ sub CommandParametersMenu.EditAlertText(number as Integer)
  if after <> before then
   MsgUndoPush(5, 0, number)
   MsgSet(5, 0, number, after)
+  'the list of messages and the lines that show one are built from the text, so they take the new text
+  message_menu.ChangeOption(number + 1, after)
  end if
  put (0, 0), backdrop, pset
  ImageDestroy(backdrop)
