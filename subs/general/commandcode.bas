@@ -49,6 +49,8 @@ dim shared cc_thunk(0 to cc_thunks - 1) as Integer 'the target of each thunk: -1
 dim shared cc_lookup_only as Boolean 'asking for a thunk that is not there is a failure (reading a ROM)
 dim shared cc_full as Boolean 'a thunk was needed and the room is used up
 dim shared cc_red_shift as Integer 'Steal: the shift of the copy that is being read
+dim shared cc_heal as Boolean 'a routine was recognised although the thunks it calls are not in the ROM: they are written again by Save ROM
+dim shared cc_block_len(1 to cb_extra) as Integer 'bytes of each block
 
 
 function CcSlotOffset(index as Integer) as Integer
@@ -92,7 +94,15 @@ function CcThunkSnes(target as Integer) as Integer
  'The address (bank * 65536 + address) of the thunk for a routine, made when it is not there yet. -1 if there is no room.
 
  for i as Integer = 0 to cc_thunks - 1
-  if cc_thunk(i) = target then return MbSnes(cc_area + i * 4)
+  if cc_thunk(i) = target then
+   if not cc_lookup_only and CcBytesAt(cc_area + i * 4, 4) <> CcThunkBytes(target) then
+    'the bytes in the ROM image are not the thunk (the image was put back after a save that failed)
+    for j as Integer = 1 to 4
+     WriteByte(cc_area + i * 4 + j - 1, asc(mid(CcThunkBytes(target), j, 1)))
+    next
+   end if
+   return MbSnes(cc_area + i * 4)
+  end if
  next
  if cc_lookup_only then return -1
 
@@ -245,6 +255,33 @@ function CcBuild(c as MenuCommand, index as Integer) as String
 end function
 
 
+function CcMatch(t as MenuCommand, index as Integer, code as String) as Boolean
+
+ 'Whether the routine is what is built from the settings. When a ROM is read, a routine whose calls (JSL) and jump (JML) into the
+ ' small jumps of bank 03 are right but whose small jumps are not in the ROM is accepted too (cc_heal): Save ROM writes them again.
+
+ dim built as String = CcBuild(t, index)
+ dim norm as String
+
+ if built = code then return true
+ if not cc_lookup_only or len(built) <> len(code) then return false
+
+ norm = code
+ for i as Integer = 1 to len(norm) - 3
+  if (asc(mid(norm, i, 1)) = &h22 or asc(mid(norm, i, 1)) = &h5C) and asc(mid(norm, i + 3, 1)) = 3 and asc(mid(norm, i + 2, 1)) = &hF2 then
+   mid(norm, i, 4) = string(4, chr(0))
+  end if
+ next
+ if norm = built then
+  cc_heal = true
+  return true
+ end if
+
+ return false
+
+end function
+
+
 function CcParse(code as String, index as Integer, byref c as MenuCommand) as Boolean
 
  'Reads the settings out of the routine and checks that building it again gives the same bytes
@@ -263,7 +300,7 @@ function CcParse(code as String, index as Integer, byref c as MenuCommand) as Bo
   t.misc_bytes(2) = asc(mid(code, 18, 1))
   t.reverse_limit = asc(mid(code, 19 + MenuCommand.ReverseLimitPos(18, t.reversed), 1))
   t.message(1) = asc(mid(code, 29, 1))
-  if CcBuild(t, index) = code then
+  if CcMatch(t, index, code) then
    c = t
    return true
   end if
@@ -278,7 +315,7 @@ function CcParse(code as String, index as Integer, byref c as MenuCommand) as Bo
   t.misc_bytes(2) = asc(mid(code, 40, 1))
   t.reverse_limit = asc(mid(code, 44 + MenuCommand.ReverseLimitPos(19, t.reversed), 1))
   t.message(1) = asc(mid(code, 62, 1))
-  if CcBuild(t, index) = code then
+  if CcMatch(t, index, code) then
    c = t
    return true
   end if
@@ -290,7 +327,7 @@ function CcParse(code as String, index as Integer, byref c as MenuCommand) as Bo
   t.success(1) = asc(mid(code, 6, 1))
   t.message(1) = asc(mid(code, 14, 1))
   t.spell(1) = asc(mid(code, 21, 1))
-  if CcBuild(t, index) = code then
+  if CcMatch(t, index, code) then
    c = t
    return true
   end if
@@ -301,7 +338,7 @@ function CcParse(code as String, index as Integer, byref c as MenuCommand) as Bo
   t.own_kind = 16
   t.spell(1) = asc(mid(code, 2, 1))
   t.message(1) = asc(mid(code, 18, 1))
-  if CcBuild(t, index) = code then
+  if CcMatch(t, index, code) then
    c = t
    return true
   end if
@@ -542,7 +579,9 @@ function CcReadNew(byref c as MenuCommand, index as Integer) as Boolean
   cc_block(index - cb_first_extra + 1) = block
   c.behaves_like = 0
   c.behaves_known = true
+  if cc_heal then cb_rewrite_all = true
  end if
+ cc_heal = false
 
  return found
 
@@ -553,34 +592,42 @@ function CcRead(byref c as MenuCommand, index as Integer) as Boolean
 
  'Whether the command has its own routine; fills in its settings if it does.
 
+ dim found as Boolean
+ dim b as Integer
+ dim k as Integer = index - cb_first_extra + 1
+
  if not CbIsNew(index) or not cc_ok then return false
  if cb_state <> 1 then return false
 
- if cc_legacy then return CcReadLegacy(c, index)
+ if cc_legacy then found = CcReadLegacy(c, index) else found = CcReadNew(c, index)
+ if found and FsHasTable() then
+  FsLoad()
+  b = FsFindBlock(cc_block(k))
+  if b > 0 then cc_block_len(k) = fs_length(b) else cc_block_len(k) = cc_block_size
+ end if
 
- return CcReadNew(c, index)
+ return found
 
 end function
 
 
-sub CcDetect()
+sub CcLoadLayout()
 
- 'Whether the unused bytes of bank 03 can be used, and forgets the blocks of the last ROM
+ 'Reads how the unused bytes of bank 03 are used in the ROM image: the old way (slots and thunks in fixed places) or the list of
+ ' thunks. The image can differ from what was read before, because Save ROM puts it back when it fails.
 
  dim thunk as String
+ dim slots as Boolean
 
  cc_ok = true
- cc_legacy = not cb_hook
  cc_full = false
- cc_analysed = 0
- cc_lookup_only = false
- cc_red_on = false
- for k as Integer = 1 to cb_extra
-  cc_block(k) = 0
- next
  for i as Integer = 0 to cc_thunks - 1
   cc_thunk(i) = -1
  next
+ for k as Integer = 0 to cc_slots - 1
+  if ByteAt(cc_area + k * 4) = &h5C then slots = true
+ next
+ cc_legacy = slots or not cb_hook
 
  if cc_legacy then
   for k as Integer = 1 to cc_slots
@@ -612,12 +659,41 @@ sub CcDetect()
 end sub
 
 
+sub CcDetect()
+
+ 'Whether the unused bytes of bank 03 can be used, and forgets the blocks of the last ROM
+
+ cc_analysed = 0
+ cc_lookup_only = false
+ cc_red_on = false
+ cc_heal = false
+ for k as Integer = 1 to cb_extra
+  cc_block(k) = 0
+  cc_block_len(k) = 0
+ next
+ CcLoadLayout()
+
+end sub
+
+
 sub CcSaveStart()
 
- 'Save ROM: a ROM with the old way is changed to the new way, so the unused bytes are cleared and each copy writes its thunks again
+ 'Save ROM: what was worked out earlier is checked against the ROM image first (a save that failed put the image back), the
+ ' blocks of the commands are in the free space table, and a ROM with the old way is changed to the new way: the unused bytes
+ ' are cleared and each copy writes its thunks again.
+
+ CcLoadLayout()
+ if cb_state <> 1 then exit sub
+ CbRepairBlocks()
+ for k as Integer = 1 to cb_extra
+  if cc_block(k) > 0 then
+   if cc_block_len(k) = 0 then cc_block_len(k) = cc_block_size
+   FsAdopt(cc_block(k), cc_block_len(k), cc_owner)
+  end if
+ next
 
  if not cc_legacy then exit sub
- if not cc_ok or cb_state <> 1 or not cb_hook then exit sub
+ if not cc_ok or not cb_hook then exit sub
 
  for i as Integer = 0 to cc_area_size - 1
   WriteByte(cc_area + i, &hFF)
@@ -650,6 +726,7 @@ function CcNeedBlock(index as Integer, size as Integer = cc_block_size) as Boole
   cc_block(k) = 0
   return false
  end if
+ cc_block_len(k) = size
 
  return true
 
