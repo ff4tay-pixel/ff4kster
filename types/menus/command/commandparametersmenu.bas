@@ -41,6 +41,8 @@ type CommandParametersMenu
  declare sub Display()
  declare function Kind() as Integer
  declare sub PickRoutine()
+ declare sub PickMessage(byref msg as UByte, px as Integer, py as Integer, allow_none as Boolean = true)
+ declare sub EditAlertText(number as Integer)
  declare function FlagKind(stat as Integer) as String
  declare function FlagText(list_kind as String, flag_value as Integer) as String
  declare function PickFlags(list_kind as String, flag_value as Integer, px as Integer, py as Integer) as Integer

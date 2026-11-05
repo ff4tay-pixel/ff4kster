@@ -1120,6 +1120,8 @@ Physical defense rate) and the user's hit rate. The Aim screen lets you pick
 which stat each side uses (the same list as Cry and Steal) and whether it is
 set at all or left alone.
 
+Every message line of a command (the Message of Boast, Cry, Pray, Bear, Charge, Twin, Sing, Recall, Split, Jump, Throw, Steal and the others) opens a small menu: "Pick another message" gives the list of battle messages, "Edit the text of this message" opens the text of the message that the line has now, on a screen of its own (it is the same text as in the Messages editor, the Battle alerts bank, so every command that shows it shows the new text, and the change can be undone there; Save ROM checks the space of the bank as before). A line that has no message (-- NONE --) goes straight to the list.
+
 Boast (Bluff) and Cry have an "Effect" line that reverses them. Boast raises a
 stat by its amount up to 99; reversed it lowers it and stops at 0. Cry lowers
 a stat by half the user's and stops at 1; reversed it raises it by that

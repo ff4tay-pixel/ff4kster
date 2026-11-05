@@ -733,11 +733,7 @@ sub CommandParametersMenu.UserSelect()
     recall_menu.UserSelect()
     if not recall_menu.cancelled then
      if recall_menu.selected = 17 then
-      message_menu.x = x + 9
-      message_menu.y = y + 8
-      message_menu.ChangeSelected(menucommands(id).message(1) + 2)
-      message_menu.UserSelect()
-      if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+      PickMessage(menucommands(id).message(1), x + 9, y + 8, true)
      elseif recall_menu.selected = 18 then
       if menucommands(id).recall_check_known then menucommands(id).recall_needs_mp = not menucommands(id).recall_needs_mp
      elseif recall_menu.selected = 19 then
@@ -793,11 +789,7 @@ sub CommandParametersMenu.UserSelect()
        menucommands(id).spell(sing_menu.selected \ 2 + 1) = spell_menu.selected - 1
       end if
      else
-      message_menu.x = x + sing_menu.options.Width() + 2
-      message_menu.y = y + sing_menu.selected \ 2 - 1
-      message_menu.ChangeSelected(menucommands(id).message(sing_menu.selected \ 2) + 2)
-      message_menu.UserSelect()
-      if not message_menu.cancelled then menucommands(id).message(sing_menu.selected \ 2) = message_menu.selected - 2
+      PickMessage(menucommands(id).message(sing_menu.selected \ 2), x + sing_menu.options.Width() + 2, y + sing_menu.selected \ 2 - 1, true)
      end if
     end if
     Display()
@@ -832,11 +824,7 @@ sub CommandParametersMenu.UserSelect()
        end select
       end if
      else
-      message_menu.x = x + 15
-      message_menu.y = y + 3
-      message_menu.ChangeSelected(menucommands(id).message(1) + 2)
-      message_menu.UserSelect()
-      if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+      PickMessage(menucommands(id).message(1), x + 15, y + 3, true)
      end if
     end if
     Display()
@@ -864,11 +852,7 @@ sub CommandParametersMenu.UserSelect()
        success_input.UserSelect()
        menucommands(id).success(1) = success_input.number
       case 3
-       message_menu.x = x + 9
-       message_menu.y = y + 1
-       message_menu.ChangeSelected(menucommands(id).message(1) + 2)
-       message_menu.UserSelect()
-       if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+       PickMessage(menucommands(id).message(1), x + 9, y + 1, true)
       case 4 'The routine of a new command
        if MenuCommand.IsClone(id) then
         PickRoutine()
@@ -911,11 +895,7 @@ sub CommandParametersMenu.UserSelect()
     charge_menu.UserSelect()
     if not charge_menu.cancelled then
      if charge_menu.selected = 1 then
-      message_menu.x = x + 9
-      message_menu.y = y
-      message_menu.ChangeSelected(menucommands(id).message(1) + 2)
-      message_menu.UserSelect()
-      if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+      PickMessage(menucommands(id).message(1), x + 9, y, true)
      else
       success_input.x = x + 32
       success_input.y = y + 1
@@ -941,11 +921,7 @@ sub CommandParametersMenu.UserSelect()
       spell_menu.UserSelect()
       if not spell_menu.cancelled then menucommands(id).spell(1) = spell_menu.selected - 1
      case 2 'Message
-      message_menu.x = x + 9
-      message_menu.y = y + 1
-      message_menu.ChangeSelected(menucommands(id).message(1) + 2)
-      message_menu.UserSelect()
-      if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+      PickMessage(menucommands(id).message(1), x + 9, y + 1, true)
      case 3 'The routine of a new command
       if MenuCommand.IsClone(id) then PickRoutine()
     end select
@@ -1003,17 +979,9 @@ sub CommandParametersMenu.UserSelect()
        spell_menu.UserSelect()
        if not spell_menu.cancelled then menucommands(id).spell(3) = spell_menu.selected - 1
       case 8 'Failure message
-       message_menu.x = x + 19
-       message_menu.y = y + 7
-       message_menu.ChangeSelected(menucommands(id).message(2) + 2)
-       message_menu.UserSelect()
-       if not message_menu.cancelled then menucommands(id).message(2) = message_menu.selected - 2
+       PickMessage(menucommands(id).message(2), x + 19, y + 7, true)
       case 9 'Cancel message
-       message_menu.x = x + 19
-       message_menu.y = y + 8
-       message_menu.ChangeSelected(menucommands(id).message(1) + 2)
-       message_menu.UserSelect()
-       if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+       PickMessage(menucommands(id).message(1), x + 19, y + 8, true)
       case 10 'Wait for the second cast
        success_input.x = x + 36
        success_input.y = y + 9
@@ -1052,11 +1020,7 @@ sub CommandParametersMenu.UserSelect()
         if menucommands(id).reverse_set then menucommands(id).reverse_limit = success_input.number else menucommands(id).misc_bytes(2) = success_input.number
        end if
       case 3 'Message
-       message_menu.x = x + 9
-       message_menu.y = y + 2
-       message_menu.ChangeSelected(menucommands(id).message(1) + 2)
-       message_menu.UserSelect()
-       if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+       PickMessage(menucommands(id).message(1), x + 9, y + 2, true)
       case 4 'Raise, lower or set
        if menucommands(id).reverse_known then
         if menucommands(id).reverse_set then
@@ -1124,11 +1088,7 @@ sub CommandParametersMenu.UserSelect()
         if not stat_menu.cancelled then menucommands(id).misc_bytes(1) = stat_menu.selected - 1' + &h80
        end if
       case 3 'Message
-       message_menu.x = x + 9
-       message_menu.y = y + 2
-       message_menu.ChangeSelected(menucommands(id).message(1) + 2)
-       message_menu.UserSelect()
-       if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+       PickMessage(menucommands(id).message(1), x + 9, y + 2, true)
       case 4 'Lower, raise or set
        if menucommands(id).reverse_known then
         if menucommands(id).reverse_set then
@@ -1262,11 +1222,7 @@ sub CommandParametersMenu.UserSelect()
     fail_menu.UserSelect()
     if not fail_menu.cancelled then
      if fail_menu.selected = 1 then
-      message_menu.x = x + 17
-      message_menu.y = y
-      message_menu.ChangeSelected(menucommands(id).message(1) + 2)
-      message_menu.UserSelect()
-      if not message_menu.cancelled and message_menu.selected > 1 then menucommands(id).message(1) = message_menu.selected - 2
+      PickMessage(menucommands(id).message(1), x + 17, y, false)
      elseif Kind() = 23 then
       EditThrowRow(fail_menu.selected - 1)
      else
@@ -1354,23 +1310,11 @@ sub CommandParametersMenu.UserSelect()
         if n > 0 then menucommands(id).steal_shift = n
        end if
       case 9 'Caught message
-       message_menu.x = x + 18
-       message_menu.y = y + 8
-       message_menu.ChangeSelected(menucommands(id).message(1) + 2)
-       message_menu.UserSelect()
-       if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+       PickMessage(menucommands(id).message(1), x + 18, y + 8, true)
       case 10 'Failure message
-       message_menu.x = x + 18
-       message_menu.y = y + 9
-       message_menu.ChangeSelected(menucommands(id).message(2) + 2)
-       message_menu.UserSelect()
-       if not message_menu.cancelled then menucommands(id).message(2) = message_menu.selected - 2
+       PickMessage(menucommands(id).message(2), x + 18, y + 9, true)
       case 11 'Success message
-       message_menu.x = x + 18
-       message_menu.y = y + 10
-       message_menu.ChangeSelected(menucommands(id).message(3) + 2)
-       message_menu.UserSelect()
-       if not message_menu.cancelled then menucommands(id).message(3) = message_menu.selected - 2
+       PickMessage(menucommands(id).message(3), x + 18, y + 10, true)
       case 12 'The routine of a new command
        if MenuCommand.IsClone(id) then
         PickRoutine()
@@ -1397,11 +1341,7 @@ sub CommandParametersMenu.UserSelect()
       case 2
        menucommands(id).regen_freeze = not menucommands(id).regen_freeze
       case 3
-       message_menu.x = x + 9
-       message_menu.y = y + 2
-       message_menu.ChangeSelected(menucommands(id).message(1) + 2)
-       message_menu.UserSelect()
-       if not message_menu.cancelled then menucommands(id).message(1) = message_menu.selected - 2
+       PickMessage(menucommands(id).message(1), x + 9, y + 2, true)
       case 4
        success_input.x = x + 30
        success_input.y = y + 3
@@ -1614,3 +1554,75 @@ function CommandParametersMenu.PickFlags(list_kind as String, flag_value as Inte
  return result
 
 end function
+
+
+sub CommandParametersMenu.PickMessage(byref msg as UByte, px as Integer, py as Integer, allow_none as Boolean = true)
+
+ 'The message of a setting: a small menu to pick another message or to edit the text of the one it has now (all the messages
+ ' of a command are the battle alerts), then the list of messages when picking.
+
+ dim action as BlueMenu
+ dim choice as Integer = 1
+
+ if msg < total_dialogues_alerts then
+  action = BlueMenu(px, py)
+  action.AddOption(FF4Text("Pick another message"))
+  action.AddOption(FF4Text("Edit the text of this message"))
+  action.hint = "Enter picks the action. Esc goes back."
+  action.UserSelect()
+  if action.cancelled then exit sub
+  choice = action.selected
+ end if
+
+ if choice = 2 then
+  EditAlertText(msg + 1)
+  exit sub
+ end if
+
+ message_menu.x = px
+ message_menu.y = py
+ message_menu.ChangeSelected(msg + 2)
+ message_menu.UserSelect()
+ if not message_menu.cancelled and (allow_none or message_menu.selected > 1) then msg = message_menu.selected - 2
+
+end sub
+
+
+sub CommandParametersMenu.EditAlertText(number as Integer)
+
+ 'Edits the text of battle alert number (the messages that the commands show) on a screen of its own. The screen as it was is put
+ ' back afterwards. Save ROM checks that the alerts fit, as before.
+
+ dim backdrop as Any ptr
+ dim small_text as BlueTextInput
+ dim before as String
+ dim after as String
+
+ if number < 1 or number > total_dialogues_alerts then exit sub
+ before = MsgGet(5, 0, number)
+
+ backdrop = ImageCreate(640, 480)
+ get (0, 0)-(639, 479), backdrop
+ cls
+ WriteText(FF4Text("Battle message " + str(number)), 4, 1, 14)
+ WriteText(FF4Text("Other commands that show this message show the new text too."), 4, 2, 15)
+ WriteText(FF4Text(MsgSpaceText(5)), 4, 3, MsgSpaceColor(5))
+ ShowHint("Type the text. Enter accepts it, Esc keeps the old text.")
+ small_text = BlueTextInput(4, 5, MsgWidth(5))
+ small_text.cursor = true
+ small_text.extended = true
+ small_text.starting_text = before
+ small_text.text = before
+ small_text.Display()
+ small_text.UserType()
+ after = small_text.text
+ if after <> before then
+  MsgUndoPush(5, 0, number)
+  MsgSet(5, 0, number, after)
+ end if
+ put (0, 0), backdrop, pset
+ ImageDestroy(backdrop)
+ 'a draw on the screen itself, so the destroyed image is not left as the drawing target
+ pset (0, 0), point(0, 0)
+
+end sub
