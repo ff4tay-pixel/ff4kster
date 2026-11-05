@@ -44,8 +44,18 @@ dim shared cb_rewrite_all as Boolean 'the tables changed place: Save ROM writes 
 dim shared cb_hook as Boolean 'the game starts a command through a routine in the new banks that also reads the bank of the code
 dim shared cb_hook_at as Integer 'file offset of that routine
 dim shared cb_bank_at as Integer 'file offset of the table of banks (2 bytes per command: the bank and a zero)
+dim shared cb_alias as Boolean 'the number of the animation of a command comes from a table
+dim shared cb_alias_at as Integer 'file offset of the routine
+dim shared cb_alias_tbl as Integer 'file offset of the table (1 byte per command)
 const cb_hook_size = 21
 const cb_hook_total = cb_hook_size + cb_slots * 2
+'The graphics script of a battle action starts with the command number plus C0, and the script treats E8 and above as other
+'orders, so a command number above 27 would be taken for one of them. The instructions that add C0 (7 bytes at 1B34A: PHA,
+'CLC, ADC #C0, STA $33C4) become PHA and a call to a routine that adds C0 to the number that a table gives for the command
+'(the number of the command whose animation it has).
+const cb_alias_site = &h1B34A
+const cb_alias_hook_size = 14
+const cb_alias_total = cb_alias_hook_size + cb_slots
 
 cb_orig(1) = &h7A9C6: cb_size(1) = 5 'names
 cb_orig(2) = &h9FFC3: cb_size(2) = 1 'targeting
@@ -129,6 +139,29 @@ function CbDefaultName(index as Integer) as String
 end function
 
 
+function CbAliasBytes() as String
+
+ dim t as Integer = MbSnes(cb_alias_tbl)
+
+ return chr(&hDA) + chr(&hAA) + chr(&hBF) + chr(t and &hFF) + chr((t shr 8) and &hFF) + chr(t shr 16) + chr(&h18) + chr(&h69) + chr(&hC0) + _
+  chr(&h8D) + chr(&hC4) + chr(&h33) + chr(&hFA) + chr(&h6B)
+
+end function
+
+
+function CbAliasValue(index as Integer) as Integer
+
+ 'The command whose animation the command has: itself, or for a new command the command that it copies
+
+ if index <= cb_game then return index - 1
+ if menucommands(index).own_kind > 0 then return menucommands(index).own_kind - 1
+ if menucommands(index).behaves_like > 0 then return menucommands(index).behaves_like - 1
+
+ return &h21 'does nothing
+
+end function
+
+
 function CbHookBytes() as String
 
  'The routine that starts a command: pointer from the table, bank from the table of banks, then JML [$80]
@@ -162,6 +195,9 @@ sub CbDetect()
  cb_hook = false
  cb_hook_at = 0
  cb_bank_at = 0
+ cb_alias = false
+ cb_alias_at = 0
+ cb_alias_tbl = 0
  cb_rewrite_all = false
  for t as Integer = 1 to cb_tables
   cb_at(t) = cb_orig(t)
@@ -205,6 +241,19 @@ sub CbDetect()
      cb_state = 1
      cb_hook = true
      cb_hook_at = target
+    end if
+   end if
+  end if
+  if cb_state = 1 and ByteAt(cb_alias_site) = &h48 and ByteAt(cb_alias_site + 1) = &h22 then
+   'the routine that gives the number of the animation
+   dim a_target as Integer = MbFileOffset(MbOperand(cb_alias_site + 1))
+   if a_target >= fs_header + fs_original_size and a_target + cb_alias_hook_size <= len(ff4rom) then
+    cb_alias_tbl = MbFileOffset(ByteAt(a_target + 3) + ByteAt(a_target + 4) * &h100 + ByteAt(a_target + 5) * &h10000)
+    if cb_alias_tbl >= fs_header + fs_original_size and cb_alias_tbl + cb_slots <= len(ff4rom) and mid(ff4rom, a_target + 1, cb_alias_hook_size) = CbAliasBytes() then
+     cb_alias = true
+     cb_alias_at = a_target
+    else
+     cb_alias_tbl = 0
     end if
    end if
   end if
@@ -257,7 +306,51 @@ sub CbWriteSite()
   next
  end if
 
+ 'the number of the animation of a command
+ if cb_alias then
+  dim alias_code as String = CbAliasBytes()
+  for i as Integer = 1 to cb_alias_hook_size
+   WriteByte(cb_alias_at + i - 1, asc(mid(alias_code, i, 1)))
+  next
+  for i as Integer = 1 to cb_slots
+   WriteByte(cb_alias_tbl + i - 1, CbAliasValue(i))
+  next
+  operand = MbSnes(cb_alias_at)
+  WriteByte(cb_alias_site, &h48)
+  WriteByte(cb_alias_site + 1, &h22)
+  WriteByte(cb_alias_site + 2, operand and &hFF)
+  WriteByte(cb_alias_site + 3, (operand shr 8) and &hFF)
+  WriteByte(cb_alias_site + 4, operand shr 16)
+  WriteByte(cb_alias_site + 5, &hEA)
+  WriteByte(cb_alias_site + 6, &hEA)
+ else
+  for i as Integer = 0 to 6
+   WriteByte(cb_alias_site + i, val("&h" + mid("4818" + "69C08DC433", i * 2 + 1, 2)))
+  next
+ end if
+
 end sub
+
+
+function CbInstallAlias() as String
+
+ 'Puts the routine and the table in the new banks and the call of it
+
+ dim block_at as Integer
+
+ if cb_state <> 1 then return "The command tables are not in the new banks."
+ if cb_alias then return ""
+ if ByteAt(cb_alias_site) <> &h48 or ByteAt(cb_alias_site + 1) <> &h18 or ByteAt(cb_alias_site + 2) <> &h69 or ByteAt(cb_alias_site + 3) <> &hC0 then return "The start of the commands was changed by another tool."
+ block_at = FsAlloc(cb_alias_total, cb_owner)
+ if block_at < 0 then return "There is no room for the animation routine in the new banks."
+ cb_alias_at = block_at
+ cb_alias_tbl = block_at + cb_alias_hook_size
+ cb_alias = true
+ CbWriteSite()
+
+ return ""
+
+end function
 
 
 function CbInstallHook() as String
@@ -291,6 +384,17 @@ sub CbRemoveHook()
  cb_hook = false
  cb_hook_at = 0
  cb_bank_at = 0
+
+end sub
+
+
+sub CbRemoveAlias()
+
+ if not cb_alias then exit sub
+ FsRelease(cb_alias_at)
+ cb_alias = false
+ cb_alias_at = 0
+ cb_alias_tbl = 0
 
 end sub
 
@@ -352,6 +456,7 @@ function CbMove() as String
  next
  cb_state = 1
  name_text = CbInstallHook()
+ if name_text = "" then name_text = CbInstallAlias()
  if name_text <> "" then
   cb_state = 0
   for t as Integer = 1 to cb_tables
@@ -383,6 +488,7 @@ function CbMoveBack() as String
  next
 
  CcClearAll()
+ CbRemoveAlias()
  CbRemoveHook()
  for t as Integer = 1 to cb_tables
   cb_at(t) = cb_orig(t)

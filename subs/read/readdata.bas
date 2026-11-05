@@ -193,6 +193,10 @@ sub ReadData(filename as String)
  if cb_state = 1 and not cb_hook then
   if CbInstallHook() = "" then cb_rewrite_all = true
  end if
+ 'the routine that gives the number of the animation of a command (new commands above 27 need it)
+ if cb_state = 1 and cb_hook and not cb_alias then
+  if CbInstallAlias() = "" then cb_rewrite_all = true
+ end if
  formulas.ReadFromROM()
  for k as Integer = 1 to 4
   internal_command_names(k) = ""
