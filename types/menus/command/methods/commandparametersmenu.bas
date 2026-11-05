@@ -385,7 +385,11 @@ sub CommandParametersMenu.Display()
   case 18 'Boast
    if menucommands(id).reverse_set then
     boast_menu.ChangeOption(1, FF4Text("Set target's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(1) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
-    boast_menu.ChangeOption(2, FF4Text("To " + Pad(str(menucommands(id).reverse_limit), 3, true)), 15)
+    if FlagKind(menucommands(id).misc_bytes(1)) <> "" then
+     boast_menu.ChangeOption(2, FF4Text("To ") + FlagText(FlagKind(menucommands(id).misc_bytes(1)), menucommands(id).reverse_limit), 15)
+    else
+     boast_menu.ChangeOption(2, FF4Text("To " + Pad(str(menucommands(id).reverse_limit), 3, true)), 15)
+    end if
    else
     boast_menu.ChangeOption(1, FF4Text(iif(menucommands(id).reversed, "Decrease", "Increase") + " target's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(1) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
     boast_menu.ChangeOption(2, FF4Text("By " + Pad(str(menucommands(id).misc_bytes(2)), 3, true)), 15)
@@ -421,7 +425,11 @@ sub CommandParametersMenu.Display()
   case 19 'Cry
    if menucommands(id).reverse_set then
     cry_menu.ChangeOption(1, FF4Text("Set target's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(2) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
-    cry_menu.ChangeOption(2, FF4Text(" to " + Pad(str(menucommands(id).reverse_limit), 3, true)), 15)
+    if FlagKind(menucommands(id).misc_bytes(2)) <> "" then
+     cry_menu.ChangeOption(2, FF4Text(" to ") + FlagText(FlagKind(menucommands(id).misc_bytes(2)), menucommands(id).reverse_limit), 15)
+    else
+     cry_menu.ChangeOption(2, FF4Text(" to " + Pad(str(menucommands(id).reverse_limit), 3, true)), 15)
+    end if
    else
     cry_menu.ChangeOption(1, FF4Text(iif(menucommands(id).reversed, "Raise", "Reduce") + " target's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(2) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
     cry_menu.ChangeOption(2, FF4Text(" by half user's ") + Pad(stat_menu.options.ItemAt((menucommands(id).misc_bytes(1) + 1) mod &h80), stat_menu.options.Width(),, FF4Text(" ")), 15)
@@ -1036,9 +1044,13 @@ sub CommandParametersMenu.UserSelect()
        stat_menu.UserSelect()
        if not stat_menu.cancelled then menucommands(id).misc_bytes(1) = stat_menu.selected - 1
       case 2 'Amount, or the fixed value
-       if menucommands(id).reverse_set then success_input.starting_number = menucommands(id).reverse_limit else success_input.starting_number = menucommands(id).misc_bytes(2)
-       success_input.UserSelect()
-       if menucommands(id).reverse_set then menucommands(id).reverse_limit = success_input.number else menucommands(id).misc_bytes(2) = success_input.number
+       if menucommands(id).reverse_set and FlagKind(menucommands(id).misc_bytes(1)) <> "" then
+        menucommands(id).reverse_limit = PickFlags(FlagKind(menucommands(id).misc_bytes(1)), menucommands(id).reverse_limit, x + 8, y + 2)
+       else
+        if menucommands(id).reverse_set then success_input.starting_number = menucommands(id).reverse_limit else success_input.starting_number = menucommands(id).misc_bytes(2)
+        success_input.UserSelect()
+        if menucommands(id).reverse_set then menucommands(id).reverse_limit = success_input.number else menucommands(id).misc_bytes(2) = success_input.number
+       end if
       case 3 'Message
        message_menu.x = x + 9
        message_menu.y = y + 2
@@ -1098,7 +1110,9 @@ sub CommandParametersMenu.UserSelect()
        stat_menu.UserSelect()
        if not stat_menu.cancelled then menucommands(id).misc_bytes(2) = stat_menu.selected - 1
       case 2 'Read stat, or the fixed value
-       if menucommands(id).reverse_set then
+       if menucommands(id).reverse_set and FlagKind(menucommands(id).misc_bytes(2)) <> "" then
+        menucommands(id).reverse_limit = PickFlags(FlagKind(menucommands(id).misc_bytes(2)), menucommands(id).reverse_limit, x + 8, y + 2)
+       elseif menucommands(id).reverse_set then
         success_input.y = y + 1
         success_input.starting_number = menucommands(id).reverse_limit
         success_input.UserSelect()
@@ -1532,3 +1546,71 @@ sub CommandParametersMenu.PickRoutine()
  end if
 
 end sub
+
+
+function CommandParametersMenu.FlagKind(stat as Integer) as String
+
+ 'The kind of list that a stat of a unit is a set of flags of, "" if it is a number
+
+ dim n as String = FF4Name(stat_menu.options.ItemAt((stat mod &h80) + 1))
+
+ select case n
+  case "Persistent statuses", "Adds - persistent", "Cancels - persistent"
+   return "persistent status"
+  case "Temporary statuses", "Adds - temporary", "Cancels - temporary"
+   return "temporary status"
+  case "System statuses"
+   return "system status"
+  case "Hidden statuses"
+   return "hidden status"
+  case "Attack elemental", "Weaknesses", "Extra-weaknesses", "Resistances", "Immunities"
+   return "element"
+  case "Hurts race", "Racial defenses", "Races"
+   return "race"
+ end select
+
+ return ""
+
+end function
+
+
+function CommandParametersMenu.FlagText(list_kind as String, flag_value as Integer) as String
+
+ 'The names of the flags that are set in a value, as the line shows them
+
+ dim names as FlagMenu = FlagMenu(0, 0, list_kind)
+ dim result as String
+
+ for i as Integer = 0 to 7
+  if flag_value and 2^i then
+   if result <> "" then result += FF4Text(", ")
+   result += names.flag_names.ItemAt(i + 1)
+  end if
+ next
+ if result = "" then return FF4Text("nothing")
+ if len(result) > 30 then result = left(result, 27) + FF4Text("...")
+
+ return result
+
+end function
+
+
+function CommandParametersMenu.PickFlags(list_kind as String, flag_value as Integer, px as Integer, py as Integer) as Integer
+
+ 'A list with a check for each flag of the value; returns the new value
+
+ dim flag_menu as FlagMenu = FlagMenu(px, py, list_kind)
+ dim result as Integer
+
+ for i as Integer = 0 to 7
+  if flag_value and 2^i then flag_menu.SetFlag(i + 1)
+ next
+ flag_menu.UserSelect()
+ flag_menu.Hide()
+ for i as Integer = 0 to 7
+  if flag_menu.flags(i + 1) then result += 2^i
+ next
+
+ return result
+
+end function

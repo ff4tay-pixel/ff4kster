@@ -41,6 +41,9 @@ type CommandParametersMenu
  declare sub Display()
  declare function Kind() as Integer
  declare sub PickRoutine()
+ declare function FlagKind(stat as Integer) as String
+ declare function FlagText(list_kind as String, flag_value as Integer) as String
+ declare function PickFlags(list_kind as String, flag_value as Integer, px as Integer, py as Integer) as Integer
  declare sub SetTo(index as UByte)
  declare sub EditThrowRow(row as Integer)
  declare sub UserSelect()

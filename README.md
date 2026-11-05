@@ -1126,7 +1126,7 @@ a stat by half the user's and stops at 1; reversed it raises it by that
 amount up to 99. If other changes have altered that code the line says
 "custom code, not changed" and leaves it alone.
 
-The Effect line also has a third choice, Set: the stat of the target is set to a fixed value (0 to 255) instead of being raised or lowered, with no limit; Enter on the Effect line goes through raise, lower and set, and Enter on the line under the stat edits the value (the amount of Boast is not kept while a fixed value is set, it comes back as 16 when you leave Set). It is written into the game's code in place of the add or subtract, and it works on the own copies of Boast and Cry too.
+The Effect line also has a third choice, Set: the stat of the target is set to a fixed value (0 to 255) instead of being raised or lowered, with no limit; Enter on the Effect line goes through raise, lower and set, and Enter on the line under the stat edits the value (for the stats that are sets of flags, which are the statuses, the elements and the races (persistent, temporary, system and hidden statuses, attack elemental, hurts race, adds, weaknesses, extra-weaknesses, resistances, immunities, racial defenses, cancels and races), the line shows the names that are set and Enter opens the list to check them) (the amount of Boast is not kept while a fixed value is set, it comes back as 16 when you leave Set). It is written into the game's code in place of the add or subtract, and it works on the own copies of Boast and Cry too.
 
 Both also have a limit line. When the command raises a stat, Enter asks for the highest
 value it can reach, 0 to 255 (99 in the original); keep stat plus amount below 256.
