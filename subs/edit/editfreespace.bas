@@ -112,6 +112,11 @@ sub FsReleaseBlock()
  choice = SmPick("Release which block?", names(), fs_blocks, 1)
  if choice = 0 then exit sub
 
+ if CcBlockInUse(fs_start(choice) + fs_header) <> "" then
+  InfoBox("That block is in use: " + CcBlockInUse(fs_start(choice) + fs_header) + ".|Releasing it would break the battle commands.|Move the command tables back, or pick another|routine for the command, instead.||Press any key", 4, 20)
+  exit sub
+ end if
+
  if ConfirmBox("Release it and fill it with FF? Its data is lost.") then
   if FsRelease(fs_start(choice) + fs_header) then modified = true
  end if

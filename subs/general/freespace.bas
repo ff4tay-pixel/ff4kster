@@ -332,6 +332,41 @@ function FsRelease(file_offset as Integer) as Boolean
 end function
 
 
+function FsAdopt(file_offset as Integer, size as Integer, owner as Integer) as Boolean
+
+ 'Registers a block of data that is in the ROM but is not in the table (it was lost from it), when no other block is
+ ' in the way. False if it overlaps one or the table is full. True when it is registered.
+
+ dim s as Integer = file_offset - fs_header
+ dim g as Integer
+
+ FsLoad()
+ if FsFindBlock(file_offset) > 0 then return true
+ if fs_blocks >= fs_max_blocks then return false
+ for i as Integer = 1 to fs_blocks
+  if s < fs_start(i) + fs_length(i) and s + size > fs_start(i) then return false
+ next
+
+ g = 0
+ for i as Integer = 1 to fs_blocks
+  if fs_start(i) < s then g = i
+ next
+ for i as Integer = fs_blocks to g + 1 step -1
+  fs_start(i + 1) = fs_start(i)
+  fs_length(i + 1) = fs_length(i)
+  fs_owner(i + 1) = fs_owner(i)
+ next
+ fs_start(g + 1) = s
+ fs_length(g + 1) = size
+ fs_owner(g + 1) = owner
+ fs_blocks += 1
+ FsStore()
+
+ return true
+
+end function
+
+
 function FsResize(file_offset as Integer, new_size as Integer) as Boolean
 
  'Changes the length of a block in place when the space after it is free (or it shrinks). A shrunk tail is filled

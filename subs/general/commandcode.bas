@@ -656,6 +656,25 @@ function CcNeedBlock(index as Integer, size as Integer = cc_block_size) as Boole
 end function
 
 
+function CcBlockInUse(file_offset as Integer) as String
+ 
+ 'What the command tables and routines use the block for ("" if nothing does): the tables, the routine that starts the
+ ' commands, the one that gives the animations and the copies of routines. Releasing it would break the commands.
+
+ if cb_state = 1 then
+  if file_offset = cb_block then return "the command tables"
+  if cb_hook and file_offset = cb_hook_at then return "the routine that starts the commands"
+  if cb_alias and file_offset = cb_alias_at then return "the animation routine of the commands"
+ end if
+ for k as Integer = 1 to cb_extra
+  if cc_block(k) = file_offset and file_offset > 0 then return "the routine of " + FF4Name(menucommands(cb_game + k).name)
+ next
+
+ return ""
+
+end function
+
+
 sub CcRelease(index as Integer)
 
  'The command has no routine of its own any more

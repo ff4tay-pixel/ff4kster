@@ -332,6 +332,54 @@ sub CbWriteSite()
 end sub
 
 
+sub CbRepairBlocks()
+
+ 'The tables and the routines are in the free space table. A ROM where they were lost from it (the bytes are there, the
+ ' table does not say so) gets them back, so that nothing else is put on top of them.
+
+ if cb_state <> 1 then exit sub
+ FsAdopt(cb_block, cb_block_size, cb_owner)
+ if cb_hook then FsAdopt(cb_hook_at, cb_hook_total, cb_owner)
+ if cb_alias then FsAdopt(cb_alias_at, cb_alias_total, cb_owner)
+
+end sub
+
+
+function CbBlockSafe(file_offset as Integer, size as Integer) as Boolean
+
+ 'Whether the table lists a block of the commands there that is long enough (needs FsLoad first)
+
+ dim b as Integer = FsFindBlock(file_offset)
+
+ if b = 0 then return false
+
+ return fs_length(b) >= size and fs_owner(b) = cb_owner
+
+end function
+
+
+function CbCheck() as String
+
+ 'Before Save ROM writes the file: "" if the tables and the routines are safe in the free space table, otherwise what is wrong.
+ ' A block that overlaps another one would be written over by it.
+
+ if not FsHasTable() then return ""
+ FsLoad()
+ for i as Integer = 1 to fs_blocks - 1
+  if fs_start(i) + fs_length(i) > fs_start(i + 1) then
+   return "Blocks " + str(i) + " and " + str(i + 1) + " of the free space table overlap. Not saved."
+  end if
+ next
+ if cb_state <> 1 then return ""
+ if not CbBlockSafe(cb_block, cb_block_size) then return "The command tables are not in the free space table. Not saved."
+ if cb_hook and not CbBlockSafe(cb_hook_at, cb_hook_total) then return "The routine that starts commands is not in the free space table. Not saved."
+ if cb_alias and not CbBlockSafe(cb_alias_at, cb_alias_total) then return "The animation routine of the commands is not in the free space table. Not saved."
+
+ return ""
+
+end function
+
+
 function CbInstallAlias() as String
 
  'Puts the routine and the table in the new banks and the call of it

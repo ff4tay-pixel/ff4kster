@@ -197,6 +197,7 @@ sub ReadData(filename as String)
  if cb_state = 1 and cb_hook and not cb_alias then
   if CbInstallAlias() = "" then cb_rewrite_all = true
  end if
+ CbRepairBlocks()
  formulas.ReadFromROM()
  for k as Integer = 1 to 4
   internal_command_names(k) = ""

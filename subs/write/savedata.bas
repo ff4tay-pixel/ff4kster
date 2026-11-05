@@ -251,6 +251,8 @@ sub ApplyDataToROM()
  PbWriteSite()
  SbWriteSite()
  CbWriteSite()
+ dim cb_problem as String = CbCheck()
+ if cb_problem <> "" then WarningMessage(FF4Text(cb_problem))
 
  FsFixChecksum()
 
