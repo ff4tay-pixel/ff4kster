@@ -254,7 +254,7 @@ The main menu groups the editors under yellow headings (Items and magic,
 Party, Story and text, World, Battles, Overview); the cursor skips the
 headings. The editors are in this order: Features, Spells, Spell Sets,
 Weapons, Armors, Medicines, Tools, Shops, Jobs, Characters, Commands, Actors,
-Battle Sprites, Portraits, Field Sprites, Messages, Menu Text, Title Screen, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
+Battle Sprites, Portraits, Field Sprites, Messages, Menu Text, Font and Icons, Title Screen, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
 Monsters, Formations, Encounters, Autobattles, Solobattles and Battle Formulas, followed by
 Search Everywhere, Space Usage, Free Space and Changed Entries. "Edit World Maps" (under World) first lists
 the three worlds, like the list of maps, with a picture of the selected one and how
@@ -799,6 +799,24 @@ Agil., Vit., Wis., Will, Attack, Attack%, Defence, Defence%, Mag Def, Mag Def%).
 for the line, Space opens a menu with Type a new text, Restore this text and Restore all texts. A text cannot
 be longer than the original (a shorter one is filled up with spaces, nothing else in the ROM moves). Changed
 texts are yellow. The battle menu has its own copy of RHand and LHand, which follows the Equip menu's.
+
+FONT AND ICONS
+--------------
+
+"Edit Font and Icons" (in the Story and text group, after Edit Menu Text) edits the 256 tiles
+of 8x8 pixels that the game draws its text from: the letters and digits, the icons that item
+and spell names start with, the pieces of the window frames and the cursor. Every tile has 4
+colors (0 to 3) and is also a character code of the game's text, so the menus, the battle
+windows and the dialogues all change with it. The left of the screen shows all tiles (a yellow
+dot marks a changed one), the right shows the chosen tile big, previews of it and of some text
+in one of the four window palettes (Comma and Period change the palette; it is only for the
+preview, the colors are not edited). Arrows choose a tile, Tab switches to editing its pixels
+(Space paints, 0 to 3 choose the color), Enter opens the menu of every action: go to a tile
+by number, flip (X, Y), clear, copy and paste (Ctrl-C, Ctrl-V), Undo (Ctrl-Z), revert one tile
+or all (Ctrl-R), export and import all tiles as one 128x128 BMP, exports/font/font.bmp (E, I;
+a pixel is its color number 0 to 3 whatever the BMP's color table says). The editor itself
+keeps the font that was loaded with the ROM until it is started again, so a slip never makes
+it unreadable.
 
 TITLE SCREEN
 ------------
@@ -2274,6 +2292,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.2
+    - Added Font and Icons editor (Story and text group): the 256 tiles of 8x8 pixels (2 bits) that the menus, battle windows and dialogues draw their letters, item icons and window frames from, with a sheet of all tiles, a big tile for painting, a preview in the four window palettes, flip, copy, undo, revert and BMP export and import (exports/font)
     - Added Menu Text editor (Story and text group): the names of the five equipment slots of the Equip menu (RHand, LHand, Head, Body, Arms) and the labels of the Status menu (Ability, Str., Agil., Vit., Wis., Will, Attack, Attack%, Defence, Defence%, Mag Def, Mag Def%); a text can be as long as the original at most and is filled up with spaces, the battle menu's copy of the hand names follows
     - Added Title Screen editor: the 256x224 picture shown before New Game with a zoom window and the whole picture, pixel painting, fill, tile palettes, the 8 palettes of 16 colors with a palette editor, a count of the 256 tiles the ROM has room for, BMP export and import (exports/title)
     - Shops: 256 shops (up from 32 that the game can open) in a table in the new banks of an expanded ROM

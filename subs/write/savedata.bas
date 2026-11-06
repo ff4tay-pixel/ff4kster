@@ -117,6 +117,7 @@ sub ApplyDataToROM()
  next
  formulas.WriteToROM()
  WriteMenuText()
+ SaveFontTiles()
  for k as Integer = 1 to 4
   for j as Integer = 0 to 4
    WriteByte(cb_at(1) + (cb_standard + k - 1) * 5 + j, asc(mid(internal_command_names(k), j + 1, 1)))

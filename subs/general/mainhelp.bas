@@ -233,6 +233,12 @@ sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
    HelpLine(lines(), n, "change reaches every sprite using that palette.")
    HelpLine(lines(), n, "In the palette editor the bracket keys move a")
    HelpLine(lines(), n, "color and the pixels follow, asking first.")
+  case 41
+   HelpLine(lines(), n, "The 256 tiles of 8x8 pixels the game draws its")
+   HelpLine(lines(), n, "text, icons and window frames from. Arrows pick a")
+   HelpLine(lines(), n, "tile, Tab edits its pixels (Space paints, 0-3 pick")
+   HelpLine(lines(), n, "the color), Enter opens the menu of every action:")
+   HelpLine(lines(), n, "flip, copy, undo, revert, BMP export and import.")
   case 40
    HelpLine(lines(), n, "Change the names of the equipment slots of the")
    HelpLine(lines(), n, "Equip menu and the labels of the Status menu.")
