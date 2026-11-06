@@ -254,7 +254,7 @@ The main menu groups the editors under yellow headings (Items and magic,
 Party, Story and text, World, Battles, Overview); the cursor skips the
 headings. The editors are in this order: Features, Spells, Spell Sets,
 Weapons, Armors, Medicines, Tools, Shops, Jobs, Characters, Commands, Actors,
-Battle Sprites, Portraits, Field Sprites, Title Screen, Messages, Menu Text, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
+Battle Sprites, Portraits, Field Sprites, Messages, Menu Text, Title Screen, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
 Monsters, Formations, Encounters, Autobattles, Solobattles and Battle Formulas, followed by
 Search Everywhere, Space Usage, Free Space and Changed Entries. "Edit World Maps" (under World) first lists
 the three worlds, like the list of maps, with a picture of the selected one and how
@@ -803,7 +803,7 @@ texts are yellow. The battle menu has its own copy of RHand and LHand, which fol
 TITLE SCREEN
 ------------
 
-"Edit Title Screen" (in the Party group, after Edit Field Sprites) edits the picture
+"Edit Title Screen" (in the Story and text group, after Edit Menu Text) edits the picture
 shown before New Game: the Final Fantasy II logo, the sword and the two lines of
 text. It is 256x224 pixels of 16 colors; the screen is made of 32x28 tiles of 8x8
 pixels and every tile uses one of 8 palettes of 16 colors. Color 0 of a tile is
