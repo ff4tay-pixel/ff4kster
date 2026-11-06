@@ -26,6 +26,7 @@ const menu_formulas = 36 'Edit Battle Formulas
 const menu_field_sprites = 37 'Field Sprites
 const menu_free_space = 38 'Expand the ROM and manage the free space
 const menu_title_screen = 39 'Edit Title Screen
+const menu_menu_text = 40 'Edit Menu Text
 dim shared menu_id(1 to 60) as Integer
 dim shared menu_rows as Integer
 dim shared entry_number as Integer
@@ -176,6 +177,7 @@ AddMainEntry(editor_menu, "Edit Title Screen", menu_title_screen)
 entry_number = 14
 AddMainHeader(editor_menu, "Story and text")
 AddMainEntry(editor_menu, "Edit Messages")
+AddMainEntry(editor_menu, "Edit Menu Text", menu_menu_text)
 AddMainEntry(editor_menu, "Edit Events")
 AddMainEntry(editor_menu, "Edit Triggers")
 AddMainEntry(editor_menu, "Edit NPCs")
@@ -224,7 +226,7 @@ do
  if not editor_menu.cancelled then
 
   'Start every editor on a black screen so nothing from the main menu is left behind.
-  if (choice >= menu_first_editor and choice <= menu_last_editor) or choice = menu_world_map or choice = menu_portraits or choice = menu_monster_sprites or choice = menu_formulas or choice = menu_field_sprites or choice = menu_free_space or choice = menu_title_screen then cls
+  if (choice >= menu_first_editor and choice <= menu_last_editor) or choice = menu_world_map or choice = menu_portraits or choice = menu_monster_sprites or choice = menu_formulas or choice = menu_field_sprites or choice = menu_free_space or choice = menu_title_screen or choice = menu_menu_text then cls
 
   help_entry = choice
 
@@ -269,6 +271,7 @@ do
    case menu_field_sprites: EditFieldSprites()
    case menu_free_space: EditFreeSpace()
    case menu_title_screen: EditTitleScreen()
+   case menu_menu_text: EditMenuText()
 
    case menu_restore
     if RestoreFromBackup(filename, modified) then
@@ -307,7 +310,7 @@ do
   help_entry = 0
 
   'Work out whether anything really changed (opening an editor and leaving does not count).
-  if (choice >= menu_first_editor and choice <= menu_last_editor) or choice = menu_world_map or choice = menu_portraits or choice = menu_monster_sprites or choice = menu_formulas or choice = menu_field_sprites or choice = menu_free_space or choice = menu_title_screen then
+  if (choice >= menu_first_editor and choice <= menu_last_editor) or choice = menu_world_map or choice = menu_portraits or choice = menu_monster_sprites or choice = menu_formulas or choice = menu_field_sprites or choice = menu_free_space or choice = menu_title_screen or choice = menu_menu_text then
    modified = HasUnsavedEdits()
   end if
   editor_menu.ChangeOption(menu_save, FF4Text(iif(modified, "Save ROM !", "Save ROM")))

@@ -436,6 +436,7 @@ sub ReadData(filename as String)
  ReadPortraits()
  ReadFieldSprites()
  ReadTitle()
+ ReadMenuText()
  print "DONE"
 
  print "Reading world maps... ";
