@@ -254,7 +254,7 @@ The main menu groups the editors under yellow headings (Items and magic,
 Party, Story and text, World, Battles, Overview); the cursor skips the
 headings. The editors are in this order: Features, Spells, Spell Sets,
 Weapons, Armors, Medicines, Tools, Shops, Jobs, Characters, Commands, Actors,
-Battle Sprites, Portraits, Field Sprites, Messages, Menu Text, Font and Icons, Title Screen, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
+Battle Sprites, Portraits, Field Sprites, Messages, Menu Text, Font and Icons, Credits, Title Screen, Events, Triggers, NPCs, Tilesets, Map Info, Maps,
 Monsters, Formations, Encounters, Autobattles, Solobattles and Battle Formulas, followed by
 Search Everywhere, Space Usage, Free Space and Changed Entries. "Edit World Maps" (under World) first lists
 the three worlds, like the list of maps, with a picture of the selected one and how
@@ -817,6 +817,23 @@ or all (Ctrl-R), export and import all tiles as one 128x128 BMP, exports/font/fo
 a pixel is its color number 0 to 3 whatever the BMP's color table says). The editor itself
 keeps the font that was loaded with the ROM until it is started again, so a slip never makes
 it unreadable.
+
+CREDITS
+-------
+
+"Edit Credits" (in the Story and text group, after Edit Font and Icons) edits the text of the end
+credits roll that plays after the final battle. The left of the screen lists the lines of the
+roll, each placed as it is on the roll (indented), with an "Add a line at the end" entry; the
+right shows the roll as the game draws it, in the game's font as it is being edited, with the
+chosen line on a blue band. Enter types the letters of the line, Space opens a menu: Type the
+text, Center the line, Set the indent, Add a line above or below, Move the line up or down,
+Delete the line, Undo (Ctrl-Z, the last 30 changes) and Restore all lines. The game draws a line
+on a grid 32 letters wide, so the indent and the letters together cannot pass 32. The text lives
+in the ROM in 1427 bytes (a line break is one byte, an indent two, a letter one); the box on the
+right shows the bytes used, the rest is free, and a roll that is too long in red (Save ROM
+refuses). A roll that was not changed is not written. Note: the game shows the roll for a fixed
+time and scrolls it at a fixed speed, which the editor does not change; a roll much longer than
+the original (162 lines) has not been tried in the game.
 
 TITLE SCREEN
 ------------
@@ -2292,6 +2309,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.2
+    - Added Credits editor (Story and text group): the lines of the end credits roll with a picture in the game's font, type, center, indent, add, move and delete lines, undo, a count of the bytes used of the 1427 the text may take
     - Added Font and Icons editor (Story and text group): the 256 tiles of 8x8 pixels (2 bits) that the menus, battle windows and dialogues draw their letters, item icons and window frames from, with a sheet of all tiles, a big tile for painting, a preview in the four window palettes, flip, copy, undo, revert and BMP export and import (exports/font)
     - Added Menu Text editor (Story and text group): the names of the five equipment slots of the Equip menu (RHand, LHand, Head, Body, Arms) and the labels of the Status menu (Ability, Str., Agil., Vit., Wis., Will, Attack, Attack%, Defence, Defence%, Mag Def, Mag Def%); a text can be as long as the original at most and is filled up with spaces, the battle menu's copy of the hand names follows
     - Added Title Screen editor: the 256x224 picture shown before New Game with a zoom window and the whole picture, pixel painting, fill, tile palettes, the 8 palettes of 16 colors with a palette editor, a count of the 256 tiles the ROM has room for, BMP export and import (exports/title)

@@ -233,6 +233,11 @@ sub FillHelp(lines() as String, byref n as Integer, selected as Integer)
    HelpLine(lines(), n, "change reaches every sprite using that palette.")
    HelpLine(lines(), n, "In the palette editor the bracket keys move a")
    HelpLine(lines(), n, "color and the pixels follow, asking first.")
+  case 42
+   HelpLine(lines(), n, "The text of the end credits roll, line by line,")
+   HelpLine(lines(), n, "with a picture in the game's font. Enter types a")
+   HelpLine(lines(), n, "line, Space opens a menu: center, indent, add,")
+   HelpLine(lines(), n, "move, delete, undo. About 300 bytes may be added.")
   case 41
    HelpLine(lines(), n, "The 256 tiles of 8x8 pixels the game draws its")
    HelpLine(lines(), n, "text, icons and window frames from. Arrows pick a")
