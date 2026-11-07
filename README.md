@@ -1,4 +1,4 @@
-# FF4kster v1.2
+# FF4kster v1.3
 
 IMPORTANT NOTES
 ---------------
@@ -2317,7 +2317,7 @@ Zyrthofar
 
 VERSION HISTORY
 ---------------
-* 1.2
+* 1.3
     - Map editor and world map editor: G (or the M menu) picks up a trigger or NPC placement and drops it on another tile, instead of typing its X and Y
     - Added Credits editor (Story and text group): the lines of the end credits roll with a picture in the game's font, type, center, indent, add, move and delete lines, undo, a count of the bytes used of the 1427 the text may take
     - Added Font and Icons editor (Story and text group): the 256 tiles of 8x8 pixels (2 bits) that the menus, battle windows and dialogues draw their letters, item icons and window frames from, with a sheet of all tiles, a big tile for painting, a preview in the four window palettes, flip, copy, undo, revert and BMP export and import (exports/font)
@@ -2329,6 +2329,10 @@ VERSION HISTORY
     - Events and triggers can also be moved to the new banks (65520 bytes each; the trigger limit then follows the room, 13104 instead of 979); Free Space has a Move data to the new banks entry for message text, events and triggers
     - Messages: the text of banks 1 to 3 can be moved to the new banks of an expanded ROM for about 65 KB of room each (the game's text reading is patched to read it there); Space Usage and the bank list show the new room
     - Free Space: expand the ROM to 2 MB or 4 MB (header size and checksum written by Save ROM) and reserve or release blocks of the new banks in a table kept in the ROM; the groundwork for moving tables out of the full original banks
+    - Commands: Free Space can move the command tables to the new banks for 16 new commands that run the routine of an existing command with their own name, target, delay, statuses and stance
+    - Commands: a new command can have its own copy of Boast, Cry, Pray, Bear, Jump, Recall, Sing, Aim, Split, Throw or Steal, so that its settings do not change the original; the Commands editor has a Routine entry for the new commands
+    - Commands: Boast and Cry can set a stat to a fixed value, and the stats that are sets of flags show and edit their names; a message line of a command opens a menu to pick another message or to edit the text of the current one; new commands above 27 (hex) play the animation of the command they copy; Save ROM checks the command tables, the blocks of the own copies and the small jumps of bank 03 and refuses when they are damaged
+* 1.2
     - Summon pictures: in Edit Monster Sprites, the 17 summon pictures with a preview, graphics pointer, palette and tile count, an editor (the monster sprite editor) and BMP export and import (exports/summons)
     - Stored monster pictures: add a picture from a BMP to free room of the ROM without replacing a monster's own, keep it in a list (config/monsterpictures.dat) and give it to any monster later, in Edit Monster Sprites or with Pointer, Stored picture in the Graphics box of Edit Monsters; Space Usage shows the room
     - Level up data: Save ROM places each character's rows in the original area or in unused bytes of the same bank, so every character can start at level 1, and refuses when they do not fit; Space Usage lists the room
@@ -2340,12 +2344,10 @@ VERSION HISTORY
     - Battle Formulas: spell effect 29, the unused copy of Count, can raise or lower a stat of its target like Armor, including the modified strength, agility, vitality, wisdom and will
     - Commands: overview of all commands with what changed, and the names of the four internal commands
     - Commands: the unused command 22 can "Behave like" another command (runs its routine and animation)
-    - Commands: Free Space can move the command tables to the new banks for 16 new commands that run the routine of an existing command with their own name, target, delay, statuses and stance
-    - Commands: a new command can have its own copy of Boast, Cry, Pray, Bear, Jump, Recall, Sing, Aim, Split, Throw or Steal, so that its settings do not change the original; the Commands editor has a Routine entry for the new commands
     - Commands: Fight's multipliers can use half steps (x1.5, x2.5, x3.5), which the original damage code ignored
     - Commands: Fight has the list of temporary statuses that its attack cures in the attacker (Charm in the original)
     - Commands: Dark Wave and Kick have code settings (HP cost, damage to undead, Kick multiplier, shared base damage) and Peep has one (bosses)
-    - Commands: Aim can use any stat of the target and the user, Boast and Cry can be reversed (raise or lower) or set a stat to a fixed value and have a limit (the cap of a raise, 99 originally)
+    - Commands: Aim can use any stat of the target and the user, Boast and Cry can be reversed (raise or lower)
     - Commands: Regen has the ticks between its heals, Cry can work on the allies instead of the enemies
     - Commands: Jump has its wait and air time, Charge, Twin and Regen have the delay of their second part
     - Commands: Jump and Throw have a Parameters screen with their failure message, Throw also with its damage formula (stat, random part, cap)
