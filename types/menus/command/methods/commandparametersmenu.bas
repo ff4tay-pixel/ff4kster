@@ -51,6 +51,7 @@ constructor CommandParametersMenu(starting_x as UByte = 0, starting_y as UByte =
  source_menu = BlueMenu(x + 15, y)
  source_menu.max_rows = 12
  source_menu.type_ahead = true
+ share_menu = BlueMenu(x + 15, y)
 
  item_menu = BlueMenu(x + 8, y)
  item_menu.max_rows = 1
@@ -547,10 +548,14 @@ sub CommandParametersMenu.Display()
     clone_menu.ChangeOption(2, FF4Text("It does nothing in battle."), 15)
    else
     temp = menucommands(menucommands(id).behaves_like).name
-    clone_menu.ChangeOption(2, FF4Text("It shares the parameters of ") + temp + FF4Text("."), 15)
+    clone_menu.ChangeOption(2, FF4Text("It shares the settings of ") + temp + FF4Text("."), 15)
    end if
-   clone_menu.ChangeOption(1, FF4Text("Behaves like: ") + temp, 15)
-   clone_menu.ChangeOption(3, FF4Text("A change to them reaches both."), 15)
+   clone_menu.ChangeOption(1, FF4Text("Routine: ") + temp, 15)
+   if menucommands(id).behaves_known and menucommands(id).behaves_like > 0 and OwnPossible(menucommands(id).behaves_like) then
+    clone_menu.ChangeOption(3, FF4Text("A change reaches both. Enter can give it its own."), 15)
+   else
+    clone_menu.ChangeOption(3, FF4Text("A change to them reaches both."), 15)
+   end if
    clone_menu.ChangeOption(4, FF4Text("The battle banner keeps its name."), 15)
    clone_menu.Display()
 
@@ -1382,43 +1387,76 @@ function CommandParametersMenu.Kind() as Integer
 end function
 
 
+function CommandParametersMenu.OwnPossible(k as Integer) as Boolean
+
+ 'Whether the new command can run its own copy of the routine of command k (settings that are not shared)
+
+ if not (CbIsNew(id) and CcAvailable()) then return false
+ if k < 7 or k > 24 then return false
+
+ return k = 12 or k = 16 or k = 18 or k = 19 or CcCopyOK(k)
+
+end function
+
+
 sub CommandParametersMenu.PickRoutine()
 
- 'Picks the routine of a new command: that of another command, or its own copy of Boast or Cry
+ 'Picks the routine of a new command: the command to copy and, where the game allows it, whether the
+ ' settings are shared with it or the command gets its own copy of the routine
 
  dim index as Integer
  dim picked as Integer
+ dim bytes as Integer
 
  source_menu.ClearAll()
  source_menu.AddOption(FF4Text("-- NONE --"))
  source_ids(1) = 0
  for i as Integer = 1 to total_commands
   if MenuCommand.CanBeCopied(i) then
-   source_menu.AddOption(menucommands(i).name)
+   if OwnPossible(i) then
+    source_menu.AddOption(menucommands(i).name + FF4Text(" - own settings possible"))
+   else
+    source_menu.AddOption(menucommands(i).name)
+   end if
    source_ids(source_menu.options.Length()) = i
   end if
  next
- if CbIsNew(id) and CcAvailable() then
-  'in the order of the commands: Jump, Recall, Sing, Split, Pray, Aim, Bear, Boast, Cry, Throw, Steal
-  for k as Integer = 7 to 24
-   if k = 12 or k = 16 or k = 18 or k = 19 or CcCopyOK(k) then
-    source_menu.AddOption(FF4Text("Own copy of ") + menucommands(k).name)
-    source_ids(source_menu.options.Length()) = 100 + k
-   end if
-  next
- end if
+ source_menu.title = "Routine"
+ source_menu.hint = "Enter picks the command whose routine this one runs. Some can have settings of their own."
  source_menu.x = x + 15
  source_menu.y = y
  source_menu.top_row = 1
  source_menu.ChangeSelected(1)
  for i as Integer = 1 to source_menu.options.Length()
-  if source_ids(i) = menucommands(id).behaves_like and menucommands(id).own_kind = 0 then source_menu.ChangeSelected(i)
-  if source_ids(i) = 100 + menucommands(id).own_kind and menucommands(id).own_kind > 0 then source_menu.ChangeSelected(i)
+  if menucommands(id).own_kind > 0 then
+   if source_ids(i) = menucommands(id).own_kind then source_menu.ChangeSelected(i)
+  elseif source_ids(i) = menucommands(id).behaves_like then
+   source_menu.ChangeSelected(i)
+  end if
  next
  source_menu.UserSelect()
  if source_menu.cancelled then exit sub
 
  picked = source_ids(source_menu.selected)
+
+ if OwnPossible(picked) then
+  'the second question, asked only where there is an answer to give
+  if CcIsCopied(picked) then bytes = CcCopySize(picked) else bytes = cc_block_size
+  share_menu.ClearAll()
+  share_menu.AddOption(FF4Text("Share the settings of ") + menucommands(picked).name + FF4Text(", a change reaches both"))
+  share_menu.AddOption(FF4Text("Own settings, a copy of ") + str(bytes) + FF4Text(" bytes in the new banks"))
+  share_menu.title = "Settings of " + FF4Name(menucommands(picked).name)
+  share_menu.hint = "Enter picks whether this command shares the settings of the original or has its own."
+  share_menu.x = x + 15
+  share_menu.y = y
+  share_menu.top_row = 1
+  if menucommands(id).own_kind = picked then share_menu.ChangeSelected(2) else share_menu.ChangeSelected(1)
+  share_menu.UserSelect()
+  share_menu.Hide()
+  if share_menu.cancelled then exit sub
+  if share_menu.selected = 2 then picked += 100
+ end if
+
  if picked >= 100 then
   index = picked - 100
   if menucommands(id).own_kind = index then exit sub

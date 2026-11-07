@@ -33,6 +33,7 @@ type CommandParametersMenu
  code_choice_menu as BlueMenu
  fail_menu as BlueMenu 'Jump and Throw: the message when the action fails, Throw also has its damage formula here
  source_menu as BlueMenu
+ share_menu as BlueMenu 'shared settings or own settings, asked after the routine is picked
  source_ids(60) as UByte
 
  declare constructor(starting_x as UByte = 0, starting_y as UByte = 0)
@@ -40,6 +41,7 @@ type CommandParametersMenu
  declare function MultiplierText(value as Integer) as String
  declare sub Display()
  declare function Kind() as Integer
+ declare function OwnPossible(k as Integer) as Boolean
  declare sub PickRoutine()
  declare sub PickMessage(byref msg as UByte, px as Integer, py as Integer, allow_none as Boolean = true)
  declare sub EditAlertText(number as Integer)
