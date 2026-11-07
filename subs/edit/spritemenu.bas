@@ -107,8 +107,16 @@ function SmNumber(current as Integer, max_value as Integer) as Integer
 end function
 
 
+dim shared move_kind as Integer 'what the map editors are carrying to a new tile: 0 nothing, 1 trigger, 2 NPC placement
+dim shared move_map as Integer
+dim shared move_index as Integer
+
+
 const map_key_add_npc = 60001 'Shift-Insert in the map editor
 const map_key_remove_npc = 60002 'Shift-Delete in the map editor
+const map_key_move_trigger = 60003 'M menu: pick up the trigger here to move it
+const map_key_move_npc = 60004 'M menu: pick up the NPC here to move it
+const map_key_cancel_move = 60005 'M menu: forget the move
 
 
 function MapActions(map_panel as Boolean, objects as Boolean) as UInteger
@@ -132,6 +140,13 @@ function MapActions(map_panel as Boolean, objects as Boolean) as UInteger
    SmAdd("Edit the trigger here", "T", asc("t"))
    SmAdd("Add a trigger here", "Insert", INSERT_KEY)
    SmAdd("Remove the trigger here", "Delete", DELETE_KEY)
+   if move_kind <> 0 then
+    SmAdd("Drop what you are moving here", "G", asc("g"))
+    SmAdd("Cancel the move", "", map_key_cancel_move)
+   else
+    SmAdd("Move the trigger here to another tile", "G", map_key_move_trigger)
+    SmAdd("Move the NPC here to another tile", "G", map_key_move_npc)
+   end if
    SmAdd("Edit the NPC here", "N", asc("n"))
    SmAdd("Add an NPC here", "Shift Insert", map_key_add_npc)
    SmAdd("Remove the NPC here", "Shift Delete", map_key_remove_npc)
@@ -170,6 +185,12 @@ function WorldActions(map_panel as Boolean) as UInteger
   SmAdd("Edit the trigger here", "T", asc("t"))
   SmAdd("Add a trigger here", "Insert", INSERT_KEY)
   SmAdd("Remove the trigger here", "Delete", DELETE_KEY)
+  if move_kind <> 0 then
+   SmAdd("Drop the trigger you are moving here", "G", asc("g"))
+   SmAdd("Cancel the move", "", map_key_cancel_move)
+  else
+   SmAdd("Move the trigger here to another tile", "G", map_key_move_trigger)
+  end if
  end if
  SmAdd("Change the overlay", "O", asc("o"))
  if map_panel then

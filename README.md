@@ -281,7 +281,9 @@ with each zone's encounter number (Enc, as in the Encounters editor; the game pi
 random battle by 32 by 32 tile zone: 8 by 8 on the overworld, 4 by 4 underground, 2 by 2 on
 the moon). T edits the trigger under the cursor (the same screen as Edit Triggers; on a
 tile with none it offers to add one), Insert adds a trigger at the cursor and Delete removes
-it. The game has room for 82 world triggers in all and the original ROM already uses them
+it. G picks up the trigger under the cursor to move it (the bottom line says so); put the
+cursor on the new tile and press G again to drop it there; the M menu has both steps and
+Cancel the move. The game has room for 82 world triggers in all and the original ROM already uses them
 all, so delete one before adding another. With the mouse a left click on the map paints (drag to keep
 painting), a right click picks the tile, a click on the palette chooses a tile, a click
 on the small map jumps there and the wheel moves the cursor; in paste mode a click
@@ -1869,6 +1871,13 @@ selector:
             triggers share the tile a short list asks which one.
     INSERT: Add a trigger at the cursor and open it for editing.
     DELETE: Remove the trigger on the tile (after a confirmation).
+    G:      Move a trigger or an NPC placement to another tile without typing
+            coordinates. On the tile it stands on, G picks it up (it asks which
+            when a trigger and an NPC share the tile, or several of one kind do);
+            the bottom line then says what you are moving. Move the cursor to the
+            new tile and press G again to drop it there. Nothing changes until the
+            drop. The M menu has the same steps (Move the trigger here, Move the NPC
+            here, Drop what you are moving here, Cancel the move).
     The game shares a fixed amount of room between the triggers of all maps
     (979), and the original ROM uses all of it, so delete one before adding.
     N:      Edit the NPC placement standing on the tile under the cursor (the
@@ -2309,6 +2318,7 @@ Zyrthofar
 VERSION HISTORY
 ---------------
 * 1.2
+    - Map editor and world map editor: G (or the M menu) picks up a trigger or NPC placement and drops it on another tile, instead of typing its X and Y
     - Added Credits editor (Story and text group): the lines of the end credits roll with a picture in the game's font, type, center, indent, add, move and delete lines, undo, a count of the bytes used of the 1427 the text may take
     - Added Font and Icons editor (Story and text group): the 256 tiles of 8x8 pixels (2 bits) that the menus, battle windows and dialogues draw their letters, item icons and window frames from, with a sheet of all tiles, a big tile for painting, a preview in the four window palettes, flip, copy, undo, revert and BMP export and import (exports/font)
     - Added Menu Text editor (Story and text group): the names of the five equipment slots of the Equip menu (RHand, LHand, Head, Body, Arms) and the labels of the Status menu (Ability, Str., Agil., Vit., Wis., Will, Attack, Attack%, Defence, Defence%, Mag Def, Mag Def%); a text can be as long as the original at most and is filled up with spaces, the battle menu's copy of the hand names follows

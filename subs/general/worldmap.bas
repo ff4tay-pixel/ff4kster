@@ -1061,6 +1061,7 @@ sub DrawWorldEditor()
  tile_number = world_tiles(w, wv_cursor_y, wv_cursor_x) and 127
  info_line = ""
  if (wv_overlay and 1) <> 0 then info_line = TriggerStatusText(252 + w, wv_cursor_x, wv_cursor_y)
+ if move_kind <> 0 then info_line = MoveStatusText()
  if info_line <> "" then
   if (wv_overlay and 2) <> 0 and WorldZoneArea(w, wv_cursor_x, wv_cursor_y) > 0 then info_line += ".  Enc " + str(encounter_tables(WorldZoneArea(w, wv_cursor_x, wv_cursor_y)))
   WriteText(FF4Text(Pad(left(info_line, 74), 74)), 1, 55, 14)
@@ -1180,6 +1181,7 @@ sub EditOneWorld(w as Integer)
  wv_cursor_y = world_size(w) \ 2
  wv_selecting = false
  wv_paste_mode = false
+ move_kind = 0
  wv_map_active = true
  WorldPickTile(world_tiles(w, wv_cursor_y, wv_cursor_x) and 127)
 
@@ -1305,6 +1307,16 @@ sub EditOneWorld(w as Integer)
       wv_overlay = (wv_overlay + 3) mod 4
      case asc("t"), asc("T")
       if wv_map_active then TriggerKeyAt(252 + wv_world, wv_cursor_x, wv_cursor_y, 1)
+     case asc("g"), asc("G"), map_key_move_trigger, map_key_cancel_move
+      if wv_map_active then
+       if key_code = map_key_cancel_move then
+        MoveKeyAt(252 + wv_world, wv_cursor_x, wv_cursor_y, 3)
+       elseif key_code = map_key_move_trigger then
+        if MoveKeyAt(252 + wv_world, wv_cursor_x, wv_cursor_y, 1) then wv_overlay = wv_overlay or 1
+       else
+        if MoveKeyAt(252 + wv_world, wv_cursor_x, wv_cursor_y, 0) then wv_overlay = wv_overlay or 1
+       end if
+      end if
      case INSERT_KEY
       if wv_map_active then
        if TriggerKeyAt(252 + wv_world, wv_cursor_x, wv_cursor_y, 2) then wv_overlay = wv_overlay or 1

@@ -50,8 +50,10 @@ sub MapEditorMenu.Display()
  'The trigger under the cursor, and the keys that edit it
  if editing and not paste_mode and (map_number < 252 or map_number > 254) then
   trigger_text = TriggerStatusText(map_number, map_menu.cursor_x, map_menu.cursor_y)
-  if trigger_text = "" then
-   WriteText(FF4Text(Pad("T trigger  Insert add one  Delete remove it", 51)), 1, 55, 15)
+  if move_kind <> 0 then
+   WriteText(FF4Text(Pad(left(MoveStatusText(), 51), 51)), 1, 55, 12)
+  elseif trigger_text = "" then
+   WriteText(FF4Text(Pad("T trigger  Insert add  Delete remove  G move", 51)), 1, 55, 15)
   else
    WriteText(FF4Text(Pad(left(trigger_text, 51), 51)), 1, 55, 14)
   end if
@@ -446,6 +448,7 @@ sub MapEditorMenu.UserSelect()
  if map_menu.Columns() > 0 then
 
   editing = true
+  move_kind = 0
 
   palette_menu.active = false
   map_menu.active = true
@@ -514,6 +517,19 @@ sub MapEditorMenu.UserSelect()
     case DELETE_KEY
      if active_menu = @map_menu and (map_number < 252 or map_number > 254) then
       TriggerKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 3)
+      RefreshOverlay()
+     end if
+    case asc("g"), asc("G"), map_key_move_trigger, map_key_move_npc, map_key_cancel_move
+     if active_menu = @map_menu and (map_number < 252 or map_number > 254) then
+      if keycode = map_key_move_trigger then
+       if MoveKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 1) then overlay_visible = true
+      elseif keycode = map_key_move_npc then
+       if MoveKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 2) then overlay_visible = true
+      elseif keycode = map_key_cancel_move then
+       MoveKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 3)
+      else
+       if MoveKeyAt(map_number, map_menu.cursor_x, map_menu.cursor_y, 0) then overlay_visible = true
+      end if
       RefreshOverlay()
      end if
     case map_key_remove_npc
@@ -632,6 +648,7 @@ sub MapEditorMenu.UserSelect()
   
   active_menu->active = false
   editing = false
+  move_kind = 0
   StashHistory()
   
  end if

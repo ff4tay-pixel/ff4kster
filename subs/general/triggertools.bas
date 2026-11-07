@@ -374,3 +374,112 @@ function TriggerKeyAt(m as Integer, tile_x as Integer, tile_y as Integer, action
  return false
 
 end function
+
+
+function MoveStatusText() as String
+
+ 'For the status line while a trigger or NPC is being carried to a new tile, "" otherwise
+
+ if move_kind = 0 then return ""
+ if move_kind = 1 then return "Moving trigger " + str(move_index) + ": go to the new tile, press G"
+
+ return "Moving NPC " + str(move_index) + ": go to the new tile, press G"
+
+end function
+
+
+function MoveStillThere() as Boolean
+
+ 'False if what was picked up is gone (deleted)
+
+ if move_kind = 1 then return move_index >= 1 and move_index <= maps(move_map).triggers.Length()
+ if move_kind = 2 then return move_index >= 1 and move_index <= placement_groups(move_map).placements.Length()
+
+ return false
+
+end function
+
+
+function MoveKeyAt(m as Integer, tile_x as Integer, tile_y as Integer, action as Integer) as Boolean
+
+ 'Moving a trigger or an NPC placement to another tile without typing coordinates: pick it up on its tile, move
+ ' the cursor, drop it. Nothing changes until the drop, so cancelling needs no undo.
+ ' action 0 = G (drops what is carried, else picks up the trigger on the tile, the NPC, or asks which when both
+ ' are there), 1 = pick up the trigger, 2 = pick up the NPC, 3 = cancel. Returns true if the screen should redraw
+ ' its markers.
+
+ dim t as Trigger ptr
+ dim p as Placement ptr
+ dim index as Integer
+ dim found(63) as Integer
+ dim has_npcs as Boolean = (m < 252 or m > 254)
+ dim trigger_count as Integer = TriggersAt(m, tile_x, tile_y, found())
+ dim npc_count as Integer
+ dim choose as BlueMenu
+
+ if has_npcs then npc_count = PlacementsAt(m, tile_x, tile_y, found())
+
+ if action = 3 then
+  move_kind = 0
+  return true
+ end if
+
+ if action = 0 and move_kind <> 0 then
+  if move_map <> m or not MoveStillThere() then
+   move_kind = 0
+   InfoBox("What you were moving is no longer there.|Pick it up again.||Press any key", 20, 20)
+   return true
+  end if
+  if move_kind = 1 then
+   t = maps(m).triggers.PointerAt(move_index)
+   t->x = tile_x
+   t->y = tile_y
+  else
+   p = placement_groups(m).placements.PointerAt(move_index)
+   p->x = tile_x
+   p->y = tile_y
+  end if
+  move_kind = 0
+  return true
+ end if
+
+ if action = 0 then
+  if trigger_count > 0 and npc_count > 0 then
+   choose.x = 4
+   choose.y = 20
+   choose.title = "Move which?"
+   choose.AddOption(FF4Text("The trigger on this tile"))
+   choose.AddOption(FF4Text("The NPC on this tile"))
+   choose.UserSelect()
+   if choose.cancelled then return false
+   action = choose.selected
+  elseif trigger_count > 0 then
+   action = 1
+  elseif npc_count > 0 then
+   action = 2
+  else
+   InfoBox("There is no trigger or NPC on this tile.|Put the cursor on the one to move.||Press any key", 20, 20)
+   return false
+  end if
+ end if
+
+ move_kind = 0
+
+ if action = 1 then
+  index = PickTriggerAt(m, tile_x, tile_y)
+  if index = 0 then InfoBox("There is no trigger on this tile.||Press any key", 20, 20)
+  if index <= 0 then return false
+  move_kind = 1
+ else
+  if not has_npcs then return false
+  index = PickPlacementAt(m, tile_x, tile_y)
+  if index = 0 then InfoBox("There is no NPC on this tile.||Press any key", 20, 20)
+  if index <= 0 then return false
+  move_kind = 2
+ end if
+ move_map = m
+ move_index = index
+
+ return true
+
+end function
